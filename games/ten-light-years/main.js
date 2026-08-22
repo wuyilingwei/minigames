@@ -2952,7 +2952,3 @@ if (helpSeen) {
     }).observe(splashEl, { attributes: true, attributeFilter: ["class"] });
   }
 }
-
-
-
-

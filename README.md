@@ -10,4 +10,3 @@ npm run test
 ```
 
 发布入口为 `dist/index.html`；每个独立资源发布至 `dist/games/<slug>/`。新增资源时，把可发布的静态文件放入 `games/<slug>/`，并在 `apps/portal/games.json` 添加一项。
-

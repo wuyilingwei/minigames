@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, stat } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'node:path';
 
@@ -13,7 +13,7 @@ function assert(value, message) {
 }
 
 async function fileCount(directory) {
-  const entries = await (await import('node:fs/promises')).readdir(directory, { withFileTypes: true });
+  const entries = await readdir(directory, { withFileTypes: true });
   const counts = await Promise.all(entries.map(async (entry) => {
     const path = join(directory, entry.name);
     return entry.isDirectory() ? fileCount(path) : 1;
@@ -41,4 +41,3 @@ for (const game of catalog) {
 }
 
 console.log(`Built ${catalog.length} entries and ${await fileCount(output)} static files in dist/.`);
-
