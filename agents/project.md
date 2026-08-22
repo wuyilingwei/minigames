@@ -10,7 +10,7 @@
 
 - Node.js 内置脚本：清理、复制、校验及构建静态发布物
 - HTML / CSS / JavaScript：门户页与每个游戏自身的独立运行时
-- 无服务端、无运行时依赖：适合任意静态托管
+- 无业务服务端、无运行时依赖：通过 Cloudflare Workers Static Assets 提供统一静态发布
 
 ## 模块结构
 
@@ -27,4 +27,4 @@ agents/                  项目审计与任务记录
 - 每个游戏保留自己的入口与相对资源路径，避免彼此的样式、脚本和本地存档冲突。
 - 门户只负责发现、分类和跳转；发布时各游戏位于 `/games/<slug>/`。
 - 新资源通过清单加入，构建脚本统一复制并校验入口文件。
-
+- Cloudflare 发布使用 Wrangler Workers Static Assets；`wrangler.jsonc` 的 `assets.directory` 指向构建后的 `dist/`，不再使用 Pages 配置。
