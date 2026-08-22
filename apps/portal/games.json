@@ -1,0 +1,21 @@
+[
+  {
+    "slug": "cassandri-legend",
+    "kind": "game",
+    "eyebrow": "文字冒险 RPG",
+    "title": "卡桑德里传说",
+    "description": "在像素终端中选择职业、祝福与装备，穿过二十波随机战斗。",
+    "meta": "单人 · 自动存档 · 6.5",
+    "action": "开始游玩"
+  },
+  {
+    "slug": "ten-light-years",
+    "kind": "experience",
+    "eyebrow": "互动星图",
+    "title": "十光年的距离",
+    "description": "以真实星表坐标漫游三维银河，在星尘的声音与星光之间探索连接。",
+    "meta": "3D · 音频 · 5847 颗恒星",
+    "action": "进入星图"
+  }
+]
+
