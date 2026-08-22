@@ -9,6 +9,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node test/build-output.test.mjs",
-    "check": "npm run build && npm run test"
+    "check": "npm run build && npm run test",
+    "deploy": "npm run build && npx wrangler pages deploy ./dist --project-name=minigames",
+    "deploy:preview": "npm run build && npx wrangler pages deploy ./dist --project-name=minigames --branch=preview"
   }
 }
