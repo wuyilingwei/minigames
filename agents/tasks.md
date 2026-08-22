@@ -10,3 +10,4 @@
 | 002 | [Feature] 导入十光年 | 将 10lightyears `web/` HEAD 内容纳入 `games/ten-light-years/` | 首批游戏需要保持独立入口与相对资源路径 | ✅ 已完成 |
 | 003 | [Import] 导入卡桑德里传说 | 导入可发布入口与运行时字体至 `games/cassandri-legend/` | 纳入首批小游戏资源并保持独立相对路径 | ✅ 已完成 |
 | 004 | [Deploy] GitHub 与 Cloudflare Pages | 创建公开代码仓库并以 Git 集成发布静态站 | 让游戏门户拥有可持续部署的线上入口 | 🔄 进行中 |
+| 005 | [Migrate] 静态 Assets Worker | 将静态发布从 Pages 迁至 Cloudflare Workers Static Assets | 新项目的推荐静态托管路径，预留统一边缘能力 | 🔄 进行中 |
