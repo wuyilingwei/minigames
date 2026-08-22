@@ -5,4 +5,3 @@
 - [x] 在 Cloudflare 个人 `My` 账户创建 Pages 直传项目。
 - [x] 配置生产分支、Wrangler 发布命令与发布目录并触发首次部署。
 - [x] 验证线上部署及自定义域名接入前置条件，记录发布结果。
-- [ ] 经用户确认后处理 `game.wuyilingwei.com` 现有 DNS 指向并绑定 Pages 自定义域名。

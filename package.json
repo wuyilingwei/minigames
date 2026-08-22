@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node test/build-output.test.mjs",
+    "test": "node test/build-output.test.mjs && node test/worker-config.test.mjs",
     "check": "npm run build && npm run test",
     "deploy": "npm run build && npx wrangler deploy"
   }
