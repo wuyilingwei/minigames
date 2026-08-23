@@ -11,7 +11,7 @@ function createCard(game, index) {
     const cover = document.createElement('img');
     cover.className = 'card-cover';
     cover.src = game.cover;
-    cover.alt = `${game.title} 方块化封面`;
+    cover.alt = game.coverAlt || `${game.title} 预览图`;
     cover.decoding = 'async';
     article.append(cover);
   }
