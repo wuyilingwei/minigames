@@ -5,18 +5,21 @@ import { join, resolve } from 'node:path';
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const sourcePath = join(root, 'games', 'cassandri-legend', 'index.html');
 const html = await readFile(sourcePath, 'utf8');
+const runtime = await readFile(join(root, 'games', 'cassandri-legend', 'game.js'), 'utf8');
+const styles = await readFile(join(root, 'games', 'cassandri-legend', 'styles.css'), 'utf8');
+const source = `${html}\n${styles}\n${runtime}`;
 
 function requireText(text, message) {
-  if (!html.includes(text)) throw new Error(`${message}: missing ${text}`);
+  if (!source.includes(text)) throw new Error(`${message}: missing ${text}`);
 }
 
 function requirePattern(pattern, message) {
-  if (!pattern.test(html)) throw new Error(message);
+  if (!pattern.test(source)) throw new Error(message);
 }
 
 // Version identity and the durable local-storage namespace must remain stable
 // so an existing 6.x installation can reach the new runtime and save data.
-requireText('7.0', 'The game must identify the 7.0-compatible runtime');
+requireText('8.0', 'The game must identify the 8.0 runtime');
 requireText('localStorage.getItem("kasandri6_save")', 'The legacy profile key must remain readable');
 requireText('localStorage.setItem("kasandri6_save"', 'The legacy profile key must remain writable');
 requireText('function normalizeSave(stored)', 'Profiles must be normalized before use');
@@ -42,7 +45,7 @@ requirePattern(/function doAttackRound\([\s\S]*autoBattleDecide\([\s\S]*if\(!ene
 // New equipment/enemy data is additive: multiple traits and the 7.0 combat
 // effects must render and participate in calculations without dropping the
 // existing loot, set, difficulty, and navigation surfaces.
-requirePattern(/function genEquip\([\s\S]*let traits=\[\][\s\S]*return \{[^}]*traits\}/, 'Equipment must use the multi-trait 7.0 shape');
+requirePattern(/function genEquip\([\s\S]*let traits=\[\][\s\S]*return \{[^}]*traits[^}]*\}/, 'Equipment must use the multi-trait equipment shape');
 requireText('function countTraitFor(slots,id)', 'Trait calculations must support multiple traits per equipment');
 requireText('function equipmentRecommendationHtml(item)', 'Loot recommendation UI must remain available');
 requireText('function getNextEnemyForecast()', 'The existing next-enemy recommendation must remain available');
@@ -58,7 +61,7 @@ requireText('{id:"weaken",name:"虚弱",desc:"攻击命中后降低玩家3-5%攻
 requireText('{id:"curse",name:"诅咒",desc:"攻击命中后降低玩家1-3%暴击率"}', 'Curse must retain its numeric effect description');
 requirePattern(/if\(enemy\.traits&&enemy\.traits\.length>0\)[\s\S]*item\.textContent=`【\$\{trait\.name\}】\$\{trait\.desc\}`[\s\S]*enemyTraitDesc\.appendChild\(item\)/, 'The battle UI must render every enemy trait name and full description');
 requireText('#terminal-wrap #battleArena .enemy .trait-note .trait-item{display:block', 'Multiple enemy trait descriptions must remain readable in the battle UI');
-for (const behavior of ['CHEAT_SECRET', 'kasandri6_cheat_backup', 'function exitCheatMode()', 'player.energySurgeBoost', '!hasTrait("stealGuard")', 'if(save.blood<10)', '欢迎来到卡桑德里传说7.0']) {
+for (const behavior of ['CHEAT_SECRET', 'kasandri6_cheat_backup', 'function exitCheatMode()', 'player.energySurgeBoost', 'function tryEnemyTheft()', 'hasTrait("stealGuard")', 'if(save.blood<10)', '欢迎来到卡桑德里传说8.0']) {
   requireText(behavior, `The 7.0 behavior ${behavior} must remain implemented`);
 }
 for (const surface of ['id="difficultyOverlay"', 'id="lootOverlay"', 'id="setOverlay"', 'id="btnExitToPortal"', '@media (max-width:760px)']) {

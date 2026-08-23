@@ -3,11 +3,14 @@ import { resolve } from 'node:path';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
 const html = await readFile(resolve(root, 'games/cassandri-legend/index.html'), 'utf8');
+const runtime = await readFile(resolve(root, 'games/cassandri-legend/game.js'), 'utf8');
+const styles = await readFile(resolve(root, 'games/cassandri-legend/styles.css'), 'utf8');
+const source = `${html}\n${styles}\n${runtime}`;
 function requireText(text, message) {
-  if (!html.includes(text)) throw new Error(`${message}: missing ${text}`);
+  if (!source.includes(text)) throw new Error(`${message}: missing ${text}`);
 }
 function requirePattern(pattern, message) {
-  if (!pattern.test(html)) throw new Error(message);
+  if (!pattern.test(source)) throw new Error(message);
 }
 
 requireText('let lootAutoSelectEnabled=false', 'Auto-select must default to off for every page load');
@@ -19,7 +22,7 @@ requireText('lootAutoSelectRemaining=5', 'Auto-select must start with a five-sec
 requireText('"自动选择推荐装备":"自动放弃本次装备"', 'The countdown must explain whether it will equip or decline the loot');
 requirePattern(/function toggleLootAutoSelect\(enabled\)[\s\S]*lootAutoSelectEnabled=Boolean\(enabled\)[\s\S]*syncLootAutoSelectControls\(\)[\s\S]*startLootAutoSelect\(\);[\s\S]*cancelLootAutoSelect\(\);/, 'Checking and unchecking must control the shared session switch and timer');
 requirePattern(/settingsLootAutoSelect\.onchange=\(\)=>toggleLootAutoSelect\(settingsLootAutoSelect\.checked\)/, 'Settings auto-select must control the shared session switch');
-const toggleBody = html.match(/function toggleLootAutoSelect\(enabled\)\{[\s\S]*?\n\}/)?.[0] || '';
+const toggleBody = runtime.match(/function toggleLootAutoSelect\(enabled\)\{[\s\S]*?\n\}/)?.[0] || '';
 if (toggleBody.includes('writePreferences()')) throw new Error('Auto-select must not persist across page loads');
 requirePattern(/function syncLootAutoSelectControls\(\)[\s\S]*for\(let id of \["lootAutoSelect","settingsLootAutoSelect"\]\)[\s\S]*lootAutoSelectEnabled/, 'The loot and settings switches must stay synchronized with session state');
 requirePattern(/function startLootAutoSelect\(\)[\s\S]*autoResolveLootChoice\(\);/, 'The countdown must settle loot through the automatic resolution path');
@@ -27,7 +30,7 @@ requirePattern(/function startLootAutoSelect\(\)[\s\S]*lootAutoSelectRemaining--
 requirePattern(/function flashRecommendedLootChoice\(\)[\s\S]*!lootAutoSelectEnabled[\s\S]*best\.comparison\.score>0[\s\S]*auto-select-target/, 'Only enabled auto-select with a positive gain may flash the recommended equipment border');
 requirePattern(/function getRecommendedLootChoice\(\)[\s\S]*getEquipmentComparisons\(item\)\[0\][\s\S]*comparison\.score/, 'Auto-select must compare both drops with their best replacement slots');
 requirePattern(/function autoResolveLootChoice\(\)[\s\S]*best\.comparison\.score>0\)autoEquipRecommendedLoot\(\);[\s\S]*else autoDeclineLoot\(\);/, 'Automatic loot resolution must equip positive gains and decline zero or negative gains');
-const resolverSource = html.match(/function autoResolveLootChoice\(\)\{[\s\S]*?\n\}/)?.[0] || '';
+const resolverSource = runtime.match(/function autoResolveLootChoice\(\)\{[\s\S]*?\n\}/)?.[0] || '';
 function runAutoResolution(score) {
   let equipped = 0;
   let declined = 0;
@@ -45,10 +48,10 @@ for (const [score, expected] of [[1, { equipped: 1, declined: 0 }], [0, { equipp
     throw new Error(`Auto resolution failed for score ${score}: ${JSON.stringify(actual)}`);
   }
 }
-requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*getRecommendedLootChoice\(\)[\s\S]*comparison\.slotIndex[\s\S]*player\.slots\[slotIndex\]=best\.item[\s\S]*afterEquip\(/, 'Auto-select must use the best equipment and replacement slot, then close the loot flow');
+requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*getRecommendedLootChoice\(\)[\s\S]*comparison\.action[\s\S]*player\.slots=action\.slots[\s\S]*afterEquip\(/, 'Auto-select must apply the best legal equipment action, then close the loot flow');
 requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*if\(!best\|\|best\.comparison\.score<=0\)\{autoDeclineLoot\(\);return;\}/, 'Auto-equip must fall back to automatic decline for zero or negative gains');
 requirePattern(/function autoDeclineLoot\(\)[\s\S]*两件装备都没有正收益[\s\S]*afterEquip\(/, 'Automatic decline must close the loot flow without player intervention');
-requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*lastEquipAction=\{slotIdx:slotIndex,oldEquip,newEquip:best\.item,chosenIdx:best\.chosenIdx\}[\s\S]*applyEquipStats\(\);[\s\S]*refreshStatPanel\(\);/, 'Auto-select must record and apply the selected equipment before settlement');
+requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*lastEquipAction=\{\.\.\.action,chosenIdx:best\.chosenIdx,previousSlots:player\.slots\.slice\(\)\}[\s\S]*applyEquipStats\(\);[\s\S]*refreshStatPanel\(\);/, 'Auto-select must record and apply the selected legal action before settlement');
 requirePattern(/function chooseLoot\(chosenIdx\)\{[\s\S]*cancelLootAutoSelect\(\);/, 'Manual selection must cancel the pending timer');
 requirePattern(/function deferLootChoice\(\)[\s\S]*cancelLootAutoSelect\(\);/, 'Deferring loot must cancel the pending timer');
 requirePattern(/function afterEquip\([\s\S]*cancelLootAutoSelect\(\);/, 'Settling loot must cancel the pending timer');

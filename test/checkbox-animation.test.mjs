@@ -4,9 +4,11 @@ import { join, resolve } from 'node:path';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const html = await readFile(join(root, 'games', 'cassandri-legend', 'index.html'), 'utf8');
+const styles = await readFile(join(root, 'games', 'cassandri-legend', 'styles.css'), 'utf8');
+const runtime = await readFile(join(root, 'games', 'cassandri-legend', 'game.js'), 'utf8');
 
 function requireText(text, message) {
-  if (!html.includes(text)) throw new Error(`${message}: missing ${text}`);
+  if (!(styles.includes(text) || html.includes(text) || runtime.includes(text))) throw new Error(`${message}: missing ${text}`);
 }
 
 function requirePixelSwitchLabel(id) {
