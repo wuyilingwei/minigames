@@ -6,6 +6,7 @@
     "title": "卡桑德里传说",
     "description": "在像素终端中选择职业、祝福与装备，穿过二十波随机战斗。",
     "cover": "./games/cassandri-legend/assets/cover.png",
+    "coverAlt": "卡桑德里传说方块化封面",
     "credit": "主创：槃清 · 编码：武乙凌薇",
     "meta": "单人 · 自动存档 · 6.5",
     "action": "开始游玩"
@@ -16,6 +17,8 @@
     "eyebrow": "互动星图",
     "title": "十光年的距离",
     "description": "以真实星表坐标漫游三维银河，在星尘的声音与星光之间探索连接。",
+    "cover": "./games/ten-light-years/assets/preview.png",
+    "coverAlt": "十光年的距离实际星图预览",
     "credit": "美术、设计、编码：武乙凌薇 · 数据处理：StarryMiko2233",
     "meta": "3D · 音频 · 5847 颗恒星",
     "action": "进入星图"
