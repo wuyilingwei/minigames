@@ -117,6 +117,14 @@ header h1{font-size:14px;}#terminal-wrap #battleArena{grid-template-columns:1fr;
 }
 </style>
 <style>#settingsOverlay .settings-exit,#welcomeOverlay .portal-exit{display:block;text-decoration:none;}</style>
+<style>
+#difficultyOverlay .overlay-panel{max-width:620px;}
+.difficulty-selector{display:grid;grid-template-columns:58px minmax(0,1fr) 58px;align-items:center;gap:12px;margin:10px 0 14px;}
+.difficulty-nav{width:58px;height:64px;padding:0;border:2px solid var(--border-lit);background:var(--panel2);color:var(--accent2);cursor:pointer;box-shadow:3px 3px 0 var(--bg-deep);display:grid;place-items:center;}.difficulty-nav:hover{background:#1d2d1d;color:var(--accent);}.difficulty-nav:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--bg-deep);}.difficulty-nav:disabled{opacity:.35;cursor:not-allowed;}.difficulty-nav::before{content:"";width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;}.difficulty-nav.prev::before{border-right:17px solid currentColor;}.difficulty-nav.next::before{border-left:17px solid currentColor;}
+.difficulty-focus{min-height:112px;border:3px solid var(--accent2);background:linear-gradient(180deg,#182518,#10140f);box-shadow:5px 5px 0 var(--bg-deep),inset 0 0 0 2px rgba(57,255,143,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;}.difficulty-focus-label,.difficulty-focus-caption{font-size:11px;color:var(--dim);letter-spacing:1px;}.difficulty-focus-value{display:flex;align-items:baseline;justify-content:center;gap:5px;color:var(--accent2);line-height:1;}.difficulty-focus-value strong{font-size:42px;font-weight:400;text-shadow:3px 3px 0 var(--bg-deep);}.difficulty-focus-value span{font-size:15px;color:var(--dim);}
+.difficulty-summary{display:grid;gap:8px;border-top:2px solid var(--border);padding-top:12px;font-size:12px;line-height:1.65;}.difficulty-summary-row{border-left:3px solid var(--border-lit);background:var(--panel2);padding:7px 9px;}.difficulty-summary-row strong{display:block;color:var(--accent);font-weight:400;margin-bottom:2px;}.difficulty-summary-row.effects strong{color:var(--accent2);}.difficulty-lock-note{min-height:18px;color:var(--accent);font-size:11px;line-height:1.6;margin:10px 0 0;}.difficulty-row .difficulty-open{width:auto;min-width:132px;height:28px;padding:0 8px;color:var(--accent2);border-color:var(--border-lit);font-size:11px;}
+@media (max-width:420px){.difficulty-selector{grid-template-columns:48px minmax(0,1fr) 48px;gap:8px;}.difficulty-nav{width:48px;height:58px;}.difficulty-focus{min-height:102px;}.difficulty-focus-value strong{font-size:36px;}.difficulty-row .difficulty-open{min-width:120px;}}
+</style>
 </head>
 <body>
 <div id="app" class="crt-on">
@@ -154,7 +162,7 @@ header h1{font-size:14px;}#terminal-wrap #battleArena{grid-template-columns:1fr;
   <div id="saveOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>存档与继续</h2><p class="modal-note">自动存档会在可续玩的战斗和装备选择阶段刷新；三个手动槽可自由覆盖。存档同时保存本局状态和永久成长。</p><div id="saveContent" class="save-slots"></div><div class="modal-actions"><button class="choice-btn" id="btnSaveClose">关闭</button></div></div></div>
   <div id="lootOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>战利品选择</h2><div id="lootContent"></div></div></div>
   <div id="setOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>元素套装</h2><p class="modal-note">四件套优先于二件套生效；每张卡会显示当前件数与激活状态。</p><div id="setContent" class="set-grid"></div><div class="modal-actions"><button class="choice-btn" id="btnSetClose">关闭</button></div></div></div>
-  <div id="difficultyOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>难度说明</h2><p class="modal-note">它之血珠不会消耗；仅能在开局准备阶段调节难度，进入冒险后锁定。</p><div id="difficultyContent" class="set-grid"></div><div class="modal-actions"><button class="choice-btn" id="btnDifficultyClose">关闭</button></div></div></div>
+  <div id="difficultyOverlay" class="overlay" hidden><div class="overlay-panel"><h2>难度设定</h2><p class="modal-note">它之血珠不会消耗；在开局准备阶段选择难度，进入冒险后锁定。</p><div id="difficultyContent" class="difficulty-panel"><div class="difficulty-selector"><button class="difficulty-nav prev" id="btnDifficultyPrev" type="button" aria-label="降低难度"></button><div class="difficulty-focus"><span class="difficulty-focus-label">当前焦点</span><div class="difficulty-focus-value"><strong id="difficultySelected">0</strong><span>/10</span></div><span class="difficulty-focus-caption" id="difficultyFocusCaption">难度 0</span></div><button class="difficulty-nav next" id="btnDifficultyNext" type="button" aria-label="提高难度"></button></div><section class="difficulty-summary" aria-live="polite"><div class="difficulty-summary-row"><strong>基础倍率</strong><span id="difficultyMultiplier"></span></div><div class="difficulty-summary-row"><strong>敌人词条</strong><span id="difficultyTraits"></span></div><div class="difficulty-summary-row effects"><strong>本级附加规则</strong><span id="difficultyEffects"></span></div></section><p class="difficulty-lock-note" id="difficultyLockNote"></p></div><div class="modal-actions"><button class="choice-btn" id="btnDifficultyApply">确认难度</button><button class="choice-btn" id="btnDifficultyClose">关闭</button></div></div></div>
 </div>
 <script>
 const outputDom=document.getElementById("terminal");
@@ -165,6 +173,7 @@ const defaultPurchased={egg:0,potion:0,boots:0,hat:0,doll:0};
 const defaultSave={eyeTotal:0,blood:0,pointAtk:0,pointHp:0,pointBj:0,pointBs:0,pointCrt:0,useBlood:0,gold:0,purchased:defaultPurchased,slot5Unlocked:false};
 let save={...defaultSave,purchased:{...defaultPurchased}};
 let resetConfirmationPending=false;
+let difficultyDraft=0;
 function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}
 function normalizeSave(stored){
     if(!isRecord(stored))return {...defaultSave,purchased:{...defaultPurchased}};
@@ -662,21 +671,56 @@ function showSetInfo(){
     }).join("");
     document.getElementById("setOverlay").hidden=false;
 }
+function getDifficultyEffects(level){
+    let effects=[];
+    if(level>=3)effects.push("开局随机禁用一个职业和一项祝福");
+    if(level>=5)effects.push("敌人无视 30% 闪避率，攻击伤害 -10%");
+    if(level>=7)effects.push("玩家造成的伤害 -20%");
+    if(level>=9)effects.push("遭遇普通敌人时有 30% 概率随机失去一件装备");
+    return effects.length?effects.join("；"):"暂无额外规则。";
+}
+function getDifficultyTraits(level){
+    if(level>=8)return "敌人保底拥有 1 种词条；最多 3 种，出现概率 ×1.5。";
+    if(level>=6)return "敌人最多拥有 3 种词条，出现概率 ×1.5。";
+    if(level>=4)return "敌人最多拥有 3 种词条。";
+    return "敌人最多拥有 1 种词条，按基础概率出现。";
+}
+function renderDifficultyPanel(){
+    let unlocked=Math.min(10,Math.max(0,Number(save.blood)||0));
+    let level=Math.min(unlocked,Math.max(0,Math.floor(difficultyDraft)));
+    difficultyDraft=level;
+    let adjustable=Boolean(player.canAdjustPoint);
+    document.getElementById("difficultySelected").textContent=level;
+    document.getElementById("difficultyFocusCaption").textContent=`难度 ${level}`;
+    document.getElementById("difficultyMultiplier").textContent=`敌人攻击力与生命值 ×${Math.pow(1.4,level).toFixed(2)}（每级 ×1.4）。`;
+    document.getElementById("difficultyTraits").textContent=getDifficultyTraits(level);
+    document.getElementById("difficultyEffects").textContent=getDifficultyEffects(level);
+    document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
+    document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
+    document.getElementById("btnDifficultyApply").disabled=!adjustable||level===save.useBlood;
+    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；确认后将以难度 ${level} 开始本局。`:"本局已经开始，难度已锁定。";
+}
 function showDifficultyInfo(){
-    let current=Math.max(0,Math.min(10,Number(save.useBlood)||0));
-    let rules=[
-        {title:"基础成长",detail:"每提升 1 级难度，所有敌人的攻击力与生命值均 ×1.4。"},
-        {title:"难度 3 起",detail:"每局开始时，随机禁用一个职业和一项祝福。"},
-        {title:"难度 4 起",detail:"敌人最多可同时拥有 3 种特性。"},
-        {title:"难度 5 起",detail:"所有敌人无视玩家 30% 闪避率；敌人的攻击伤害降低 10%。"},
-        {title:"难度 6 起",detail:"敌人特性的出现概率 ×1.5。"},
-        {title:"难度 7 起",detail:"玩家造成的伤害降低 20%。"},
-        {title:"难度 8 起",detail:"敌人保底拥有 1 种特性。"},
-        {title:"难度 9 起",detail:"每次遭遇普通敌人时，有 30% 概率随机失去一件装备。"},
-        {title:"难度 10",detail:"继承前述全部规则，并继续按基础成长倍率强化敌人。"}
-    ];
-    document.getElementById("difficultyContent").innerHTML=`<article class="set-card is-active"><h3>当前难度 · ${current}/10</h3><div class="set-tier active">难度可在开局准备阶段调整；进入冒险后保持本局选择。</div></article>`+rules.map(rule=>`<article class="set-card"><h3>${rule.title}</h3><div class="set-tier">${rule.detail}</div></article>`).join("");
+    difficultyDraft=Math.max(0,Math.min(10,Number(save.useBlood)||0));
+    renderDifficultyPanel();
     document.getElementById("difficultyOverlay").hidden=false;
+}
+function shiftDifficulty(delta){
+    if(!player.canAdjustPoint)return;
+    difficultyDraft=Math.max(0,Math.min(Math.min(10,Number(save.blood)||0),difficultyDraft+delta));
+    renderDifficultyPanel();
+}
+function applyDifficultySelection(){
+    if(!player.canAdjustPoint)return;
+    save.useBlood=difficultyDraft;
+    writeSave();
+    if(player.job)applyEquipStats();
+    refreshStatPanel();
+    document.getElementById("difficultyOverlay").hidden=true;
+}
+function closeDifficultyPanel(){
+    difficultyDraft=save.useBlood;
+    document.getElementById("difficultyOverlay").hidden=true;
 }
 function openShop(){
     resetConfirmationPending=false;
@@ -788,7 +832,7 @@ function refreshStatPanel(){
     <div class="eye-info">魔王之眼：${save.eyeTotal}/24 | 已用：${usedEye}</div>
     <div class="eye-info">它之血珠：${save.blood} | 难度：${save.useBlood}/10</div>
     <div class="eye-info">金币：${save.gold||0}</div>
-    <div class="hud-actions"><button class="hud-action" onclick="openSaveManager()">${svgUse("save")}存档</button><button class="hud-action shop" onclick="openShop()">${svgUse("shop")}商城</button>${pendingLoot?`<button class="hud-action pending" onclick="resumeLootChoice()">${svgUse("resume")}继续选择装备</button>`:""}<button class="hud-action sets" onclick="showDifficultyInfo()">难度说明</button><button class="hud-action sets" onclick="showSetInfo()">${svgUse("sets")}元素套装详情</button></div>
+    <div class="hud-actions"><button class="hud-action" onclick="openSaveManager()">${svgUse("save")}存档</button><button class="hud-action shop" onclick="openShop()">${svgUse("shop")}商城</button>${pendingLoot?`<button class="hud-action pending" onclick="resumeLootChoice()">${svgUse("resume")}继续选择装备</button>`:""}<button class="hud-action sets" onclick="showDifficultyInfo()">难度设定</button><button class="hud-action sets" onclick="showSetInfo()">${svgUse("sets")}元素套装详情</button></div>
     <div class="stat-row"><span class="label">职业</span><span class="value">${player.job||"-"}</span></div>
     <div class="stat-row"><span class="label">祝福</span><span class="value">${player.blessing||"-"}</span></div>
     <div class="stat-row"><span class="label">攻击力</span><span class="value stat-atk">${player.atk}</span></div>
@@ -800,7 +844,7 @@ function refreshStatPanel(){
     <div class="stat-row"><span class="label">套装效果</span><span class="value">${setText}</span></div>
     <div class="equip-slots"><h4>装备槽位</h4><div class="slot-grid">__SLOTS__</div></div>
     <div class="point-controls">
-    <div class="point-row"><span class="plabel">难度等级</span><button onclick="adjPoint('blood',-1)" ${player.canAdjustPoint&&save.useBlood>0?"":"disabled"}>-</button><span class="pval">${save.useBlood}</span><button onclick="adjPoint('blood',1)" ${player.canAdjustPoint&&save.useBlood<10&&save.blood>save.useBlood?"":"disabled"}>+</button></div>
+    <div class="point-row difficulty-row"><span class="plabel">难度等级</span><button class="difficulty-open" onclick="showDifficultyInfo()">难度 ${save.useBlood}/10 · ${player.canAdjustPoint?"调整":"已锁定"}</button></div>
     <div class="point-row"><span class="plabel stat-atk">攻击力</span><button onclick="adjPoint('atk',-1)" ${player.canAdjustPoint&&save.pointAtk>0?"":"disabled"}>-</button><span class="pval stat-atk">${save.pointAtk}</span><button onclick="adjPoint('atk',1)" ${player.canAdjustPoint&&usedEye<save.eyeTotal?"":"disabled"}>+</button></div>
     <div class="point-row"><span class="plabel stat-hp">血量</span><button onclick="adjPoint('hp',-1)" ${player.canAdjustPoint&&save.pointHp>0?"":"disabled"}>-</button><span class="pval stat-hp">${save.pointHp}</span><button onclick="adjPoint('hp',1)" ${player.canAdjustPoint&&usedEye<save.eyeTotal?"":"disabled"}>+</button></div>
     <div class="point-row"><span class="plabel stat-bj">暴击率</span><button onclick="adjPoint('bj',-1)" ${player.canAdjustPoint&&save.pointBj>0?"":"disabled"}>-</button><span class="pval stat-bj">${save.pointBj}</span><button onclick="adjPoint('bj',1)" ${player.canAdjustPoint&&usedEye<save.eyeTotal?"":"disabled"}>+</button></div>
@@ -817,14 +861,9 @@ function refreshStatPanel(){
 function adjPoint(type,delta){
     if(!player.canAdjustPoint)return;
     let usedEye=save.pointAtk+save.pointHp+save.pointBj+save.pointBs+save.pointCrt;
-    if(type==="blood"){
-        if(delta>0&&save.useBlood<10&&save.blood>save.useBlood){save.useBlood++;}
-        else if(delta<0&&save.useBlood>0){save.useBlood--;}
-    }else{
-        let key="point"+type.charAt(0).toUpperCase()+type.slice(1);
-        if(delta>0&&usedEye<save.eyeTotal){save[key]++;}
-        else if(delta<0&&save[key]>0){save[key]--;}
-    }
+    let key="point"+type.charAt(0).toUpperCase()+type.slice(1);
+    if(delta>0&&usedEye<save.eyeTotal){save[key]++;}
+    else if(delta<0&&save[key]>0){save[key]--;}
     writeSave();
     if(player.job){applyEquipStats();}
     refreshStatPanel();
@@ -1867,11 +1906,14 @@ function initApp(){
     document.getElementById("btnShopClose").onclick=()=>closeShop();
     document.getElementById("btnSaveClose").onclick=()=>closeSaveManager();
     document.getElementById("btnSetClose").onclick=()=>{document.getElementById("setOverlay").hidden=true;};
-    document.getElementById("btnDifficultyClose").onclick=()=>{document.getElementById("difficultyOverlay").hidden=true;};
+    document.getElementById("btnDifficultyPrev").onclick=()=>shiftDifficulty(-1);
+    document.getElementById("btnDifficultyNext").onclick=()=>shiftDifficulty(1);
+    document.getElementById("btnDifficultyApply").onclick=()=>applyDifficultySelection();
+    document.getElementById("btnDifficultyClose").onclick=()=>closeDifficultyPanel();
     crtToggle.onchange=()=>{preferences.crt=crtToggle.checked;writePreferences();applyPreferences();};
     reduceMotionToggle.onchange=()=>{preferences.reduceMotion=!reduceMotionToggle.checked;writePreferences();applyPreferences();};
     collapseEventsToggle.onchange=()=>{preferences.collapseEvents=collapseEventsToggle.checked;writePreferences();};
-    document.addEventListener("keydown",event=>{if(event.key!=="Escape")return;closeSettings();changelog.hidden=true;closeShop();document.getElementById("setOverlay").hidden=true;document.getElementById("difficultyOverlay").hidden=true;closeSaveManager();});
+    document.addEventListener("keydown",event=>{if(event.key!=="Escape")return;closeSettings();changelog.hidden=true;closeShop();document.getElementById("setOverlay").hidden=true;closeDifficultyPanel();closeSaveManager();});
     applyPreferences();
     syncPreferenceControls();
     continueButton.disabled=!readRunSave("auto");
