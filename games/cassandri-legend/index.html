@@ -171,6 +171,35 @@ header h1{font-size:18px;}header .sub{font-size:14px;}#term-titlebar{font-size:1
 @media (prefers-reduced-motion:reduce){.pixel-switch input[type="checkbox"],.pixel-switch input[type="checkbox"]::before,.loot-choice.auto-select-target{transition:none;animation:none;}.loot-choice.auto-select-target{border-color:var(--accent2);box-shadow:3px 3px 0 #07140c,0 0 0 2px rgba(57,255,143,.35);}}
 #terminal-wrap #battleArena .enemy .trait-note{font-size:10px;line-height:1.45;overflow-wrap:anywhere;}
 #terminal-wrap #battleArena .enemy .trait-note .trait-item{display:block;margin-top:2px;}
+/* Battle roster cards stay readable at one unit and grow into groups. */
+#battleArena .unit-roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;min-width:0;z-index:1;}
+#battleArena .unit-roster .combatant{min-width:0;}
+#battleArena .unit-roster .combatant.player,#battleArena .unit-roster .combatant.enemy{grid-column:auto;grid-row:auto;align-self:stretch;}
+#battleArena .ally-roster{grid-column:1;grid-row:1;}
+#battleArena .enemy-roster{grid-column:3;grid-row:1;}
+#battleArena .unit-roster .combatant .pixel-avatar{image-rendering:pixelated;}
+#battleArena .unit-roster .combatant[data-unit-kind="guardian"] .pixel-avatar{border-color:#88b8ff;}
+#battleArena .unit-roster .combatant[data-unit-kind="caster"] .pixel-avatar{border-color:#d78cff;}
+#battleArena .unit-roster .combatant[data-unit-kind="beast"] .pixel-avatar{border-color:#ff9d5c;}
+#battleArena .unit-roster .combatant[data-unit-kind="undead"] .pixel-avatar{border-color:#b5c3cc;}
+#battleArena .unit-roster .combatant[data-unit-kind="slime"] .pixel-avatar{border-color:#64e6c0;}
+.pixel-sprite{width:100%;height:100%;shape-rendering:crispEdges;image-rendering:pixelated;}
+.pixel-avatar .pixel-sprite rect{vector-effect:non-scaling-stroke;}
+.combatant.attack{animation:unitAttack .28s steps(3);}
+.combatant.dodge{animation:unitDodge .34s steps(3);}
+@keyframes unitAttack{50%{transform:translateX(5px) scale(1.05);filter:brightness(1.5)}}
+@keyframes unitDodge{50%{transform:translateX(-6px);opacity:.45}}
+@media (max-width:720px){
+  body,#app{min-width:0;width:100%;overflow-x:hidden;}
+  #layout{min-width:0;}
+  #terminal-wrap #battleArena{grid-template-columns:1fr;grid-template-rows:auto auto auto;min-height:0;padding:8px;}
+  #terminal-wrap #battleArena .ally-roster,#terminal-wrap #battleArena .enemy-roster{grid-column:1;grid-row:auto;}
+  #battleArena .unit-roster{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
+  #battleArena .versus{display:block;grid-column:1;grid-row:auto;}
+  #terminal-wrap #battleArena .combatant{grid-template-columns:40px minmax(0,1fr);}
+}
+@media (prefers-reduced-motion:reduce){.combatant.attack,.combatant.dodge,.combatant.hit,.combatant.heal{animation:none;transition:none;}}
+.battle-float.attack{color:var(--accent);}
 </style>
 </head>
 <body>
@@ -185,14 +214,18 @@ header h1{font-size:18px;}header .sub{font-size:14px;}#term-titlebar{font-size:1
       <div id="term-titlebar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span>TERMINAL // 卡桑德里传说</span></div>
       <div id="terminal" aria-live="polite"></div>
       <section id="battleArena" hidden aria-label="战斗对阵">
-        <div class="combatant player" id="playerCombatant">
+        <div id="allyRoster" class="unit-roster ally-roster" aria-label="我方单位">
+        <div class="combatant player" id="playerCombatant" data-unit-kind="hero" aria-label="我方勇者">
           <div class="pixel-avatar"><svg class="battle-svg" aria-hidden="true"><use href="#svg-hero"></use></svg></div><div class="combatant-name" id="battlePlayerName">勇者</div><div class="combatant-atk" id="battlePlayerAtk">ATK —</div>
           <div id="hpBarArea"><div class="battle-meter"><div class="fill" id="hpBarFill"></div></div><div class="battle-number" id="hpNums">0 / 0</div><div id="shieldBarWrap"><div class="shield-number" id="shieldNums">护盾 0</div><div class="battle-meter"><div class="fill" id="shieldBarFill"></div></div></div></div>
         </div>
+        </div>
         <div class="versus">VS</div>
-        <div class="combatant enemy" id="enemyBarArea">
+        <div id="enemyRoster" class="unit-roster enemy-roster" aria-label="敌方单位">
+        <div class="combatant enemy" id="enemyBarArea" data-unit-kind="enemy" aria-label="敌方单位">
           <div class="pixel-avatar"><svg class="battle-svg" aria-hidden="true"><use href="#svg-enemy"></use></svg></div><div class="combatant-name" id="enemyBarLabel">敌人</div><div class="combatant-atk" id="battleEnemyAtk">ATK —</div>
           <div class="battle-meter"><div class="fill enemy-fill" id="enemyBarFill"></div></div><div class="battle-number" id="enemyHpNums">0 / 0</div><div id="enemyTraitDesc" class="trait-note"></div>
+        </div>
         </div>
         <div id="battleEvent">等待交战</div>
       </section>
@@ -774,14 +807,76 @@ function oneSlotHtml(idx){
     </div>${traitHtml}</div>`;
 }
 
+/* The battle engine can keep its legacy singletons while
+   callers may expose `player.allies` / `enemy.enemies` (or roster) arrays. */
+function unitKind(unit,side){
+    let text=String(unit&&((unit.kind||unit.type||unit.job||unit.name)||"")).toLowerCase();
+    if(side==="ally"){
+        if(text.includes("法")||text.includes("巫")||text.includes("术"))return "caster";
+        if(text.includes("盾")||text.includes("骑")||text.includes("战士"))return "guardian";
+        return "hero";
+    }
+    if(text.includes("史莱姆")||text.includes("泥浆")||text.includes("植物"))return "slime";
+    if(text.includes("骷髅")||text.includes("僵尸")||text.includes("亡灵")||text.includes("幽灵"))return "undead";
+    if(text.includes("狼")||text.includes("兽")||text.includes("蝙蝠")||text.includes("蜘蛛"))return "beast";
+    if(text.includes("法师")||text.includes("巫医")||text.includes("恶魔")||text.includes("元素"))return "caster";
+    return "enemy";
+}
+function pixelSpriteMarkup(kind){
+    const palettes={hero:["#39ff8f","#ffcf9a","#4169e1"],guardian:["#88b8ff","#ffd2a6","#6f7f9f"],caster:["#d78cff","#ffd2a6","#4b2f82"],enemy:["#ff4d4d","#d48a6a","#641f32"],beast:["#ff9d5c","#c56a43","#723c29"],undead:["#b5c3cc","#d7e2e8","#596875"],slime:["#64e6c0","#b6ffe9","#218f79"]};
+    const [body,skin,shade]=palettes[kind]||palettes.enemy;
+    const ears=(kind==="beast"||kind==="enemy")?`<rect x="2" y="3" width="3" height="4" fill="${shade}"/><rect x="11" y="3" width="3" height="4" fill="${shade}"/>`:"";
+    const weapon=(kind==="hero"||kind==="guardian")?`<rect x="13" y="9" width="2" height="6" fill="#e9e3c2"/><rect x="14" y="8" width="1" height="1" fill="#fff6c4"/>`:kind==="caster"?`<rect x="13" y="8" width="2" height="7" fill="#8b6b43"/><rect x="13" y="7" width="3" height="2" fill="#d78cff"/>`:"";
+    return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位"><rect x="5" y="2" width="6" height="2" fill="${skin}"/>${ears}<rect x="4" y="4" width="8" height="5" fill="${skin}"/><rect x="5" y="5" width="2" height="2" fill="#10140f"/><rect x="9" y="5" width="2" height="2" fill="#10140f"/><rect x="6" y="7" width="4" height="1" fill="${shade}"/><rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>${weapon}</svg>`;
+}
+function rosterUnits(side){
+    let source=side==="ally"?player:enemy;
+    let explicit=source&&(Array.isArray(source.allies)&&side==="ally"?source.allies:Array.isArray(source.enemies)&&side!=="ally"?source.enemies:Array.isArray(source.roster)?source.roster:null);
+    if(Array.isArray(explicit)&&explicit.length)return explicit;
+    return [source||{}];
+}
+function setCombatantSprite(card,unit,side){
+    let kind=unitKind(unit,side),avatar=card&&card.querySelector(".pixel-avatar");
+    if(card){card.dataset.unitKind=kind;card.setAttribute("aria-label",`${side==="ally"?"我方":"敌方"}单位：${unit.name||unit.job||"未命名"}`);}
+    if(avatar)avatar.innerHTML=pixelSpriteMarkup(kind);
+    return kind;
+}
+function createRosterCard(unit,side,index){
+    let card=document.createElement("article");
+    card.className=`combatant ${side==="ally"?"player":"enemy"}`;
+    card.dataset.rosterUnit=String(index);card.dataset.unitSide=side;
+    card.innerHTML=`<div class="pixel-avatar"></div><div class="combatant-name"></div><div class="combatant-atk"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-fill"}"></div></div><div class="battle-number"></div><div class="trait-note"></div>`;
+    setCombatantSprite(card,unit,side);
+    card.querySelector(".combatant-name").textContent=unit.name||unit.job|| (side==="ally"?"友军":"敌人");
+    card.querySelector(".combatant-atk").textContent=`ATK ${unit.atk??"—"}`;
+    let hp=Number(unit.hp)||0,max=Number(unit.maxHp)||hp||1,pct=Math.max(0,Math.min(100,hp/max*100));
+    card.querySelector(".fill").style.width=`${pct}%`;
+    card.querySelector(".battle-number").textContent=`${hp} / ${max}`;
+    let trait=card.querySelector(".trait-note");
+    trait.textContent=(unit.traits||[]).map(t=>`【${t.name||t.id||"特性"}】${t.desc||""}`).join(" ");
+    return card;
+}
+function renderBattleRoster(){
+    let allyRoot=document.getElementById("allyRoster"),enemyRoot=document.getElementById("enemyRoster");
+    if(!allyRoot||!enemyRoot)return;
+    let allies=rosterUnits("ally"),enemies=rosterUnits("enemy");
+    let allyPrimary=document.getElementById("playerCombatant"),enemyPrimary=document.getElementById("enemyBarArea");
+    setCombatantSprite(allyPrimary,allies[0],"ally");setCombatantSprite(enemyPrimary,enemies[0],"enemy");
+    allyRoot.querySelectorAll("[data-roster-unit]").forEach(node=>node.remove());
+    enemyRoot.querySelectorAll("[data-roster-unit]").forEach(node=>node.remove());
+    for(let i=1;i<allies.length;i++)allyRoot.appendChild(createRosterCard(allies[i],"ally",i));
+    for(let i=1;i<enemies.length;i++)enemyRoot.appendChild(createRosterCard(enemies[i],"enemy",i));
+    allyRoot.dataset.unitCount=String(allies.length);enemyRoot.dataset.unitCount=String(enemies.length);
+}
+
 function showBattleFeedback(side,text,type="damage"){
     let combatant=document.getElementById(side==="enemy"?"enemyBarArea":"playerCombatant");
     let event=document.getElementById("battleEvent");
     if(event)event.textContent=text;
     if(!combatant)return;
-    combatant.classList.remove("hit","heal");
+    combatant.classList.remove("hit","heal","attack","dodge");
     void combatant.offsetWidth;
-    combatant.classList.add(type==="heal"?"heal":"hit");
+    combatant.classList.add(type==="heal"?"heal":type==="dodge"?"dodge":type==="attack"?"attack":"hit");
     let float=document.createElement("span");
     float.className=`battle-float ${type}`;
     float.textContent=text;
@@ -790,6 +885,7 @@ function showBattleFeedback(side,text,type="damage"){
 }
 
 function refreshHpBar(){
+    renderBattleRoster();
     let arena=document.getElementById("battleArena");
     let active=Boolean(enemy.name&&enemy.maxHp>0&&(gameState==="battle"||gameState==="bossBattle"));
     if(arena)arena.hidden=!active;
@@ -1483,7 +1579,7 @@ function playerAttack(){
     }
     if(dmg>0&&hasETrait("thorns")&&hasTrait("antiThorns"))print("【反刺护体】免疫荆棘反伤。");
     enemy.hp-=dmg;
-    showBattleFeedback("enemy",dmg>0?(isCrit?`暴击 -${dmg}`:`-${dmg}`):"格挡",isCrit?"crit":"damage");
+    showBattleFeedback("enemy",dmg>0?(isCrit?`暴击 -${dmg}`:`-${dmg}`):"格挡",isCrit?"crit":(dmg>0?"attack":"damage"));
     if(dmg>0&&hasETrait("enrage")&&enemy.hp>0){
         enemy.atk=Math.floor(enemy.atk*1.10);
         print(`【激怒】敌人的攻击力提升了！`);
