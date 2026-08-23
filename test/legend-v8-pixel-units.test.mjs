@@ -5,21 +5,24 @@ import vm from "node:vm";
 
 const file = new URL("../games/cassandri-legend/index.html", import.meta.url);
 const html = fs.readFileSync(file, "utf8");
+const runtime = fs.readFileSync(new URL("../games/cassandri-legend/game.js", import.meta.url), "utf8");
+const styles = fs.readFileSync(new URL("../games/cassandri-legend/styles.css", import.meta.url), "utf8");
+const source = `${html}\n${styles}\n${runtime}`;
 
 function extractFunction(name) {
-  const match = html.match(new RegExp(`function ${name}\\([\\s\\S]*?\\n\\}`));
+  const match = runtime.match(new RegExp(`function ${name}\\([\\s\\S]*?\\n\\}`));
   assert.ok(match, `missing ${name}`);
   return match[0];
 }
 
 test("battle arena exposes ally/enemy roster containers and legacy primary IDs", () => {
-  assert.match(html, /id="battleArena"[^>]*aria-label="战斗对阵"/);
-  assert.match(html, /id="allyRoster"[^>]*aria-label="我方单位"/);
-  assert.match(html, /id="enemyRoster"[^>]*aria-label="敌方单位"/);
-  assert.match(html, /id="playerCombatant"/);
-  assert.match(html, /id="enemyBarArea"/);
-  assert.match(html, /player\.allies/);
-  assert.match(html, /enemy\.enemies/);
+  assert.match(source, /id="battleArena"[^>]*aria-label="战斗对阵"/);
+  assert.match(source, /id="allyRoster"[^>]*aria-label="我方单位"/);
+  assert.match(source, /id="enemyRoster"[^>]*aria-label="敌方单位"/);
+  assert.match(source, /id="playerCombatant"/);
+  assert.match(source, /id="enemyBarArea"/);
+  assert.match(source, /player\.allies/);
+  assert.match(source, /enemy\.enemies/);
 });
 
 test("pixel sprite adapter creates distinct, accessible SVG units", () => {
@@ -39,9 +42,11 @@ test("pixel sprite adapter creates distinct, accessible SVG units", () => {
 });
 
 test("feedback and responsive roster contracts are executable in source", () => {
-  assert.match(html, /type==="dodge"\?"dodge":type==="attack"\?"attack"/);
-  assert.match(html, /prefers-reduced-motion:reduce/);
-  assert.match(html, /body,#app\{min-width:0/);
-  assert.match(html, /for\(let i=1;i<allies\.length;i\+\+\)/);
-  assert.match(html, /for\(let i=1;i<enemies\.length;i\+\+\)/);
+  assert.match(source, /type==="dodge"\?"dodge":type==="attack"\?"attack"/);
+  assert.match(source, /prefers-reduced-motion:reduce/);
+  assert.match(source, /body,#app\{min-width:0/);
+  assert.match(source, /for\(let i=1;i<allies\.length;i\+\+\)/);
+  assert.match(source, /for\(let i=1;i<enemies\.length;i\+\+\)/);
 });
+
+
