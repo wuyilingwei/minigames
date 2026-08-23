@@ -30,6 +30,17 @@ if (hard.buildEquipAction({ ...shield, part: 'body' }, 2, slots) !== null) throw
 
 const legacy = hard.normalizeEquipment({ name: '古老的大剑', atk: 4, hp: 5, trait: { id: 'armorBreak' } }, 2);
 if (legacy.part !== 'twoHand' || !Array.isArray(legacy.traits) || legacy.traits.length !== 1) throw new Error('Legacy equipment must infer a part and migrate a single trait.');
+const legacyCloak = hard.normalizeEquipment({ name: '旧披风', part: 'body', atk: 1 }, 1);
+const legacyBoot = hard.normalizeEquipment({ name: '旧靴子', part: 'oneHand', hp: 2 }, 2);
+if (legacyCloak.part !== 'outerwear' || legacyBoot.part !== 'outerwear') throw new Error('Legacy body/one-hand wearable items must migrate to the outerwear part by name.');
+const armor = { name: '铠甲', part: 'body', element: '无', atk: 0, hp: 5, bj: 0, bs: 0, crt: 0, traits: [] };
+const cloak = { name: '披风', part: 'outerwear', element: '风', atk: 1, hp: 2, bj: 0, bs: 0, crt: 0, traits: [] };
+const migratedHard = hard.normalizeEquipmentSlots([null, armor, null, null, { ...cloak, part: 'body' }]);
+if (migratedHard[1]?.part !== 'body' || migratedHard[4]?.part !== 'outerwear') throw new Error('Armor and a legacy body cloak must coexist in body and fifth slots.');
+const migratedLow = low.normalizeEquipmentSlots([null, armor, null, null, cloak]);
+if (migratedLow.some(item => item?.part === 'outerwear')) throw new Error('Low difficulty must not retain an add-on without the fifth slot.');
+if (hard.buildEquipAction(cloak, 1, [null, armor, null, null, null]) !== null) throw new Error('Outerwear must never be placeable in the body slot.');
+if (!hard.buildEquipAction(cloak, 4, [null, armor, null, null, null])) throw new Error('Outerwear must be equipable in the unlocked fifth slot alongside armor.');
 const tierStart = runtime.indexOf('const equipmentTraitIdsByTier=');
 const tierEnd = runtime.indexOf('\n\nconst elements=', tierStart);
 const tierModel = tierStart >= 0 && tierEnd > tierStart ? runtime.slice(tierStart, tierEnd) : '';
@@ -44,7 +55,7 @@ for (const [level, traits] of [[0, 0], [3, 1], [6, 2], [9, 3]]) {
   const expected = level === 0 ? 'let maxTraits=tier;' : 'let tier=save.useBlood>=9?3:save.useBlood>=6?2:save.useBlood>=3?1:0;';
   if (!runtime.includes(expected)) throw new Error(`Difficulty ${level} equipment trait tier is missing.`);
 }
-for (const text of ['id:"armorBreak"', 'trait.id==="armorBreak"', 'function buildEquipAction', 'function normalizeEquipmentSlots', 'save.slot5Unlocked||save.useBlood>=6?5:4']) {
+for (const text of ['id:"armorBreak"', 'trait.id==="armorBreak"', 'function buildEquipAction', 'function normalizeEquipmentSlots', 'accepts:["accessory","outerwear"]', 'save.slot5Unlocked||save.useBlood>=6?5:4']) {
   if (!runtime.includes(text)) throw new Error(`Missing 8.0 equipment contract: ${text}`);
 }
 console.log('Verified 8.0 equipment slots, compatibility, legal combinations, and difficulty tiers.');

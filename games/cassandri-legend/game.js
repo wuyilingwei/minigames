@@ -55,16 +55,19 @@ let player={name:"",job:"",atk:0,hp:0,maxHp:0,bj:0,bs:0,crt:0,ZDYHP:0,shields:nu
 const equipmentSlots=[
     {id:"head",name:"头部",accepts:["head"]},{id:"body",name:"身体",accepts:["body"]},
     {id:"mainHand",name:"主手",accepts:["oneHand","twoHand"]},{id:"offHand",name:"副手",accepts:["oneHand","offHand"]},
-    {id:"accessory",name:"饰品",accepts:["accessory"]}
+    {id:"accessory",name:"附加",accepts:["accessory","outerwear"]}
 ];
-const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品"};
+const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品",outerwear:"附加"};
 function getSlotCount(){return save.slot5Unlocked||save.useBlood>=6?5:4;}
 function getSlotLabel(index){return equipmentSlots[index]?equipmentSlots[index].name:`槽位${index+1}`;}
 function inferEquipmentPart(item,index=0){
-    if(item&&equipmentPartNames[item.part])return item.part;
     let name=String(item&&item.name||"");
+    // Older versions classified wearable add-ons as body or oneHand. Name-based
+    // migration must run before trusting the persisted part so they can reach slot 5.
+    if(/斗篷|披风|靴子|鞋子|手套|翅膀|背包|臂甲|胫甲|护腿|护肩|披肩|围巾/.test(name))return "outerwear";
+    if(item&&equipmentPartNames[item.part])return item.part;
     if(/头盔|假发|面纱|帽子/.test(name))return "head";
-    if(/铠甲|毛衣|连衣裙|斗篷|披风|臂甲|裤子/.test(name))return "body";
+    if(/铠甲|胸甲|战甲|布衣|毛衣|连衣裙|裤子/.test(name))return "body";
     if(/盾/.test(name))return "offHand";
     if(/大剑|巨锤|巨斧|长弓|弩|战戟|双刃剑/.test(name))return "twoHand";
     if(/戒指|项链|护符|腰带|念珠|水晶球|号角|香炉|钱包|钥匙/.test(name))return "accessory";
@@ -81,10 +84,18 @@ function normalizeEquipment(item,index=0){
     delete normalized.trait;
     return normalized;
 }
-function normalizeEquipmentSlots(slots){
-    let next=Array.from({length:getSlotCount()},(_,index)=>normalizeEquipment(Array.isArray(slots)?slots[index]:null,index));
+function normalizeEquipmentSlots(slots,slotCount=getSlotCount()){
+    let next=Array.from({length:slotCount},()=>null);
+    for(let sourceIndex=0;sourceIndex<(Array.isArray(slots)?slots.length:0);sourceIndex++){
+        let item=normalizeEquipment(slots[sourceIndex],sourceIndex);
+        if(!item)continue;
+        let targetIndex=sourceIndex<next.length&&equipmentSlots[sourceIndex]?.accepts.includes(item.part)&&!next[sourceIndex]
+            ?sourceIndex
+            :next.findIndex((slot,index)=>!slot&&equipmentSlots[index]?.accepts.includes(item.part));
+        if(targetIndex>=0)next[targetIndex]=item;
+    }
     if(next[2]&&next[2].part==="twoHand")next[3]=null;
-    for(let index=0;index<next.length;index++)if(next[index]&&!equipmentSlots[index].accepts.includes(next[index].part))next[index]=null;
+    if(next[3]&&next[3].part==="twoHand"){next[2]=null;next[3]=null;}
     return next;
 }
 function syncSlotCapacity(){player.slots=normalizeEquipmentSlots(player.slots);}
@@ -176,9 +187,7 @@ function validateRunSnapshot(snapshot){
     normalizeCombatant(normalized.enemy);
     let snapshotSave=normalizeSave(normalized.save);
     let slotCount=snapshotSave.slot5Unlocked||snapshotSave.useBlood>=6?5:4;
-    normalized.player.slots=Array.from({length:slotCount},(_,index)=>normalizeEquipment((normalized.player.slots||[])[index],index));
-    if(normalized.player.slots[2]&&normalized.player.slots[2].part==="twoHand")normalized.player.slots[3]=null;
-    for(let index=0;index<normalized.player.slots.length;index++)if(normalized.player.slots[index]&&!equipmentSlots[index].accepts.includes(normalized.player.slots[index].part))normalized.player.slots[index]=null;
+    normalized.player.slots=normalizeEquipmentSlots(normalized.player.slots,slotCount);
     if(normalized.pendingLoot){for(let key of ["e1","e2"])normalized.pendingLoot[key]=normalizeEquipment(normalized.pendingLoot[key]);}
     return normalized;
 }
@@ -1043,9 +1052,9 @@ function adjPoint(type,delta){
 function genEquip(wave){
     if(wave===undefined)wave=player.wave;
     let parts=["head","body","oneHand","oneHand","twoHand","offHand"];
-    if(getSlotCount()>=5)parts.push("accessory");
+    if(getSlotCount()>=5)parts.push("accessory","outerwear");
     let part=pick(parts);
-    let nounByPart={head:["头盔","面纱","假发"],body:["铠甲","披风","斗篷"],oneHand:["长剑","战斧","匕首","法杖","短刀"],twoHand:["巨锤","大剑","长弓","战戟","双刃剑"],offHand:["盾牌","骨盾","护臂"],accessory:["戒指","项链","护符","念珠","水晶球"]};
+    let nounByPart={head:["头盔","面纱","假发"],body:["铠甲","胸甲","战甲","布衣"],oneHand:["长剑","战斧","匕首","法杖","短刀"],twoHand:["巨锤","大剑","长弓","战戟","双刃剑"],offHand:["盾牌","骨盾"],accessory:["戒指","项链","护符","念珠","水晶球"],outerwear:["披风","斗篷","靴子","鞋子","手套","翅膀","背包","臂甲","胫甲"]};
     let name=pick(lootAdj)+pick(nounByPart[part]||lootNoun);
     let element=pick(elements);
     let scale=1+Math.min(1,wave/20)*1.0;
