@@ -12,6 +12,7 @@ function requireText(text, message) {
 requireText('.toggle input[type="checkbox"]{appearance:none;', 'Toggle checkboxes must use the shared custom control');
 requireText('.pixel-switch input[type="checkbox"]{appearance:none;', 'Auto-select and auto-battle must use the shared pixel switch control');
 requireText('.pixel-switch input[type="checkbox"]::before', 'Pixel switches must expose a decorative sliding block');
+requireText('.pixel-switch input[type="checkbox"]::after{content:none;}', 'Pixel switches must suppress the square checkbox mark');
 requireText('.pixel-switch input[type="checkbox"]:checked::before', 'Checked pixel switches must move the sliding block');
 requireText('.pixel-switch input[type="checkbox"]:active', 'Pixel switches must expose an active state');
 requireText('.toggle input[type="checkbox"]:checked::after', 'Checked toggles must animate their pixel check mark');
