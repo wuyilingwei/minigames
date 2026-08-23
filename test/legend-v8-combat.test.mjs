@@ -19,9 +19,17 @@ context.grantShield(legacy,'hits',40,2);context.grantShield(legacy,'temp',30);
 let hit=context.absorbDamage(legacy,160);
 if(hit.damage!==15||legacy.shields.hits.charges!==1||legacy.shields.temp!==0||legacy.shields.persistent!==0)throw new Error('Shield order must be hits, then temporary, then persistent');
 context.player.hp=100;let healed=context.healPlayer(900,'test');
-if(healed!==600||context.player.hp!==700)throw new Error('Difficulty 3 healing must cap each recovery at 60% max HP');
+if(healed!==855||context.player.hp!==955)throw new Error('Difficulty 3 healing must cap each recovery at 95% of current missing HP');
 context.save.useBlood=10;context.player.hp=0;healed=context.healPlayer(1000,'test');
-if(healed>600||healed<450)throw new Error('High-difficulty healing must decay and never exceed 60%');
+if(healed!==500||context.player.hp!==500)throw new Error('Difficulty 10 healing must restore exactly 50% of current missing HP');
+for(let level=3;level<=10;level++){
+  context.save.useBlood=level;context.player.hp=100;let rate=[, , ,.95,.90,.85,.75,.70,.65,.55,.50][level];
+  if(context.healPlayer(9999,'test')!==Math.floor(900*rate))throw new Error(`Difficulty ${level} healing rate must be ${rate}`);
+}
+for(let level=0;level<=2;level++){
+  context.save.useBlood=level;context.player.hp=100;
+  if(context.healPlayer(9999,'test')!==900||context.player.hp!==1000)throw new Error(`Difficulty ${level} healing must be uncapped`);
+}
 context.setTemporaryShield(context.player,80);
 if(context.restoreTemporaryShield(context.player,20,80)!==0||context.player.shields.temp!==80)throw new Error('Natural temporary shields must restore only to their combat cap');
 

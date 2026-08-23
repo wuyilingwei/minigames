@@ -83,7 +83,7 @@ function hasAddonSlotFor(saveState=save){return saveState.useBlood>=6||saveState
 function hasPurchaseSlotFor(saveState=save){return Boolean(saveState.purchaseSlotUnlocked||saveState.slot5Unlocked);}
 function getEquipmentSlotsFor(saveState=save){
     let slots=equipmentSlots.slice();
-    if(hasAddonSlotFor(saveState))slots.push({id:"accessory",name:"附加",accepts:["accessory","outerwear"]});
+    if(hasAddonSlotFor(saveState))slots.push({id:"accessory",name:"高难",accepts:["accessory","outerwear"]});
     if(hasPurchaseSlotFor(saveState))slots.push({id:"purchase",name:"购买",accepts:["purchase"]});
     return slots;
 }
@@ -186,24 +186,25 @@ function absorbDamage(unit,amount,{pierce=false,label="护盾"}={}){normalizeCom
 }
 function healPlayer(amount,source="恢复"){
     let requested=Math.max(0,Math.floor(amount)||0), bonus=hasPrismaticResonance()?1.20:1;
-    let perHealCap=player.maxHp;
-    if(save.useBlood>=3)perHealCap=Math.floor(player.maxHp*Math.max(.30,.60-(save.useBlood-3)*.02));
-    let healed=Math.max(0,Math.min(Math.floor(requested*bonus),perHealCap,player.maxHp-player.hp));player.hp+=healed;
-    print(`【${source}】回复${healed}/${requested}点生命${save.useBlood>=3?`（本次上限${perHealCap}）`:""}。`);return healed;
+    let missingHp=Math.max(0,Math.floor(player.maxHp-player.hp));
+    let recoveryRate=getHealingRecoveryRate(save.useBlood);
+    let perHealCap=Math.floor(missingHp*recoveryRate);
+    let healed=Math.max(0,Math.min(Math.floor(requested*bonus),perHealCap,missingHp));player.hp+=healed;
+    print(`【${source}】回复${healed}/${requested}点生命（当前损失生命可恢复${Math.floor(recoveryRate*100)}%，本次上限${perHealCap}）。`);return healed;
 }
 function getEmergencyShield(){
     return player.slots.find(item=>item&&item.id==="emergencyShield")||null;
 }
 function triggerEmergencyShield(){
     let item=getEmergencyShield();
-    if(!item)return;
+    if(!item||save.useBlood<6)return;
     let charges=Math.max(0,Math.floor(Number(item.emergencyCharges)||0));
     if(charges<=0)return;
-    let value=[25,50,75,100][Math.min(3,charges-1)];
+    let value=getEmergencyShieldValueForCharges(charges,save.useBlood);
     item.emergencyCharges=charges-1;
     grantShield(player,"temp",value);
     if(item.emergencyCharges>0){
-        print(`【高难应急护盾】进战触发，获得${value}点临时盾；剩余${item.emergencyCharges}次，下次${[25,50,75,100][item.emergencyCharges-1]}点。`);
+        print(`【高难应急护盾】进战触发，获得${value}点临时盾；剩余${item.emergencyCharges}次，下次${getEmergencyShieldValueForCharges(item.emergencyCharges,save.useBlood)}点。`);
     }else{
         let index=player.slots.indexOf(item);
         if(index>=0)player.slots[index]=null;
@@ -211,6 +212,19 @@ function triggerEmergencyShield(){
         applyEquipStats();
     }
     refreshStatPanel();
+}
+function getEmergencyShieldValueForCharges(charges,level=save.useBlood){
+    let remaining=Math.max(0,Math.min(4,Math.floor(Number(charges)||0)));
+    if(remaining<=0||Number(level)<6)return 0;
+    let base=[0,25,50,75,100][remaining];
+    return Math.floor(base*Math.pow(1.18,Math.max(0,Math.floor(Number(level)||0))));
+}
+function getEmergencyShieldValues(level=save.useBlood){
+    return [4,3,2,1].map(charges=>getEmergencyShieldValueForCharges(charges,level));
+}
+function getHealingRecoveryRate(level=save.useBlood){
+    let rates=[1,1,1,.95,.90,.85,.75,.70,.65,.55,.50];
+    return rates[Math.max(0,Math.min(10,Math.floor(Number(level)||0)))];
 }
 function hasPrismaticResonance(){let c=getElemCount();return ["火","水","草","雷"].every(element=>c[element]>=1);}
 function prepareBattleShields(){
@@ -614,7 +628,7 @@ function targetHasTrait(target,id){return target&&Array.isArray(target.traits)&&
 function emergencyShieldValue(item){
     if(!item||item.id!=="emergencyShield")return 0;
     let charges=Math.max(0,Math.min(4,Math.floor(Number(item.emergencyCharges)||0)));
-    return [100,75,50,25].slice(0,charges).reduce((sum,value)=>sum+value,0);
+    return getEmergencyShieldValues(save.useBlood).slice(0,charges).reduce((sum,value)=>sum+value,0);
 }
 function deriveBuild(slots){
     let base=calcBaseStats();
@@ -720,7 +734,7 @@ function getDropAdvice(items){
 }
 function equipmentRecommendationHtml(item){
     let comparisons=getEquipmentComparisons(item),best=comparisons[0];
-    if(!best)return `<div class="recommendation avoid"><div class="recommend-title">当前没有可用部位</div><div>附加装备需要难度 6 的附加槽；商城专用装备需要单独解锁购买槽。</div></div>`;
+    if(!best)return `<div class="recommendation avoid"><div class="recommend-title">当前没有可用部位</div><div>附加装备需要难度 6 的高难槽；商城专用装备需要单独解锁购买槽。</div></div>`;
     let decision=classifyRecommendation(best);
     let before=best.current,after=best.next;
     let beforeTrait=best.oldEquip&&best.oldEquip.traits&&best.oldEquip.traits.length?best.oldEquip.traits.map(trait=>trait.name).join("·"):"无";
@@ -771,8 +785,10 @@ function oneSlotHtml(idx){
     let s=player.slots[idx];
     if(!s)return `<div class="slot">${getSlotLabel(idx)}：空</div>`;
     let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
-    let specialNote=s.id==="emergencyShield"?` · 剩余${s.emergencyCharges}次${s.emergencyCharges>0?` · 下次${[25,50,75,100][s.emergencyCharges-1]}临时盾`:" · 已损坏"}`:"";
-    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note">【${equipmentPartNames[s.part]}】${specialNote}</span>
+    let isEmergencyShield=s.id==="emergencyShield";
+    let specialNote=isEmergencyShield?` · 剩余${s.emergencyCharges}次${s.emergencyCharges>0?` · 下次${getEmergencyShieldValueForCharges(s.emergencyCharges,save.useBlood)}临时盾`:" · 已损坏"}`:"";
+    let partNote=isEmergencyShield?"":`【${equipmentPartNames[s.part]}】`;
+    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note">${partNote}${specialNote}</span>
     <div class="estats">
     <span class="estat-item stat-atk">ATK+${s.atk}</span>
     <span class="estat-item stat-hp">HP+${s.hp}</span>
@@ -977,16 +993,27 @@ function showSetInfo(){
     document.getElementById("setOverlay").hidden=false;
 }
 function getDifficultyEffects(level){
-    let effects=[];
-    if(level>=1)effects.push(`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(level)-1)*100)}%`);
-    if(level>=3)effects.push("开局随机禁用一个职业和一项祝福；回复上限从最大生命60%起继续衰减");
-    if(level>=5)effects.push("敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%");
-    if(level>=7)effects.push("玩家造成的伤害 -20%");
-    if(level>=9)effects.push("遭遇普通敌人时有 30% 概率随机失去一件装备");
-    if(level>=3)effects.push("装备掉落开放额外效果与 1 条词条");
-    if(level>=6)effects.push("装备掉落至多 2 条词条，并开放高难附加槽；新征途在该槽获得应急护盾（100/75/50/25临时盾，4次后损坏；购买槽需商城单独解锁）");
-    if(level>=9)effects.push("装备掉落至多 3 条强化词条");
-    return effects.length?effects.join("；"):"暂无额外规则。";
+    return getDifficultyRules(level).map(rule=>rule.detail).join("；")||"暂无额外规则。";
+}
+function getDifficultyRules(level){
+    let current=Math.max(0,Math.min(10,Math.floor(Number(level)||0))),rules=[];
+    if(current>=1)rules.push({level:1,tag:"金币效率",detail:`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`});
+    if(current>=3)rules.push({level:3,tag:"禁用与回血",detail:`开局随机禁用一个职业和一项祝福；当前损失生命可恢复${Math.floor(getHealingRecoveryRate(current)*100)}%`});
+    if(current>=3)rules.push({level:3,tag:"额外词条",detail:"装备掉落开放额外效果与 1 条词条"});
+    if(current>=5)rules.push({level:5,tag:"追踪成长",detail:"敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%"});
+    if(current>=6)rules.push({level:6,tag:"高难应急盾",detail:`装备掉落至多 2 条词条，并开放高难槽；新征途在该槽获得应急盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏；购买槽需商城单独解锁）`});
+    if(current>=7)rules.push({level:7,tag:"伤害压制",detail:"玩家造成的伤害 -20%"});
+    if(current>=9)rules.push({level:9,tag:"装备损失",detail:"遭遇普通敌人时有 30% 概率随机失去一件装备"});
+    if(current>=9)rules.push({level:9,tag:"强化词条",detail:"装备掉落至多 3 条强化词条"});
+    return rules;
+}
+function getDifficultyRuleTags(level){
+    let tags=getDifficultyRules(level).map(rule=>`难度${rule.level} · ${rule.tag}`);
+    return tags.length?tags:["基础规则"];
+}
+function getDifficultyRuleDetails(level){
+    let rules=getDifficultyRules(level);
+    return rules.length?rules.map(rule=>`<li><strong>难度 ${rule.level}</strong> ${rule.detail}</li>`).join(""):`<li>暂无额外规则。</li>`;
 }
 function getDifficultyTraits(level){
     if(level>=8)return "敌人保底拥有 1 种词条；最多 3 种，出现概率 ×1.5。";
@@ -1005,11 +1032,12 @@ function renderDifficultyPanel(){
     document.getElementById("difficultyFocusCaption").textContent=`难度 ${level}`;
     document.getElementById("difficultyMultiplier").textContent=`敌人攻击力与生命值 ×${Math.pow(1.4,level).toFixed(2)}；胜利金币 ×${getDifficultyGoldMultiplier(level).toFixed(2)}（每级金币 +10%）。`;
     document.getElementById("difficultyTraits").textContent=getDifficultyTraits(level);
-    document.getElementById("difficultyEffects").textContent=getDifficultyEffects(level);
+    document.getElementById("difficultyRuleTags").replaceChildren(...getDifficultyRuleTags(level).map(tag=>{let node=document.createElement("span");node.className="difficulty-rule-tag";node.textContent=tag;return node;}));
+    document.getElementById("difficultyRuleDetails").innerHTML=getDifficultyRuleDetails(level);
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
     document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
     document.getElementById("btnDifficultyApply").disabled=!adjustable||level===save.useBlood;
-    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备词条，6 级起开放高难附加槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
+    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备词条，6 级起开放高难槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
     cancelLootAutoSelect();
@@ -1053,11 +1081,11 @@ function renderShop(notice=""){
     document.getElementById("shopNotice").textContent=notice||(cheatMode?"作弊模式：道具可免费增减。":`当前金币：${save.gold||0}`);
     let productHtml=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>${cheatMode?`已购 ${p[key]}/10（免费）`:`价格：${price} 金币 · 已购 ${p[key]}/10`}</div>${cheatMode?`<div class="cheat-shop-controls"><button class="choice-btn" onclick="adjustCheatItem('${key}',-1)" ${p[key]<=0?"disabled":""}>−</button><span class="cheat-count">${p[key]}</span><button class="choice-btn" onclick="adjustCheatItem('${key}',1)" ${p[key]>=10?"disabled":""}>+</button></div>`:`<button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button>`}</article>`).join("");
     let purchaseEquipment=save.purchaseEquipment;
-    let purchaseHtml=`<article class="modal-card"><h3>购买槽</h3><div>独立于高难附加槽的专用装备槽，只接受商城装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
+    let purchaseHtml=`<article class="modal-card"><h3>购买槽</h3><div>独立于高难槽的专用装备槽，只接受商城装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
     if(save.purchaseSlotUnlocked){
         purchaseHtml+=`<article class="modal-card"><h3>职业护符</h3><div>无基础属性；当前职业所有数值效果 +25%，不放大祝福。切换职业后自动按当前职业生效。</div><div>${purchaseEquipment?.id==="jobAmulet"?"已装备":cheatMode?"作弊模式：免费":"价格：1200 金币"}</div><button class="choice-btn" onclick="buyPurchaseEquipment('jobAmulet',1200)" ${purchaseEquipment?.id==="jobAmulet"?"disabled":""}>${purchaseEquipment?.id==="jobAmulet"?"已装备":"购买并装备"}</button></article>`;
     }
-    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难第五槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难附加槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
+    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
     document.getElementById("shopContent").innerHTML=productHtml+extraHtml;
 }
 function closeShop(){
