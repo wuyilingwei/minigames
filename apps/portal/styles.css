@@ -24,12 +24,14 @@ body {
 .site-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   min-height: 64px;
   border-bottom: 1px solid var(--line);
 }
 
 .wordmark,
-.card-footer a {
+.card-footer a,
+.about-link {
   color: inherit;
   text-decoration: none;
 }
@@ -39,6 +41,14 @@ body {
   font-weight: 700;
   letter-spacing: .08em;
 }
+
+.about-link {
+  color: var(--muted);
+  font-size: .76rem;
+  letter-spacing: .06em;
+}
+
+.about-link:hover { color: var(--ink); }
 
 .collection { padding: clamp(3rem, 8vw, 5.5rem) 0 4rem; }
 
@@ -130,6 +140,26 @@ h1 {
 
 .card-footer a { font-weight: 700; }
 .card-footer a::after { margin-left: .4rem; color: var(--accent); content: "→"; }
+
+.about {
+  padding: 0 0 clamp(3rem, 7vw, 5rem);
+}
+
+.about h2 {
+  margin: 0 0 .65rem;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.about p {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.75;
+}
 
 @media (max-width: 680px) {
   .shell { width: min(100% - 32px, 960px); }

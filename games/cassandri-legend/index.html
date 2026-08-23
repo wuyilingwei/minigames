@@ -93,7 +93,7 @@ header h1{font-size:16px;margin:0;letter-spacing:1px;color:var(--accent2);font-w
 #terminal-wrap #battleArena{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:1fr 1fr;gap:10px;min-height:174px;margin:8px 12px 0;padding:12px 16px;background:linear-gradient(180deg,#223f2a 0%,#162a20 52%,#10140f 53%,#10140f 100%);border-color:#7e9a67;box-shadow:inset 0 -8px 0 rgba(5,6,5,.28);flex-shrink:0;}#terminal-wrap #battleArena::before{content:'';position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(ellipse at 23% 77%,rgba(57,255,143,.22) 0 19%,transparent 20%),radial-gradient(ellipse at 77% 25%,rgba(255,180,84,.16) 0 18%,transparent 19%);}#terminal-wrap #battleArena .combatant{display:grid;grid-template-columns:52px minmax(0,1fr);grid-template-rows:auto auto auto auto;column-gap:8px;align-items:center;min-height:66px;padding:7px 8px;border:2px solid var(--border-lit);background:rgba(10,16,10,.84);box-shadow:3px 3px 0 rgba(5,6,5,.65);z-index:1;text-align:left;}#terminal-wrap #battleArena .combatant.player{grid-column:1;grid-row:2;align-self:end;}#terminal-wrap #battleArena .combatant.enemy{grid-column:2;grid-row:1;align-self:start;}#terminal-wrap #battleArena .pixel-avatar{grid-column:1;grid-row:1/5;width:48px;height:48px;margin:0;font-size:25px;background:#0a100a;box-shadow:3px 3px 0 var(--bg-deep);}#terminal-wrap #battleArena .combatant-name{grid-column:2;grid-row:1;height:auto;justify-content:flex-start;text-align:left;color:var(--text);}#terminal-wrap #battleArena .combatant-atk{grid-column:2;grid-row:2;margin:0;}#terminal-wrap #battleArena #hpBarArea{grid-column:2;grid-row:3/5;}#terminal-wrap #battleArena .enemy .battle-meter{grid-column:2;grid-row:3;}#terminal-wrap #battleArena .enemy .battle-number{grid-column:2;grid-row:4;text-align:left;}#terminal-wrap #battleArena .enemy .trait-note{grid-column:2;grid-row:5;font-size:9px;}#terminal-wrap #battleArena .versus{display:none;}#terminal-wrap #battleArena #battleEvent{z-index:2;bottom:50%;transform:translate(-50%,50%);padding:2px 7px;background:rgba(5,6,5,.72);border:1px solid var(--border);}.hud-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:10px 0;}.hud-action{min-height:34px;border:2px solid var(--border-lit);background:var(--panel2);color:var(--text);font:inherit;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:3px 3px 0 var(--bg-deep);}.hud-action:hover{background:#1d2d1d;color:var(--accent2);}.hud-action.shop{border-color:var(--accent);}.hud-action.pending{border-color:var(--accent2);color:var(--accent2);}.hud-action.sets{grid-column:1/-1;border-color:#8794db;color:#ccd4ff;}.hud-action:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--bg-deep);}.set-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch;}.set-card{border:2px solid var(--border);background:var(--panel2);padding:10px;display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:1.55;}.set-card.is-active{border-color:var(--accent2);box-shadow:3px 3px 0 #07140c;}.set-card h3{font-size:14px;font-weight:400;}.set-count{color:var(--accent);}.set-tier{padding:4px 6px;border-left:3px solid var(--border);color:var(--dim);}.set-tier.active{border-left-color:var(--accent2);color:var(--text);background:#102216;}.loot-grid,.modal-grid{align-items:stretch;grid-auto-rows:1fr;}.loot-choice,.modal-card{height:100%;display:flex;flex-direction:column;}.loot-choice .equipment-card,.modal-card .equipment-card{flex:1;margin:0;}.loot-choice .choice-btn,.modal-card .choice-btn{margin-top:auto;}.replace-delta{border-top:1px solid var(--border);padding-top:7px;color:var(--dim);font-size:11px;line-height:1.6;}.replace-delta .compare-summary{margin:0;}
 #terminal-wrap #battleArena .combatant.defeated{animation:enemyDefeat .62s steps(5) forwards;pointer-events:none;}@keyframes enemyDefeat{0%{opacity:1;transform:translate(0,0) scale(1);filter:brightness(1)}35%{opacity:1;transform:translate(-3px,2px) scale(1.06);filter:brightness(2)}100%{opacity:0;transform:translate(22px,-8px) scale(.5);filter:brightness(2)}}.svg-sprite{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;}.svg-btn{display:grid;place-items:center;font-size:0;}.ui-svg,.hud-svg,.battle-svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;}.battle-svg{width:32px;height:32px;}.hud-action .hud-svg{color:var(--accent);}.hud-action.pending .hud-svg{color:var(--accent2);}.hud-action.sets .hud-svg{color:#ccd4ff;}
 </style>
-<style>#settingsOverlay .settings-exit{display:block;text-decoration:none;}</style>
+<style>#settingsOverlay .settings-exit,#welcomeOverlay .portal-exit{display:block;text-decoration:none;}</style>
 </head>
 <body>
 <div id="app" class="crt-on">
@@ -124,7 +124,7 @@ header h1{font-size:16px;margin:0;letter-spacing:1px;color:var(--accent2);font-w
       <section class="hero-panel"><h2>勇者面板</h2><div id="statContent"></div></section>
     </aside>
   </div>
-  <div id="welcomeOverlay" class="overlay"><div class="overlay-panel"><div class="title-title">卡桑德里传说</div><div class="title-ver">6.5 · 像素终端版</div><div class="title-menu"><button class="choice-btn" id="btnContinue">继续自动存档</button><button class="choice-btn" id="btnNewGame">新的征途</button><button class="choice-btn" id="btnHomeSave">存档 / 读取</button><button class="choice-btn" id="btnHomeShop">流动商城</button><button class="choice-btn" id="btnChangelog">更新内容</button></div></div></div>
+  <div id="welcomeOverlay" class="overlay"><div class="overlay-panel"><div class="title-title">卡桑德里传说</div><div class="title-ver">6.5 · 像素终端版</div><div class="title-menu"><button class="choice-btn" id="btnContinue">继续自动存档</button><button class="choice-btn" id="btnNewGame">新的征途</button><button class="choice-btn" id="btnHomeSave">存档 / 读取</button><button class="choice-btn" id="btnChangelog">更新内容</button><button class="choice-btn" id="btnHomeShop">流动商城</button><a class="choice-btn portal-exit" id="btnHomeExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a></div></div></div>
   <div id="settingsOverlay" class="overlay" hidden><div class="overlay-panel"><h2>设置</h2><div class="settings-field"><label class="toggle"><input type="checkbox" id="crtToggle"> CRT 扫描线</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="reduceMotionToggle"> 战斗反馈动画</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="collapseEventsToggle"> 完成事件后收起终端记录</label></div><div class="title-menu"><button class="choice-btn" id="btnOpenSaveFromSettings">存档与继续</button><a class="choice-btn settings-exit" id="btnExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a><button class="choice-btn" id="btnSettingsClose">关闭</button></div></div></div>
   <div id="changelogOverlay" class="overlay" hidden><div class="overlay-panel"><h2>更新内容 · 6.5</h2><ol class="changelog-list"><li>完整接入职业、祝福、元素套装、敌人特性、商城和难度机制。</li><li>恢复像素终端 UI，并新增左右对阵血条场景。</li><li>战利品提供按伤害与生存拆分的装备对比和替换建议。</li></ol><div class="title-menu"><button class="choice-btn" id="btnChangelogClose">关闭</button></div></div></div>
   <div id="shopOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>流动商城</h2><p class="modal-note">购买永久生效；战斗中的行动选项会在关闭商城后保留。</p><div id="shopNotice" class="modal-notice" aria-live="polite"></div><div id="shopContent" class="modal-grid"></div><div class="modal-actions"><button class="choice-btn" id="btnShopClose">关闭商城</button></div></div></div>
@@ -140,6 +140,7 @@ const statContent=document.getElementById("statContent");
 const defaultPurchased={egg:0,potion:0,boots:0,hat:0,doll:0};
 const defaultSave={eyeTotal:0,blood:0,pointAtk:0,pointHp:0,pointBj:0,pointBs:0,pointCrt:0,useBlood:0,gold:0,purchased:defaultPurchased,slot5Unlocked:false};
 let save={...defaultSave,purchased:{...defaultPurchased}};
+let resetConfirmationPending=false;
 function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}
 function normalizeSave(stored){
     if(!isRecord(stored))return {...defaultSave,purchased:{...defaultPurchased}};
@@ -638,6 +639,7 @@ function showSetInfo(){
     document.getElementById("setOverlay").hidden=false;
 }
 function openShop(){
+    resetConfirmationPending=false;
     document.getElementById("shopOverlay").hidden=false;
     renderShop();
 }
@@ -652,11 +654,12 @@ function renderShop(notice=""){
     ];
     document.getElementById("shopNotice").textContent=notice||`当前金币：${save.gold||0}`;
     document.getElementById("shopContent").innerHTML=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>价格：${price} 金币 · 已购 ${p[key]}/10</div><button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button></article>`).join("")+`
-    <article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div><button class="choice-btn danger" onclick="buyReset()">施放</button></article>
     <article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article>
-    <article class="modal-card"><h3>额外装备槽位</h3><div>永久解锁第五个装备槽位。</div><div>${save.slot5Unlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buySlot5()" ${save.slot5Unlocked?"disabled":""}>${save.slot5Unlocked?"已解锁":"购买"}</button></article>`;
+    <article class="modal-card"><h3>额外装备槽位</h3><div>永久解锁第五个装备槽位。</div><div>${save.slot5Unlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buySlot5()" ${save.slot5Unlocked?"disabled":""}>${save.slot5Unlocked?"已解锁":"购买"}</button></article>
+    <article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
 }
 function closeShop(){
+    resetConfirmationPending=false;
     document.getElementById("shopOverlay").hidden=true;
     collapseTerminalEvents();
     refreshStatPanel();
@@ -685,7 +688,18 @@ function buyItem(key,price,limit){
     autoSaveRun();
     renderShop(`购买成功！剩余金币：${save.gold}`);
 }
-function buyReset(){
+function requestReset(){
+    if((save.gold||0)<10){renderShop("金币不足，无法施放大记忆消失术。");return;}
+    resetConfirmationPending=true;
+    renderShop("请确认是否施放大记忆消失术。");
+}
+function cancelReset(){
+    resetConfirmationPending=false;
+    renderShop("已取消大记忆消失术。");
+}
+function confirmReset(){
+    if(!resetConfirmationPending)return;
+    resetConfirmationPending=false;
     if((save.gold||0)<10){renderShop("金币不足，无法施放大记忆消失术。");return;}
     save.gold-=10;
     save.purchased={egg:0,potion:0,boots:0,hat:0,doll:0};
@@ -1816,7 +1830,7 @@ function initApp(){
     crtToggle.onchange=()=>{preferences.crt=crtToggle.checked;writePreferences();applyPreferences();};
     reduceMotionToggle.onchange=()=>{preferences.reduceMotion=!reduceMotionToggle.checked;writePreferences();applyPreferences();};
     collapseEventsToggle.onchange=()=>{preferences.collapseEvents=collapseEventsToggle.checked;writePreferences();};
-    document.addEventListener("keydown",event=>{if(event.key!=="Escape")return;closeSettings();changelog.hidden=true;document.getElementById("shopOverlay").hidden=true;document.getElementById("setOverlay").hidden=true;closeSaveManager();});
+    document.addEventListener("keydown",event=>{if(event.key!=="Escape")return;closeSettings();changelog.hidden=true;closeShop();document.getElementById("setOverlay").hidden=true;closeSaveManager();});
     applyPreferences();
     syncPreferenceControls();
     continueButton.disabled=!readRunSave("auto");

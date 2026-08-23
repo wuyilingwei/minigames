@@ -75,15 +75,29 @@ if (!tenLightYears.includes('id="exit-game"') || !tenLightYears.includes('href="
 const cassandriMenu = [
   cassandri.indexOf('id="btnContinue"'),
   cassandri.indexOf('id="btnNewGame"'),
-  cassandri.indexOf('id="btnHomeSave"')
+  cassandri.indexOf('id="btnHomeSave"'),
+  cassandri.indexOf('id="btnChangelog"'),
+  cassandri.indexOf('id="btnHomeShop"'),
+  cassandri.indexOf('id="btnHomeExitToPortal"')
 ];
-if (cassandriMenu.some((index) => index < 0) || !(cassandriMenu[0] < cassandriMenu[1] && cassandriMenu[1] < cassandriMenu[2])) {
-  throw new Error('Cassandri Legend must present Continue, New Game, then save options.');
+if (cassandriMenu.some((index) => index < 0) || !cassandriMenu.every((index, position) => position === 0 || cassandriMenu[position - 1] < index)) {
+  throw new Error('Cassandri Legend must order home actions as Continue, New Game, save, updates, shop, then exit.');
+}
+if (!cassandri.includes('id="btnHomeExitToPortal"') || !cassandri.includes('function requestReset()') || !cassandri.includes('function confirmReset()') || !cassandri.includes('确认施放') || !cassandri.includes('取消')) {
+  throw new Error('Cassandri Legend is missing the home exit or explicit reset confirmation controls.');
+}
+const shopOrder = [
+  cassandri.indexOf('<h3>潘多拉之盒</h3>'),
+  cassandri.indexOf('<h3>额外装备槽位</h3>'),
+  cassandri.indexOf('<h3>大记忆消失术</h3>')
+];
+if (shopOrder.some((index) => index < 0) || !(shopOrder[0] < shopOrder[1] && shopOrder[1] < shopOrder[2])) {
+  throw new Error('The manually triggered reset must be the final shop item.');
 }
 
 const home = await readFile(join(output, 'index.html'), 'utf8');
-if (!home.includes('game-grid') || !home.includes('app.js') || !home.includes('迷你游戏')) {
-  throw new Error('The portal home page is missing its game-list mount point.');
+if (!home.includes('game-grid') || !home.includes('app.js') || !home.includes('迷你游戏') || !home.includes('id="about"') || !home.includes('本站作者：武乙凌薇')) {
+  throw new Error('The portal home page is missing its game list or concise about information.');
 }
 if (home.includes('收录') || home.includes('静态发布') || home.includes('关于本站')) {
   throw new Error('The portal home page contains content outside the game list.');
