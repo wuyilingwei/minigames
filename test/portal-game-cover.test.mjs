@@ -11,7 +11,7 @@ const legend = catalog.find(({ slug }) => slug === 'cassandri-legend');
 const tenLightYears = catalog.find(({ slug }) => slug === 'ten-light-years');
 
 assert.equal(legend?.cover, './games/cassandri-legend/assets/cover.png');
-assert.equal(legend?.coverAlt, '卡桑德里传说方块化封面');
+assert.equal(legend?.coverAlt, '卡桑德里传说西幻方块化封面');
 assert.equal(tenLightYears?.cover, './games/ten-light-years/assets/preview.png');
 assert.equal(tenLightYears?.coverAlt, '十光年的距离实际星图预览');
 assert.match(script, /if \(game\.cover\)/);

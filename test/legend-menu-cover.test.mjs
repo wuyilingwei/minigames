@@ -9,7 +9,7 @@ assert.match(index, /id="welcomeOverlay"[^>]*class="overlay"/);
 assert.match(index, /class="overlay-panel welcome-panel"/);
 assert.match(index, /class="welcome-layout"/);
 assert.match(index, /class="welcome-cover" src="\.\/assets\/cover\.png"/);
-assert.match(index, /alt="卡桑德里传说方块化封面"/);
+assert.match(index, /alt="卡桑德里传说西幻方块化封面"/);
 assert.match(index, /#welcomeOverlay \.welcome-layout\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(220px,300px\)/);
 assert.match(index, /#welcomeOverlay \.welcome-cover-frame\{[^}]*box-shadow:5px 5px 0 var\(--bg-deep\)/);
 assert.match(index, /@media \(max-width:760px\)[\s\S]*#welcomeOverlay \.welcome-layout\{grid-template-columns:1fr/);
