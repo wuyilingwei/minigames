@@ -156,6 +156,8 @@ header h1{font-size:18px;}header .sub{font-size:14px;}#term-titlebar{font-size:1
 .reduce-motion .pixel-switch input[type="checkbox"],.reduce-motion .pixel-switch input[type="checkbox"]::before,.reduce-motion .loot-choice.auto-select-target{transition:none;animation:none;}
 .reduce-motion .loot-choice.auto-select-target{border-color:var(--accent2);box-shadow:3px 3px 0 #07140c,0 0 0 2px rgba(57,255,143,.35);}
 @media (prefers-reduced-motion:reduce){.pixel-switch input[type="checkbox"],.pixel-switch input[type="checkbox"]::before,.loot-choice.auto-select-target{transition:none;animation:none;}.loot-choice.auto-select-target{border-color:var(--accent2);box-shadow:3px 3px 0 #07140c,0 0 0 2px rgba(57,255,143,.35);}}
+#terminal-wrap #battleArena .enemy .trait-note{font-size:10px;line-height:1.45;overflow-wrap:anywhere;}
+#terminal-wrap #battleArena .enemy .trait-note .trait-item{display:block;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -402,8 +404,8 @@ const enemyTraitList=[
 {id:"crit",name:"致命",desc:"攻击有25%概率造成1.5倍伤害"},
 {id:"trueSight",name:"真实之眼",desc:"攻击完全无视闪避（必中）"},
 {id:"phase",name:"相位",desc:"攻击有50%概率无视闪避"},
-{id:"weaken",name:"虚弱",desc:"攻击命中后降低玩家攻击力"},
-{id:"curse",name:"诅咒",desc:"攻击命中后降低玩家暴击率"},
+{id:"weaken",name:"虚弱",desc:"攻击命中后降低玩家3-5%攻击力"},
+{id:"curse",name:"诅咒",desc:"攻击命中后降低玩家1-3%暴击率"},
 {id:"enrage",name:"激怒",desc:"每次被攻击后攻击力提升10%"},
 {id:"explode",name:"爆裂",desc:"死亡时对玩家造成最大血量10%的伤害"},
 {id:"shield",name:"护盾",desc:"开局自带最大血量20%的护盾"}
@@ -733,9 +735,16 @@ function refreshHpBar(){
         if(enemyAtk)enemyAtk.textContent=`ATK ${enemy.atk}${enemy.shield?` · 盾 ${enemy.shield}`:""}`;
         if(enemyTraitDesc){
             if(enemy.traits&&enemy.traits.length>0){
-                enemyTraitDesc.textContent=enemy.traits.map(t=>`【${t.name}】`).join(" ");
+                enemyTraitDesc.textContent="";
+                for(let trait of enemy.traits){
+                    let item=document.createElement("span");
+                    item.className="trait-item";
+                    item.textContent=`【${trait.name}】${trait.desc}`;
+                    enemyTraitDesc.appendChild(item);
+                }
                 enemyTraitDesc.style.display="block";
             }else{
+                enemyTraitDesc.textContent="";
                 enemyTraitDesc.style.display="none";
             }
         }
