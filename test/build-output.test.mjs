@@ -67,6 +67,9 @@ if (!cassandri.includes('@media (max-width:760px)') || !cassandri.includes('#app
 if (!cassandri.includes('.overlay{inset:var(--mobile-topbar) 0 0') || !cassandri.includes('max-height:calc(100dvh - var(--mobile-topbar) - 24px)')) {
   throw new Error('Cassandri Legend mobile overlays must reserve the top bar area.');
 }
+if (!cassandri.includes('id="difficultyOverlay"') || !cassandri.includes('function showDifficultyInfo()') || !cassandri.includes('难度 9 起') || !cassandri.includes('id="btnDifficultyClose"')) {
+  throw new Error('Cassandri Legend is missing its difficulty explanation dialog.');
+}
 
 const tenLightYears = await readFile(join(output, 'games', 'ten-light-years', 'index.html'), 'utf8');
 if (!tenLightYears.includes('viewport-fit=cover') || !tenLightYears.includes('@media (pointer: coarse)')) {
