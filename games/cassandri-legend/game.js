@@ -188,7 +188,7 @@ function validateRunSnapshot(snapshot){
     let snapshotSave=normalizeSave(normalized.save);
     let slotCount=snapshotSave.slot5Unlocked||snapshotSave.useBlood>=6?5:4;
     normalized.player.slots=normalizeEquipmentSlots(normalized.player.slots,slotCount);
-    if(normalized.pendingLoot){for(let key of ["e1","e2"])normalized.pendingLoot[key]=normalizeEquipment(normalized.pendingLoot[key]);}
+    if(normalized.pendingLoot){for(let key of ["e1","e2","e3"])if(normalized.pendingLoot[key])normalized.pendingLoot[key]=normalizeEquipment(normalized.pendingLoot[key]);}
     return normalized;
 }
 function readRunSave(slot){
@@ -308,7 +308,7 @@ function restoreRunSnapshot(snapshot){
     refreshStatPanel();
     if(gameState==="loot"||gameState==="bossLoot"){
         if(lootDeferred)showDeferredLootAction();
-        else showLootChoice(pendingLoot.e1,pendingLoot.e2,pendingLoot.source);
+        else showLootChoice(pendingLoot.e1,pendingLoot.e2,pendingLoot.source,pendingLoot.e3);
     }
     else if(gameState==="equipLostConfirm")resumeEquipLossConfirmation();
     else if(gameState==="bossKnockoff")resumeBossKnockoffConfirmation();
@@ -1093,11 +1093,25 @@ function adjPoint(type,delta){
     refreshStatPanel();
 }
 
+function getEquipmentPartWeights(){
+    // Keep the historical duplicate oneHand entries while making every base
+    // slot entry 1.5x as likely as either newly unlocked add-on entry.
+    let parts=[
+        {part:"head",weight:1.5},{part:"body",weight:1.5},
+        {part:"oneHand",weight:1.5},{part:"oneHand",weight:1.5},
+        {part:"twoHand",weight:1.5},{part:"offHand",weight:1.5}
+    ];
+    if(getSlotCount()>=5)parts.push({part:"accessory",weight:1},{part:"outerwear",weight:1});
+    return parts;
+}
+function pickWeightedEquipmentPart(){
+    let parts=getEquipmentPartWeights(),total=parts.reduce((sum,item)=>sum+item.weight,0),roll=Math.random()*total;
+    for(let item of parts){roll-=item.weight;if(roll<0)return item.part;}
+    return parts[parts.length-1].part;
+}
 function genEquip(wave){
     if(wave===undefined)wave=player.wave;
-    let parts=["head","body","oneHand","oneHand","twoHand","offHand"];
-    if(getSlotCount()>=5)parts.push("accessory","outerwear");
-    let part=pick(parts);
+    let part=pickWeightedEquipmentPart();
     let nounByPart={head:["头盔","面纱","假发"],body:["铠甲","胸甲","战甲","布衣"],oneHand:["长剑","战斧","匕首","法杖","短刀"],twoHand:["巨锤","大剑","长弓","战戟","双刃剑"],offHand:["盾牌","骨盾"],accessory:["戒指","项链","护符","念珠","水晶球"],outerwear:["披风","斗篷","靴子","鞋子","手套","翅膀","背包","臂甲","胫甲"]};
     let name=pick(lootAdj)+pick(nounByPart[part]||lootNoun);
     let element=pick(elements);
@@ -1152,7 +1166,7 @@ function renderReplacementChoices(e,chosenIdx){
 function replaceEquip(slotIndex,chosenIdx){
     if(!pendingLoot)return;
     cancelLootAutoSelect();
-    let e=chosenIdx===1?pendingLoot.e1:pendingLoot.e2;
+    let e=pendingLoot[`e${chosenIdx}`];
     let action=buildEquipAction(e,slotIndex);
     if(!action){renderLootChoice();return;}
     lastEquipAction={...action,chosenIdx,previousSlots:player.slots.slice()};
@@ -1181,9 +1195,9 @@ function undoEquip(){
         afterEquip();
     }
 }
-function showLootChoice(e1,e2,source){
+function showLootChoice(e1,e2,source,e3=null){
     cancelLootAutoSelect();
-    pendingLoot={e1,e2,source};
+    pendingLoot={e1,e2,e3,source};
     lootDeferred=false;
     lastEquipAction=null;
     printEventSummary("战利品已掉落","已打开装备选择弹窗；确认或放弃后将自动收起这条记录。");
@@ -1196,9 +1210,9 @@ function renderLootChoice(){
     if(!pendingLoot)return;
     cancelLootAutoSelect();
     document.getElementById("lootTitle").textContent=pendingLoot.source==="bossLoot"?"角落遗落装备":"战利品选择";
-    let drops=[pendingLoot.e1,pendingLoot.e2];
+    let drops=[pendingLoot.e1,pendingLoot.e2,pendingLoot.e3].filter(Boolean);
     let advice=getDropAdvice(drops),hasInferior=advice.inferiorIndexes.length>0;
-    let adviceText=hasInferior?"无特殊词条且基础属性全面不占优的装备已标红；其余装备请按当前构筑与词条自行选择。":"两件装备各有取舍，请按输出、生存与特殊词条自行选择。";
+    let adviceText=hasInferior?"无特殊词条且基础属性全面不占优的装备已标红；其余装备请按当前构筑与词条自行选择。":`${drops.length}件装备各有取舍，请按输出、生存与特殊词条自行选择。`;
     document.getElementById("lootContent").innerHTML=`<div class="drop-advice">${adviceText}</div><label class="toggle pixel-switch loot-auto-toggle"><input id="lootAutoSelect" type="checkbox" ${lootAutoSelectEnabled?"checked":""} onchange="toggleLootAutoSelect(this.checked)">自动选择装备 <span id="lootAutoStatus"></span></label><div class="loot-grid">${drops.map((item,index)=>{let inferior=advice.inferiorIndexes.includes(index);return `<article class="loot-choice ${inferior?"is-inferior":""}" data-loot-index="${index+1}"><h3>装备${index+1}${inferior?` <span class="loot-status">· 不建议</span>`:""}</h3>${equipmentCardHtml(item,true)}<button class="choice-btn" onclick="chooseLoot(${index+1})">选择装备${index+1}</button></article>`;}).join("")}</div><div class="modal-actions"><button class="choice-btn" onclick="deferLootChoice()">暂时收起</button><button class="choice-btn danger" onclick="declineLoot()">都放弃</button></div>`;
     syncLootAutoSelectControls();
     updateLootAutoStatus();
@@ -1242,9 +1256,9 @@ function startLootAutoSelect(){
 }
 function getRecommendedLootChoice(){
     if(!pendingLoot)return null;
-    let candidates=[pendingLoot.e1,pendingLoot.e2].map((item,index)=>({item,chosenIdx:index+1,comparison:getEquipmentComparisons(item)[0]})).filter(candidate=>candidate.comparison);
+    let candidates=[pendingLoot.e1,pendingLoot.e2,pendingLoot.e3].filter(Boolean).map((item,index)=>({item,chosenIdx:index+1,comparison:getEquipmentComparisons(item)[0]})).filter(candidate=>candidate.comparison);
     if(!candidates.length)return null;
-    return candidates.length===1||candidates[0].comparison.score>=candidates[1].comparison.score?candidates[0]:candidates[1];
+    return candidates.reduce((best,candidate)=>candidate.comparison.score>best.comparison.score?candidate:best);
 }
 function flashRecommendedLootChoice(){
     if(!lootAutoSelectEnabled||!pendingLoot)return;
@@ -1273,7 +1287,7 @@ function autoEquipRecommendedLoot(){
 function autoDeclineLoot(){
     if(!pendingLoot)return;
     cancelLootAutoSelect();
-    afterEquip("两件装备都没有正收益，已自动放弃本次掉落，继续冒险。");
+    afterEquip("三件装备都没有正收益，已自动放弃本次掉落，继续冒险。");
 }
 function toggleLootAutoSelect(enabled){
     lootAutoSelectEnabled=Boolean(enabled);
@@ -1286,7 +1300,7 @@ function syncLootAutoSelectControls(){
 }
 function chooseLoot(chosenIdx){
     cancelLootAutoSelect();
-    if(pendingLoot)equipToSlot(chosenIdx===1?pendingLoot.e1:pendingLoot.e2,chosenIdx);
+    if(pendingLoot){let item=pendingLoot[`e${chosenIdx}`];if(item)equipToSlot(item,chosenIdx);}
 }
 function showDeferredLootAction(){
     clearChoices();
@@ -1983,8 +1997,9 @@ function finishEnemyDefeat(){
     gameState="loot";
     let e1=genEquip();
     let e2=genEquip();
+    let e3=genEquip();
     refreshStatPanel();
-    showLootChoice(e1,e2,"loot");
+    showLootChoice(e1,e2,"loot",e3);
 }
 
 function onPlayerDefeat(){
@@ -2003,7 +2018,7 @@ function resumeEquipLossConfirmation(){
 function resumeBossKnockoffConfirmation(){
     clearChoices();
     print("已恢复魔王震落装备确认，请确认后选择临时装备。");
-    addChoice("确认",()=>{gameState="bossLoot";showLootChoice(genEquip(),genEquip(),"bossLoot");});
+    addChoice("确认",()=>{gameState="bossLoot";showLootChoice(genEquip(),genEquip(),"bossLoot",genEquip());});
 }
 
 function nextWave(){
@@ -2027,7 +2042,7 @@ function nextWave(){
         clearChoices();
         for(let dropped of droppedItems){print(`你的装备被震落了：`);showEquip(dropped);}
         if(!droppedItems.length)print("你没有装备可被震落。");
-        addChoice("确认",()=>{gameState="bossLoot";showLootChoice(genEquip(),genEquip(),"bossLoot");});
+        addChoice("确认",()=>{gameState="bossLoot";showLootChoice(genEquip(),genEquip(),"bossLoot",genEquip());});
         autoSaveRun();
         return;
     }
