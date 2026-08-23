@@ -1059,11 +1059,22 @@ function startLootAutoSelect(){
         updateLootAutoStatus();
         if(lootAutoSelectRemaining<=0){
             cancelLootAutoSelect();
-            let drops=[pendingLoot.e1,pendingLoot.e2];
-            let scores=drops.map(item=>getEquipmentComparisons(item)[0].score);
-            chooseLoot(scores[1]>scores[0]?2:1);
+            autoEquipRecommendedLoot();
         }
     },1000);
+}
+function autoEquipRecommendedLoot(){
+    if(!pendingLoot)return;
+    cancelLootAutoSelect();
+    let candidates=[pendingLoot.e1,pendingLoot.e2].map((item,index)=>({item,chosenIdx:index+1,comparison:getEquipmentComparisons(item)[0]}));
+    let best=candidates[1].comparison.score>candidates[0].comparison.score?candidates[1]:candidates[0];
+    let slotIndex=best.comparison.slotIndex,oldEquip=player.slots[slotIndex];
+    lastEquipAction={slotIdx:slotIndex,oldEquip,newEquip:best.item,chosenIdx:best.chosenIdx};
+    player.slots[slotIndex]=best.item;
+    applyEquipStats();
+    refreshStatPanel();
+    let result=oldEquip?`替换【${oldEquip.name}】`:`装备至空槽位${slotIndex+1}`;
+    afterEquip(`已自动选择推荐装备【${best.item.name}】并${result}，继续冒险。`);
 }
 function toggleLootAutoSelect(enabled){
     preferences.autoLootSelect=Boolean(enabled);
