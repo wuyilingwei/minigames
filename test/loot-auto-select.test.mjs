@@ -13,14 +13,14 @@ function requirePattern(pattern, message) {
 requireText('let lootAutoSelectEnabled=false', 'Auto-select must default to off for every page load');
 requireText('delete preferences.autoLootSelect', 'Legacy persisted auto-select values must be ignored');
 requireText('id="lootAutoSelect"', 'The loot modal must expose the auto-select checkbox');
-requireText('id="settingsLootAutoSelect"', 'Settings must expose the same auto-select session switch');
 requireText('id="settingsAutoBattle"', 'Settings must expose the auto-battle session switch');
+if (html.includes('id="settingsLootAutoSelect"')) throw new Error('Settings must not expose the loot auto-select switch');
 requireText('lootAutoSelectRemaining=5', 'Auto-select must start with a five-second countdown');
 requireText('5 秒后自动选择推荐装备', 'The five-second countdown intent must be visible in the loot modal');
 requirePattern(/function toggleLootAutoSelect\(enabled\)[\s\S]*lootAutoSelectEnabled=Boolean\(enabled\)[\s\S]*syncLootAutoSelectControls\(\)[\s\S]*startLootAutoSelect\(\);[\s\S]*cancelLootAutoSelect\(\);/, 'Checking and unchecking must control the shared session switch and timer');
 const toggleBody = html.match(/function toggleLootAutoSelect\(enabled\)\{[\s\S]*?\n\}/)?.[0] || '';
 if (toggleBody.includes('writePreferences()')) throw new Error('Auto-select must not persist across page loads');
-requirePattern(/function syncLootAutoSelectControls\(\)[\s\S]*"lootAutoSelect","settingsLootAutoSelect"[\s\S]*lootAutoSelectEnabled/, 'Loot and settings auto-select controls must stay synchronized');
+requirePattern(/function syncLootAutoSelectControls\(\)[\s\S]*getElementById\("lootAutoSelect"\)[\s\S]*lootAutoSelectEnabled/, 'The loot modal switch must stay synchronized with session state');
 requirePattern(/function startLootAutoSelect\(\)[\s\S]*autoEquipRecommendedLoot\(\);/, 'The countdown must settle the recommendation through the dedicated auto-equip path');
 requirePattern(/function startLootAutoSelect\(\)[\s\S]*lootAutoSelectRemaining--[\s\S]*lootAutoSelectRemaining===4\)flashRecommendedLootChoice\(\)/, 'The recommended border must flash about one second into an enabled countdown');
 requirePattern(/function flashRecommendedLootChoice\(\)[\s\S]*!lootAutoSelectEnabled[\s\S]*data-loot-index[\s\S]*auto-select-target/, 'Only enabled auto-select may flash the recommended equipment border');
