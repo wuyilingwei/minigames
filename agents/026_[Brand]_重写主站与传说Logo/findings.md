@@ -25,3 +25,19 @@
 - 子任务提交 `fba8e0b2` 新增 `portal-logo.svg`，四个 10×10 圆角方块中仅右下角旋转 12°，满足“四枚且一枚斜放”。
 - 320px 深色背景渲染检查显示轮廓平衡、旋转清楚，缩到 24px 时仍保持四格结构。
 - 接入仅修改门户 favicon、页眉字标、对应样式与测试，没有修改游戏目录清单或传说文件。
+
+## 传说实现审查
+
+- 子任务提交 `18d900d8` 新增纯白透明 `favicon.svg`，采用人物、船体与单一公文包轮廓；32px 深色背景渲染仍能辨认三个元素。
+- `assets/cover.png` 为全新内置 imagegen 产物，1254×1254 RGB PNG；检查确认画面只有一名职业女性、一艘船、一个公文包，使用深绿、米白与少量赭色的大块方形像素，无文字或水印。
+- 封面生成源路径为 `/Users/user/.codex/generated_images/01a02dcc-1432-7d61-8ea1-5db5adedc51b/exec-a96a83dd-18ff-44bc-bdf6-1e6efd203191.png`，最终项目资产已复制到 `games/cassandri-legend/assets/cover.png`。
+- 生成方式为 imagegen 内置模式；最终 prompt 以 `stylized-concept` 限定 square game cover、极简方块像素、单一售楼小姐与小船、有限深绿色板、无文字、渐变或复杂场景。
+
+## 门户封面与页面验收
+
+- 主站目录为传说增加 `./games/cassandri-legend/assets/cover.png`，卡片以右侧渐隐的方块化视觉层显示封面，文字仍位于独立前景层。
+- `npm run build && npm run test` 成功，构建 2 个入口与 23 个静态文件，全部 8 组验证通过。
+- 应用内浏览器桌面验收：主站 SVG 以 24×24 显示，传说封面在右侧清楚可见；DOM 可读到封面替代文本与完整卡片内容。
+- 应用内浏览器 390×844 窄屏验收：两张卡片单列、无横向溢出，传说封面保持显示且不会遮挡标题、说明、署名或动作链接。
+- 传说页面验收：页面无横向溢出，favicon 引用为 `./favicon.svg`，封面元数据引用为 `./assets/cover.png`；本地服务器记录两项资产均成功响应。
+- 浏览器初次等待使用不支持的 `networkidle` 状态，改用 `load` 后完成 DOM 与截图检查；该失败不影响页面实现。

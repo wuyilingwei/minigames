@@ -5,6 +5,17 @@ function createCard(game, index) {
   const article = document.createElement('article');
   article.className = `game-card game-card-${index + 1}`;
 
+  if (game.cover) {
+    article.classList.add('has-cover');
+
+    const cover = document.createElement('img');
+    cover.className = 'card-cover';
+    cover.src = game.cover;
+    cover.alt = `${game.title} 方块化封面`;
+    cover.decoding = 'async';
+    article.append(cover);
+  }
+
   const kicker = document.createElement('p');
   kicker.className = 'card-kicker';
   kicker.textContent = `${String(index + 1).padStart(2, '0')} · ${game.eyebrow}`;

@@ -93,8 +93,11 @@ h1 {
 }
 
 .game-card {
+  position: relative;
   display: flex;
+  isolation: isolate;
   min-height: 300px;
+  overflow: hidden;
   flex-direction: column;
   padding: clamp(1.35rem, 3vw, 2rem);
   border: 1px solid var(--line);
@@ -104,6 +107,26 @@ h1 {
 
 .game-card-2 { background: var(--surface-alt); }
 .game-card:hover { border-color: rgba(240, 239, 235, 0.42); transform: translateY(-2px); }
+
+.game-card > :not(.card-cover) {
+  position: relative;
+  z-index: 1;
+}
+
+.card-cover {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  width: min(58%, 270px);
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: .58;
+  filter: saturate(.8) contrast(.96);
+  mask-image: linear-gradient(to right, transparent, #000 42%);
+  pointer-events: none;
+}
 
 .card-kicker {
   color: var(--muted);
@@ -185,4 +208,5 @@ h1 {
 @media (max-width: 420px) {
   .collection { padding-top: 2.5rem; }
   .game-card { min-height: 250px; }
+  .card-cover { width: 62%; opacity: .48; }
 }
