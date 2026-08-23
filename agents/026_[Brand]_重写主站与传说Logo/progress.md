@@ -11,3 +11,5 @@
 - 建立 `codex/portal-logo-rewrite` 与 `codex/legend-logo-rewrite` 两个全新 worktree，并派出低档位子 agent 分工实现。
 - 按全局协作规则创建每 15 分钟一次的当前任务 heartbeat，用于检查两名子 agent 的阻塞与越界状态，完成后会停用。
 - 检查门户动态卡片、构建复制路径与现有测试，确定封面引用由统一分支在两项合并后接入。
+- 审查主站子任务提交 `fba8e0b2`：SVG 恰好四个实心方块，唯一旋转方块为 12°；深色背景渲染检查通过。
+- 将主站子任务提交 cherry-pick 到统一分支；add/add 审计计划冲突保留统一任务计划，子任务 findings/progress 与代码测试正常纳入。
