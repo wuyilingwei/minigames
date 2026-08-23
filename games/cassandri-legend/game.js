@@ -885,7 +885,7 @@ function getDifficultyEffects(level){
     if(level>=7)effects.push("玩家造成的伤害 -20%");
     if(level>=9)effects.push("遭遇普通敌人时有 30% 概率随机失去一件装备");
     if(level>=3)effects.push("装备掉落开放额外效果与 1 条词条");
-    if(level>=6)effects.push("装备掉落至多 2 条词条，并开放饰品第五槽");
+    if(level>=6)effects.push("装备掉落至多 2 条词条，并开放附加第五槽");
     if(level>=9)effects.push("装备掉落至多 3 条强化词条");
     return effects.length?effects.join("；"):"暂无额外规则。";
 }
