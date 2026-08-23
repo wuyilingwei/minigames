@@ -5,12 +5,13 @@ import { join, resolve } from 'node:path';
 
 const root=resolve(fileURLToPath(new URL('.',import.meta.url)),'..');
 const html=await readFile(join(root,'games/cassandri-legend/index.html'),'utf8');
-const start=html.indexOf('function normalizeCombatant(');
-const end=html.indexOf('\nfunction runSaveKey(',start);
+const runtime=await readFile(join(root,'games/cassandri-legend/game.js'),'utf8');
+const start=runtime.indexOf('function normalizeCombatant(');
+const end=runtime.indexOf('\nfunction runSaveKey(',start);
 if(start<0||end<0)throw new Error('8.0 combat helpers are not extractable');
 const context={console,player:{maxHp:1000,hp:100,slots:[]},save:{useBlood:3},print:()=>{},getElemCount:()=>({火:1,水:1,草:1,雷:1})};
 vm.createContext(context);
-vm.runInContext(html.slice(start,end),context);
+vm.runInContext(runtime.slice(start,end),context);
 
 const legacy={ZDYHP:75};context.normalizeCombatant(legacy);
 if(legacy.shields.persistent!==75||context.shieldTotal(legacy)!==75)throw new Error('Legacy ZDYHP must normalize into persistent shield');
@@ -24,8 +25,8 @@ if(healed>600||healed<450)throw new Error('High-difficulty healing must decay an
 context.setTemporaryShield(context.player,80);
 if(context.restoreTemporaryShield(context.player,20,80)!==0||context.player.shields.temp!==80)throw new Error('Natural temporary shields must restore only to their combat cap');
 
-const attackStart=html.indexOf('function getPlayerDodgeAgainst(');
-const attackEnd=html.indexOf('\nfunction autoBattleDecide(',attackStart);
+const attackStart=runtime.indexOf('function getPlayerDodgeAgainst(');
+const attackEnd=runtime.indexOf('\nfunction autoBattleDecide(',attackStart);
 if(attackStart<0||attackEnd<0)throw new Error('Multi-hit combat helpers are not extractable');
 const deterministicMath=Object.create(Math);deterministicMath.random=()=>0.99;
 const attackContext={
@@ -37,7 +38,7 @@ const attackContext={
   applyEquipStats:()=>{},refreshStatPanel:()=>{},showEquip:()=>{},clearChoices:()=>{},addChoice:()=>{},autoSaveRun:()=>{},normalizeCombatant:()=>{},restoreTemporaryShield:()=>0
 };
 attackContext.hasETrait=attackContext.hasETrait.bind(attackContext);
-vm.createContext(attackContext);vm.runInContext(html.slice(attackStart,attackEnd),attackContext);
+vm.createContext(attackContext);vm.runInContext(runtime.slice(attackStart,attackEnd),attackContext);
 attackContext.player.crt=.55;
 if(Math.abs(attackContext.getPlayerDodgeAgainst(attackContext.enemy)-.35)>1e-9)throw new Error('Tracking must subtract additively from player dodge');
 attackContext.player.crt=0;
@@ -45,6 +46,6 @@ if(attackContext.getEnemySegmentAttack(attackContext.enemy,2)!==56)throw new Err
 attackContext.resolveEnemyAttackSegment(1,2);attackContext.resolveEnemyAttackSegment(2,2);
 if(attackContext.player.hp!==852||attackContext.player.energy!==20||attackContext.player.atk!==95||Math.abs(attackContext.player.bj-.48)>1e-9)throw new Error('Each enemy segment must independently apply damage, energy, weaken, curse, and unavoidable poison');
 if(attackContext.enemy.hp!==426)throw new Error('Enemy lifesteal must resolve independently for each landed segment');
-if(html.includes('enemyAttackLegacy'))throw new Error('The old single-hit attack implementation must not remain as dead compatibility code');
-for(const marker of ['tracking:','dodge:','armor:','hits:','function enemyAttack(){','hasPrismaticResonance()','armorBreak','【次数盾】','【临时盾】','【持续盾】'])if(!html.includes(marker))throw new Error(`Missing 8.0 combat marker: ${marker}`);
+if(runtime.includes('enemyAttackLegacy'))throw new Error('The old single-hit attack implementation must not remain as dead compatibility code');
+for(const marker of ['tracking:','dodge:','armor:','hits:','function enemyAttack(){','hasPrismaticResonance()','armorBreak','type==="temp"','persistent','【次数盾】'])if(!runtime.includes(marker))throw new Error(`Missing 8.0 combat marker: ${marker}`);
 console.log('Verified Legend 8.0 shields, healing caps, tracking, split attacks, and per-segment effects.');

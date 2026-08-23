@@ -5,13 +5,16 @@ import { join, resolve } from 'node:path';
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const sourcePath = join(root, 'games', 'cassandri-legend', 'index.html');
 const html = await readFile(sourcePath, 'utf8');
+const runtime = await readFile(join(root, 'games', 'cassandri-legend', 'game.js'), 'utf8');
+const styles = await readFile(join(root, 'games', 'cassandri-legend', 'styles.css'), 'utf8');
+const source = `${html}\n${styles}\n${runtime}`;
 
 function requireText(text, message) {
-  if (!html.includes(text)) throw new Error(`${message}: missing ${text}`);
+  if (!source.includes(text)) throw new Error(`${message}: missing ${text}`);
 }
 
 function requirePattern(pattern, message) {
-  if (!pattern.test(html)) throw new Error(message);
+  if (!pattern.test(source)) throw new Error(message);
 }
 
 // Version identity and the durable local-storage namespace must remain stable

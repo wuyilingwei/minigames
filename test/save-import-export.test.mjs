@@ -5,13 +5,15 @@ import { join, resolve } from 'node:path';
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const sourcePath = join(root, 'games', 'cassandri-legend', 'index.html');
 const html = await readFile(sourcePath, 'utf8');
+const runtime = await readFile(join(root, 'games', 'cassandri-legend', 'game.js'), 'utf8');
+const source = `${html}\n${runtime}`;
 
 function requireText(text, message) {
-  if (!html.includes(text)) throw new Error(`${message}: missing ${text}`);
+  if (!source.includes(text)) throw new Error(`${message}: missing ${text}`);
 }
 
 function requirePattern(pattern, message) {
-  if (!pattern.test(html)) throw new Error(message);
+  if (!pattern.test(source)) throw new Error(message);
 }
 
 for (const control of [
@@ -30,7 +32,7 @@ requireText('const SAVE_ARCHIVE_VERSION=1', 'Exports must carry a format version
 requireText('const runSaveSlots=["auto","1","2","3"]', 'All resumable save slots must remain in the transfer set');
 requirePattern(/function buildSaveArchive\(\)[\s\S]*for\(let slot of runSaveSlots\)runs\[slot\]=readRunSave\(slot\)[\s\S]*save:cloneForStorage\(normalizeSave\(save\)\)/, 'Exports must include the permanent profile and every run slot');
 
-const archiveBuilder = html.slice(html.indexOf('function buildSaveArchive()'), html.indexOf('function validateSaveArchive('));
+const archiveBuilder = runtime.slice(runtime.indexOf('function buildSaveArchive()'), runtime.indexOf('function validateSaveArchive('));
 if (/preferences|cheatBackup|CHEAT_SECRET/.test(archiveBuilder)) {
   throw new Error('Exports must not include local settings or cheat-only state');
 }

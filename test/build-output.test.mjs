@@ -57,7 +57,10 @@ for (const asset of ['stars.bin', 'edges.bin', 'edge_weights.bin']) {
   if ((await stat(path)).size === 0) throw new Error(`The binary star-map asset is empty: ${asset}`);
 }
 
-const cassandri = await readFile(join(output, 'games', 'cassandri-legend', 'index.html'), 'utf8');
+const cassandriHtml = await readFile(join(output, 'games', 'cassandri-legend', 'index.html'), 'utf8');
+const cassandriStyles = await readFile(join(output, 'games', 'cassandri-legend', 'styles.css'), 'utf8');
+const cassandriRuntime = await readFile(join(output, 'games', 'cassandri-legend', 'game.js'), 'utf8');
+const cassandri = `${cassandriHtml}\n${cassandriStyles}\n${cassandriRuntime}`;
 if (!cassandri.includes('fonts/fusion-pixel-12px-proportional-zh_hans.otf.woff2')) {
   throw new Error('The Cassandri Legend entry does not reference its packaged pixel font.');
 }
