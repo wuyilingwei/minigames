@@ -306,7 +306,10 @@ function restoreRunSnapshot(snapshot){
     outputDom.innerHTML="";
     print(`已恢复 ${gameState==="loot"||gameState==="bossLoot"?"战利品选择":"战斗进度"}。`);
     refreshStatPanel();
-    if((gameState==="loot"||gameState==="bossLoot")&&!lootDeferred)showLootChoice(pendingLoot.e1,pendingLoot.e2,pendingLoot.source);
+    if(gameState==="loot"||gameState==="bossLoot"){
+        if(lootDeferred)showDeferredLootAction();
+        else showLootChoice(pendingLoot.e1,pendingLoot.e2,pendingLoot.source);
+    }
     else if(gameState==="equipLostConfirm")resumeEquipLossConfirmation();
     else if(gameState==="bossKnockoff")resumeBossKnockoffConfirmation();
     else battleLoop();
@@ -1053,7 +1056,7 @@ function refreshStatPanel(){
     <div class="eye-info">魔王之眼：${save.eyeTotal}/24 | 已用：${usedEye}</div>
     <div class="eye-info">它之血珠：${save.blood} | 难度：${save.useBlood}/10</div>
     <div class="eye-info">金币：${save.gold||0}</div>
-    <div class="hud-actions"><button class="hud-action" onclick="openSaveManager()">${svgUse("save")}存档</button><button class="hud-action shop" onclick="openShop()">${svgUse("shop")}商城</button>${pendingLoot?`<button class="hud-action pending" onclick="resumeLootChoice()">${svgUse("resume")}继续选择装备</button>`:""}<button class="hud-action sets" onclick="showDifficultyInfo()">难度设定</button><button class="hud-action sets" onclick="showSetInfo()">${svgUse("sets")}元素套装详情</button></div>
+    <div class="hud-actions"><button class="hud-action" onclick="openSaveManager()">${svgUse("save")}存档</button><button class="hud-action shop" onclick="openShop()">${svgUse("shop")}商城</button><button class="hud-action sets" onclick="showDifficultyInfo()">难度设定</button><button class="hud-action sets" onclick="showSetInfo()">${svgUse("sets")}元素套装详情</button></div>
     <div class="stat-row"><span class="label">职业</span><span class="value">${player.job||"-"}</span></div>
     <div class="stat-row"><span class="label">祝福</span><span class="value">${player.blessing||"-"}</span></div>
     <div class="stat-row"><span class="label">攻击力</span><span class="value stat-atk">${player.atk}</span></div>
@@ -1285,19 +1288,25 @@ function chooseLoot(chosenIdx){
     cancelLootAutoSelect();
     if(pendingLoot)equipToSlot(chosenIdx===1?pendingLoot.e1:pendingLoot.e2,chosenIdx);
 }
+function showDeferredLootAction(){
+    clearChoices();
+    addChoice("继续选择装备",resumeLootChoice,"loot-resume-action");
+}
 function deferLootChoice(){
     if(!pendingLoot)return;
     cancelLootAutoSelect();
     lootDeferred=true;
     document.getElementById("lootOverlay").hidden=true;
-    printEventSummary("战利品已暂存","可从右侧勇者面板继续选择装备。");
+    printEventSummary("战利品已暂存","可从下方操作区继续选择装备。");
     refreshStatPanel();
+    showDeferredLootAction();
     autoSaveRun();
 }
 function resumeLootChoice(){
     if(!pendingLoot)return;
     cancelLootAutoSelect();
     lootDeferred=false;
+    clearChoices();
     document.getElementById("lootOverlay").hidden=false;
     renderLootChoice();
     autoSaveRun();
