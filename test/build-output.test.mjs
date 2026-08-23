@@ -61,8 +61,14 @@ const cassandri = await readFile(join(output, 'games', 'cassandri-legend', 'inde
 if (!cassandri.includes('fonts/fusion-pixel-12px-proportional-zh_hans.otf.woff2')) {
   throw new Error('The Cassandri Legend entry does not reference its packaged pixel font.');
 }
+if (!cassandri.includes('@media (max-width:760px)') || !cassandri.includes('#app{min-width:0') || !cassandri.includes('.modal-grid,.loot-grid,.set-grid{grid-template-columns:1fr')) {
+  throw new Error('Cassandri Legend is missing its narrow-screen layout rules.');
+}
 
 const tenLightYears = await readFile(join(output, 'games', 'ten-light-years', 'index.html'), 'utf8');
+if (!tenLightYears.includes('viewport-fit=cover') || !tenLightYears.includes('@media (pointer: coarse)')) {
+  throw new Error('Ten Light Years is missing its touch-screen viewport and control rules.');
+}
 if (cassandri.includes('archive-exit') || tenLightYears.includes('archive-exit')) {
   throw new Error('A game exit control must be located in its settings menu, not fixed to the page.');
 }
@@ -106,6 +112,10 @@ if (home.includes('收录') || home.includes('静态发布') || home.includes('�
 const portalScript = await readFile(join(output, 'app.js'), 'utf8');
 if (portalScript.includes('收录') || !portalScript.includes('款游戏')) {
   throw new Error('The portal game count does not match the simplified wording.');
+}
+const portalStyles = await readFile(join(output, 'styles.css'), 'utf8');
+if (!portalStyles.includes('min-height: 44px') || !portalStyles.includes('@media (max-width: 680px)')) {
+  throw new Error('The portal is missing its mobile card layout or tap-target sizing.');
 }
 
 console.log(`Verified ${catalog.length} game entries and the portal shell.`);

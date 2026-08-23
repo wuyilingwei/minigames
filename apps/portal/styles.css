@@ -43,6 +43,9 @@ body {
 }
 
 .about-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--muted);
   font-size: .76rem;
   letter-spacing: .06em;
@@ -138,7 +141,13 @@ h1 {
   letter-spacing: .03em;
 }
 
-.card-footer a { font-weight: 700; }
+.card-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-block: -.5rem;
+  font-weight: 700;
+}
 .card-footer a::after { margin-left: .4rem; color: var(--accent); content: "→"; }
 
 .about {
@@ -166,4 +175,9 @@ h1 {
   .collection { padding-top: 3.5rem; }
   .game-grid { grid-template-columns: 1fr; }
   .game-card { min-height: 285px; }
+}
+
+@media (max-width: 420px) {
+  .collection { padding-top: 2.5rem; }
+  .game-card { min-height: 250px; }
 }
