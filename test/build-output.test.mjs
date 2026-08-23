@@ -70,6 +70,9 @@ if (!cassandri.includes('.overlay{inset:var(--mobile-topbar) 0 0') || !cassandri
 if (!cassandri.includes('id="difficultyOverlay"') || !cassandri.includes('function showDifficultyInfo()') || !cassandri.includes('id="btnDifficultyPrev"') || !cassandri.includes('id="btnDifficultyNext"') || !cassandri.includes('id="difficultyMultiplier"') || !cassandri.includes('id="difficultyTraits"') || !cassandri.includes('id="difficultyEffects"')) {
   throw new Error('Cassandri Legend is missing its focus-based difficulty selection panel.');
 }
+if (!cassandri.includes('function getNextEnemyForecast()') || !cassandri.includes('player.wave||0)+1') || !cassandri.includes('function getExpectedCrit20xMultFor(slots)') || !cassandri.includes('expectedCrit20x') || cassandri.includes('lastBattleSnapshot')) {
+  throw new Error('Cassandri Legend must estimate loot value against the next enemy and include crit20x expected damage.');
+}
 
 const tenLightYears = await readFile(join(output, 'games', 'ten-light-years', 'index.html'), 'utf8');
 if (!tenLightYears.includes('viewport-fit=cover') || !tenLightYears.includes('@media (pointer: coarse)')) {

@@ -222,7 +222,6 @@ let autoBattle=false;
 let gamePaused=false;
 let lootDeferred=false;
 let bannedJob=null,bannedBless=null;
-let lastBattleSnapshot=null;
 let defeatAnimating=false;
 
 const runSaveSlots=["auto","1","2","3"];
@@ -231,7 +230,7 @@ function cloneForStorage(value){return JSON.parse(JSON.stringify(value));}
 function isSupportedRunState(state){return ["battle","bossBattle","loot","bossLoot"].includes(state);}
 function snapshotRun(){
     if(!isSupportedRunState(gameState)||!player.job||!player.blessing)return null;
-    return {version:1,savedAt:Date.now(),state:gameState,save:cloneForStorage(save),player:cloneForStorage(player),enemy:cloneForStorage(enemy),pendingLoot:cloneForStorage(pendingLoot),lootDeferred,bannedJob,bannedBless,lastBattleSnapshot:cloneForStorage(lastBattleSnapshot)};
+    return {version:1,savedAt:Date.now(),state:gameState,save:cloneForStorage(save),player:cloneForStorage(player),enemy:cloneForStorage(enemy),pendingLoot:cloneForStorage(pendingLoot),lootDeferred,bannedJob,bannedBless};
 }
 function validateRunSnapshot(snapshot){
     if(!isRecord(snapshot)||snapshot.version!==1||!isSupportedRunState(snapshot.state)||!isRecord(snapshot.player)||!isRecord(snapshot.enemy)||!snapshot.player.job||!snapshot.player.blessing)return null;
@@ -261,7 +260,6 @@ function restoreRunSnapshot(snapshot){
     lootDeferred=Boolean(valid.lootDeferred);
     bannedJob=valid.bannedJob||null;
     bannedBless=valid.bannedBless||null;
-    lastBattleSnapshot=cloneForStorage(valid.lastBattleSnapshot);
     lastEquipAction=null;
     autoBattle=false;
     gamePaused=false;
@@ -435,15 +433,33 @@ function getSetBonusFor(slots){
 }
 function countTraitFor(slots,id){return slots.filter(slot=>slot&&slot.trait&&slot.trait.id===id).length;}
 function getTraitMultFor(slots){return Math.pow(0.5,countTraitFor(slots,"deadlyStrike"))*Math.pow(0.7,countTraitFor(slots,"crit20x"));}
-function getComparisonTarget(){
-    if(isRecord(lastBattleSnapshot)&&lastBattleSnapshot.maxHp>0)return lastBattleSnapshot;
-    return enemy;
+function getTraitProbMultFor(slots){
+    let sets=getSetBonusFor(slots);
+    return sets.includes("草4")?2.5:sets.includes("草2")?1.5:1;
 }
+function getExpectedCrit20xMultFor(slots){
+    let count=countTraitFor(slots,"crit20x");
+    let chance=Math.min(1,0.20*count*getTraitProbMultFor(slots));
+    return 1+19*chance;
+}
+function getNextEnemyForecast(){
+    let diffMult=Math.pow(1.4,save.useBlood||0);
+    let nextWave=Math.max(1,(player.wave||0)+1);
+    let bossPending=gameState==="bossLoot"||(gameState==="loot"&&player.wave>=20);
+    if(bossPending){
+        let isIt=player.Q3>=3;
+        let baseAtk=isIt?3000:2000,baseHp=isIt?300000:200000;
+        return {name:isIt?"它":"魔王",label:`下一场 Boss · ${isIt?"它":"魔王"}`,atk:Math.floor(baseAtk*diffMult),maxHp:Math.floor(baseHp*diffMult),traits:[]};
+    }
+    let baseAtk=50+nextWave*15,baseHp=300+nextWave*80;
+    if(nextWave>=7){
+        if(player.job==="战士")baseHp*=5;
+        else if(player.job==="勇者")baseHp*=4;
+    }
+    return {name:`第 ${nextWave} 波敌人`,label:`下一场 · 第 ${nextWave} 波`,atk:Math.floor(baseAtk*diffMult),maxHp:Math.floor(baseHp*diffMult),traits:[]};
+}
+function getComparisonTarget(){return getNextEnemyForecast();}
 function targetHasTrait(target,id){return target&&Array.isArray(target.traits)&&target.traits.some(trait=>trait.id===id);}
-function rememberLastBattle(){
-    if(!enemy||enemy.maxHp<=0)return;
-    lastBattleSnapshot=cloneForStorage({...enemy,hp:enemy.maxHp});
-}
 function deriveBuild(slots){
     let base=calcBaseStats();
     let atk=base.atk,hp=base.hp,bj=base.bj,bs=base.bs,crt=base.crt;
@@ -458,18 +474,19 @@ function deriveBuild(slots){
     let ironMult=Math.max(0.1,1-0.15*countTraitFor(slots,"ironWall"));
     let shield=slots.reduce((total,slot)=>total+(slot&&slot.trait&&slot.trait.id==="shieldGain"?(slot.trait.value||0):0),0);
     let target=getComparisonTarget();
-    let targetHp=target&&target.maxHp>0?target.maxHp:Math.floor((300+(player.wave||1)*80)*Math.pow(1.4,save.useBlood||0));
+    let targetHp=target.maxHp;
     let targetDodge=targetHasTrait(target,"dodge")?0.20:0;
     let targetArmor=targetHasTrait(target,"armor")?0.70:1;
     let targetAtk=target&&target.atk>0?target.atk:50;
-    let damage=(atk*(1+Math.min(1,Math.max(0,bj))*(bs-1))*fireMult*(1-targetDodge)*targetArmor)+targetHp*thunderRate;
+    let expectedCrit20x=getExpectedCrit20xMultFor(slots);
+    let damage=(atk*(1+Math.min(1,Math.max(0,bj))*(bs-1))*expectedCrit20x*fireMult*(1-targetDodge)*targetArmor)+targetHp*thunderRate;
     let dodgeRate=Math.min(0.85,Math.max(0,crt));
     if(targetHasTrait(target,"trueSight"))dodgeRate=0;
     else if(targetHasTrait(target,"phase"))dodgeRate*=0.5;
     let enemyCritMult=targetHasTrait(target,"crit")?1.125:1;
     let incoming=targetAtk*enemyCritMult*(1-dodgeRate)*waterMult*ironMult;
     let survival=(hp+shield)/Math.max(1,incoming);
-    return {atk,hp,bj,bs,crt,sets,shield,damage,survival,incoming,target};
+    return {atk,hp,bj,bs,crt,sets,shield,damage,survival,incoming,target,expectedCrit20x};
 }
 function getSurvivalPressure(build){
     let capacity=build.survival;
@@ -538,7 +555,8 @@ function equipmentRecommendationHtml(item){
     let before=best.current,after=best.next;
     let beforeTrait=best.oldEquip&&best.oldEquip.trait?best.oldEquip.trait.name:"无";
     let afterTrait=item.trait?item.trait.name:"无";
-    return `<div class="recommendation ${decision.tone==="avoid"?"avoid":""}"><div class="recommend-title">${decision.text}</div>${comparisonSummaryHtml(best)}<div>${statDeltaHtml("ATK",after.atk,before.atk)} · ${statDeltaHtml("HP",after.hp,before.hp)} · ${statDeltaHtml("BJ",after.bj,before.bj,true)} · ${statDeltaHtml("BS",after.bs,before.bs,true)} · ${statDeltaHtml("闪避",after.crt,before.crt,true)}</div><div class="trait-note">套装：${describeSets(before.sets)} → ${describeSets(after.sets)} · 特性：${beforeTrait} → ${afterTrait}</div></div>`;
+    let target=before.target;
+    return `<div class="recommendation ${decision.tone==="avoid"?"avoid":""}"><div class="recommend-title">${decision.text}</div>${comparisonSummaryHtml(best)}<div>${statDeltaHtml("ATK",after.atk,before.atk)} · ${statDeltaHtml("HP",after.hp,before.hp)} · ${statDeltaHtml("BJ",after.bj,before.bj,true)} · ${statDeltaHtml("BS",after.bs,before.bs,true)} · ${statDeltaHtml("闪避",after.crt,before.crt,true)}</div><div class="trait-note">预测：${target.label}（ATK ${target.atk} · HP ${target.maxHp}） · 套装：${describeSets(before.sets)} → ${describeSets(after.sets)} · 特性：${beforeTrait} → ${afterTrait}</div></div>`;
 }
 
 function calcBaseStats(){
@@ -1533,7 +1551,6 @@ function onEnemyDefeat(){
     playEnemyDefeatAnimation(finishEnemyDefeat);
 }
 function finishEnemyDefeat(){
-    rememberLastBattle();
     if(hasETrait("explode")){
         let explodeDmg=Math.floor(player.maxHp*0.10);
         if(player.ZDYHP>0){
