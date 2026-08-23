@@ -457,6 +457,9 @@ function getSetBonus(){
     return active;
 }
 function hasSet(tag){return getSetBonus().indexOf(tag)>=0;}
+function hasPrismaticResonanceFor(slots){let count={火:0,水:0,草:0,雷:0};for(let slot of slots||[]){if(slot&&Object.prototype.hasOwnProperty.call(count,slot.element))count[slot.element]++;}return Object.values(count).every(value=>value>=1);}
+function elementSetScale(slots=player.slots){return hasPrismaticResonanceFor(slots)?1.5:1;}
+function scaledElementEffect(value,slots=player.slots){return value*elementSetScale(slots);}
 
 function getTraitMult(){
     let atkMult=1;
@@ -483,8 +486,8 @@ function countTrait(id){
 function getArmorBreakValue(){return Math.min(.80,player.slots.flatMap(slot=>slot?.traits||[]).filter(trait=>trait.id==="armorBreak").reduce((sum,trait)=>sum+(Number(trait.value)||.10),0));}
 
 function getTraitProbMult(){
-    if(hasSet("草4"))return 2.5;
-    if(hasSet("草2"))return 1.5;
+    if(hasSet("草4"))return scaledElementEffect(2.5);
+    if(hasSet("草2"))return scaledElementEffect(1.5);
     return 1;
 }
 
@@ -497,7 +500,7 @@ function countTraitFor(slots,id){let count=0;for(let slot of slots){if(slot&&slo
 function getTraitMultFor(slots){return Math.pow(0.5,countTraitFor(slots,"deadlyStrike"))*Math.pow(0.7,countTraitFor(slots,"crit20x"));}
 function getTraitProbMultFor(slots){
     let sets=getSetBonusFor(slots);
-    return sets.includes("草4")?2.5:sets.includes("草2")?1.5:1;
+    return sets.includes("草4")?scaledElementEffect(2.5,slots):sets.includes("草2")?scaledElementEffect(1.5,slots):1;
 }
 function getExpectedCrit20xMultFor(slots){
     let count=countTraitFor(slots,"crit20x");
@@ -530,9 +533,9 @@ function deriveBuild(slots){
     hp+=((player.blessHpAdd||0)+(player.permHpAdd||0));
     bj+=(player.blessBjAdd||0);bs+=(player.blessBsAdd||0);crt+=(player.blessCrtAdd||0);
     let sets=getSetBonusFor(slots);
-    let fireMult=sets.includes("火4")?1.25:sets.includes("火2")?1.10:1;
-    let thunderRate=sets.includes("雷4")?0.06:sets.includes("雷2")?0.03:0;
-    let waterMult=sets.includes("水4")?0.80:sets.includes("水2")?0.92:1;
+    let fireMult=sets.includes("火4")?1+scaledElementEffect(0.25,slots):sets.includes("火2")?1+scaledElementEffect(0.10,slots):1;
+    let thunderRate=sets.includes("雷4")?scaledElementEffect(0.06,slots):sets.includes("雷2")?scaledElementEffect(0.03,slots):0;
+    let waterMult=sets.includes("水4")?1-scaledElementEffect(0.20,slots):sets.includes("水2")?1-scaledElementEffect(0.08,slots):1;
     let ironMult=Math.max(0.1,1-0.15*countTraitFor(slots,"ironWall"));
     let shield=slots.reduce((total,slot)=>total+(slot&&slot.traits?slot.traits.filter(trait=>trait.id==="shieldGain").reduce((sum,trait)=>sum+(trait.value||0),0):0),0);
     let target=getComparisonTarget();
@@ -853,12 +856,15 @@ function showSetInfo(){
         {element:"草",className:"elem-grass",two:"装备特性触发概率 ×1.5",four:"装备特性触发概率 ×2.5"},
         {element:"雷",className:"elem-thunder",two:"攻击附加敌方当前 HP 3% 伤害",four:"攻击附加敌方当前 HP 6% 伤害"}
     ];
-    let resonance=hasPrismaticResonance()?`<article class="set-card is-active"><h3>【四色共鸣】已激活</h3><div class="set-tier active">受到伤害 -12%；所有恢复上限 +20%；进战获得最大生命 8% 临时盾，每回合恢复 2% 临时盾。</div></article>`:`<article class="set-card"><h3>【四色共鸣】未激活</h3><div class="set-tier">火、水、草、雷各装备至少 1 件即可激活。</div></article>`;
+    let resonance=hasPrismaticResonance()?`<article class="set-card is-active"><h3>【四色共鸣】已激活</h3><div class="set-tier active">受到伤害 -12%；其他元素套装效果 +50%；所有恢复上限 +20%；进战获得最大生命 8% 临时盾，每回合恢复 2% 临时盾。</div></article>`:`<article class="set-card"><h3>【四色共鸣】未激活</h3><div class="set-tier">火、水、草、雷各装备至少 1 件即可激活。</div></article>`;
     document.getElementById("setContent").innerHTML=resonance+rules.map(rule=>{
         let amount=c[rule.element],twoActive=amount>=2&&amount<4,fourActive=amount>=4;
         let twoText=twoActive?"已激活":fourActive?"由四件套覆盖":`未激活 · 还差 ${2-amount} 件`;
         let fourText=fourActive?"已激活":`未激活 · 还差 ${4-amount} 件`;
-        return `<article class="set-card ${amount>=2?"is-active":""}"><h3 class="${rule.className}">【${rule.element}】 当前 ${amount} 件</h3><div class="set-tier ${twoActive?"active":""}">二件套 · ${twoText}<br>${rule.two}</div><div class="set-tier ${fourActive?"active":""}">四件套 · ${fourText}<br>${rule.four}</div></article>`;
+        let scale=hasPrismaticResonance()?1.5:1;
+        let actualTwo=rule.element==="火"?`攻击伤害 +${10*scale}%；战胜攻击 +${4*scale}%`:rule.element==="水"?`受到伤害 -${8*scale}%；战胜血量 +${4*scale}%`:rule.element==="草"?`装备特性触发概率 ×${1.5*scale}`:`攻击附加敌方当前 HP ${3*scale}% 伤害`;
+        let actualFour=rule.element==="火"?`攻击伤害 +${25*scale}%；战胜攻击 +${10*scale}%`:rule.element==="水"?`受到伤害 -${20*scale}%；战胜血量 +${10*scale}%`:rule.element==="草"?`装备特性触发概率 ×${2.5*scale}`:`攻击附加敌方当前 HP ${6*scale}% 伤害`;
+        return `<article class="set-card ${amount>=2?"is-active":""}"><h3 class="${rule.className}">【${rule.element}】 当前 ${amount} 件</h3><div class="set-tier ${twoActive?"active":""}">二件套 · ${twoText}<br>${actualTwo}</div><div class="set-tier ${fourActive?"active":""}">四件套 · ${fourText}<br>${actualFour}</div></article>`;
     }).join("");
     document.getElementById("setOverlay").hidden=false;
 }
@@ -879,6 +885,7 @@ function getDifficultyTraits(level){
     if(level>=4)return "敌人最多拥有 3 种词条。";
     return "敌人最多拥有 1 种词条，按基础概率出现。";
 }
+function getDifficultyGoldMultiplier(level=save.useBlood){return 1+Math.min(10,Math.max(0,Math.floor(Number(level)||0)))*0.10;}
 function renderDifficultyPanel(){
     let unlocked=Math.min(10,Math.max(0,Number(save.blood)||0));
     let level=Math.min(unlocked,Math.max(0,Math.floor(difficultyDraft)));
@@ -886,7 +893,7 @@ function renderDifficultyPanel(){
     let adjustable=Boolean(player.canAdjustPoint);
     document.getElementById("difficultySelected").textContent=level;
     document.getElementById("difficultyFocusCaption").textContent=`难度 ${level}`;
-    document.getElementById("difficultyMultiplier").textContent=`敌人攻击力与生命值 ×${Math.pow(1.4,level).toFixed(2)}（每级 ×1.4）。`;
+    document.getElementById("difficultyMultiplier").textContent=`敌人攻击力与生命值 ×${Math.pow(1.4,level).toFixed(2)}；胜利金币 ×${getDifficultyGoldMultiplier(level).toFixed(2)}（每级金币 +10%）。`;
     document.getElementById("difficultyTraits").textContent=getDifficultyTraits(level);
     document.getElementById("difficultyEffects").textContent=getDifficultyEffects(level);
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
@@ -1450,16 +1457,16 @@ function playerAttack(){
     let ex=countTrait("execute");
     if(ex>0&&enemy.hp/enemy.maxHp<0.2){dmg=Math.floor(dmg*(1+1.0*ex));print(`【斩杀】敌人血量低于20%，伤害×${1+ex}！`);}
     if(hasSet("雷4")){
-        let thunderDmg=Math.floor(enemy.hp*0.06);
+        let thunderDmg=Math.floor(enemy.hp*scaledElementEffect(0.06));
         dmg+=thunderDmg;
         print(`【雷电四件】额外造成${thunderDmg}点雷电伤害`);
     }else if(hasSet("雷2")){
-        let thunderDmg=Math.floor(enemy.hp*0.03);
+        let thunderDmg=Math.floor(enemy.hp*scaledElementEffect(0.03));
         dmg+=thunderDmg;
         print(`【雷电两件】额外造成${thunderDmg}点雷电伤害`);
     }
-    if(hasSet("火4")){dmg=Math.floor(dmg*1.25);}
-    else if(hasSet("火2")){dmg=Math.floor(dmg*1.10);}
+    if(hasSet("火4")){dmg=Math.floor(dmg*(1+scaledElementEffect(0.25)));}
+    else if(hasSet("火2")){dmg=Math.floor(dmg*(1+scaledElementEffect(0.10)));}
     if(hasTrait("trueStrike")){dmg=Math.floor(dmg*1.08);print("【必中打击】攻击无视闪避，伤害+8%。");}
     if(!hasTrait("trueStrike")&&Math.random()<enemy.dodge){
         showBattleFeedback("enemy","闪避","dodge");
@@ -1569,16 +1576,16 @@ function burstAttack(){
         dmg=Math.floor(dmg*(1+dodgeBonus));
     }
     if(hasSet("雷4")){
-        let thunderDmg=Math.floor(enemy.hp*0.06);
+        let thunderDmg=Math.floor(enemy.hp*scaledElementEffect(0.06));
         dmg+=thunderDmg;
         print(`【雷电四件】额外造成${thunderDmg}点雷电伤害`);
     }else if(hasSet("雷2")){
-        let thunderDmg=Math.floor(enemy.hp*0.03);
+        let thunderDmg=Math.floor(enemy.hp*scaledElementEffect(0.03));
         dmg+=thunderDmg;
         print(`【雷电两件】额外造成${thunderDmg}点雷电伤害`);
     }
-    if(hasSet("火4")){dmg=Math.floor(dmg*1.25);}
-    else if(hasSet("火2")){dmg=Math.floor(dmg*1.10);}
+    if(hasSet("火4")){dmg=Math.floor(dmg*(1+scaledElementEffect(0.25)));}
+    else if(hasSet("火2")){dmg=Math.floor(dmg*(1+scaledElementEffect(0.10)));}
     if(hasTrait("trueStrike")){dmg=Math.floor(dmg*1.08);print("【必中打击】必杀技无视闪避，伤害+8%。");}
     if(!hasTrait("trueStrike")&&Math.random()<enemy.dodge){
         showBattleFeedback("enemy","闪避必杀","dodge");
@@ -1669,8 +1676,11 @@ function resolveEnemyAttackSegment(part,hits){
         print(`【致命】敌人造成了1.5倍伤害！`);
     }
     if(save.useBlood>=5){dmg=Math.floor(dmg*0.90);}
-    let reduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?0.20:hasSet("水2")?0.08:0)+(hasPrismaticResonance()?0.12:0);
-    dmg=Math.floor(dmg*Math.max(.10,1-reduction));
+    let otherReduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?scaledElementEffect(0.20):hasSet("水2")?scaledElementEffect(0.08):0);
+    let resonanceReduction=hasPrismaticResonance()?0.12:0;
+    let beforeResonance=Math.floor(dmg*Math.max(.10,1-otherReduction));
+    dmg=Math.floor(dmg*Math.max(.10,1-otherReduction-resonanceReduction));
+    if(resonanceReduction>0)print(`【四色共鸣】本次受击额外减免${Math.floor(resonanceReduction*100)}%，具体减免${Math.max(0,beforeResonance-dmg)}点伤害。`);
     let isPierce=hasETrait("pierce");
     dmg=absorbDamage(player,dmg,{pierce:isPierce,label:`第${part}段`}).damage;
     if(isPierce&&dmg>0){print("【隔山打牛】敌人的攻击无视了你的护盾！");}
@@ -1733,8 +1743,9 @@ function autoBattleDecide(){
     let dodgeRate=hasETrait("trueSight")?0:getPlayerDodgeAgainst(enemy);
     if(hasETrait("phase"))dodgeRate*=.5;
     let incoming=enemy.atk*(1+.12*(Math.max(1,enemy.hits)-1))*(1-dodgeRate);
-    let reduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?0.20:hasSet("水2")?0.08:0)+(hasPrismaticResonance()?0.12:0);
-    incoming*=Math.max(.10,1-reduction);
+    let otherReduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?scaledElementEffect(0.20):hasSet("水2")?scaledElementEffect(0.08):0);
+    let resonanceReduction=hasPrismaticResonance()?0.12:0;
+    incoming*=Math.max(.10,1-otherReduction-resonanceReduction);
     let healing=0;
     if(player.job==="战士")healing+=player.atk*0.20*(1-dodgeRate);
     if(player.blessing==="战士的祝福")healing+=player.maxHp*0.03;
@@ -1775,9 +1786,9 @@ function simulateBossSkip(){
     print("\n=== 快速模拟最终决战 ===");
     let avgDmg=player.atk;
     avgDmg=avgDmg*(1+Math.min(1,player.bj)*(player.bs-1));
-    if(hasSet("火4"))avgDmg*=1.25;else if(hasSet("火2"))avgDmg*=1.10;
+    if(hasSet("火4"))avgDmg*=1+scaledElementEffect(0.25);else if(hasSet("火2"))avgDmg*=1+scaledElementEffect(0.10);
     let thunderDot=0;
-    if(hasSet("雷4"))thunderDot=enemy.maxHp*0.06;else if(hasSet("雷2"))thunderDot=enemy.maxHp*0.03;
+    if(hasSet("雷4"))thunderDot=enemy.maxHp*scaledElementEffect(0.06);else if(hasSet("雷2"))thunderDot=enemy.maxHp*scaledElementEffect(0.03);
     avgDmg+=thunderDot;
     let burstEvery=100/15;
     avgDmg+=(player.atk*5)/burstEvery;
@@ -1789,8 +1800,8 @@ function simulateBossSkip(){
     let effCrt=getPlayerDodgeAgainst(enemy);
     if(enemy.name==="魔王"){effCrt=effCrt*0.95+effCrt*0.5*0.05;}
     bossDmg*=(1-effCrt);
-    if(hasSet("水4"))bossDmg*=0.80;else if(hasSet("水2"))bossDmg*=0.92;
-    if(hasPrismaticResonance())bossDmg*=0.88;
+    let bossWaterReduction=hasSet("水4")?scaledElementEffect(0.20):hasSet("水2")?scaledElementEffect(0.08):0;
+    bossDmg*=Math.max(.10,1-bossWaterReduction-(hasPrismaticResonance()?0.12:0));
     let iw=countTrait("ironWall");
     if(iw>0)bossDmg*=Math.max(0.1,1-0.15*iw);
     let healPerTurn=0;
@@ -1877,31 +1888,31 @@ function finishEnemyDefeat(){
         healPlayer(heal,"斩杀回复");
     }
     if(gameState==="bossBattle"){
-        let gold=rand(100,200);
+        let baseGold=rand(100,200),gold=Math.floor(baseGold*getDifficultyGoldMultiplier());
         save.gold=(save.gold||0)+gold;
-        print(`你获得了 ${gold} 枚金币！当前：${save.gold}`);
+        print(`你获得了 ${gold} 枚金币（基础${baseGold} ×难度金币倍率${getDifficultyGoldMultiplier().toFixed(2)}，已取整）！当前：${save.gold}`);
         writeSave();
     }else{
-        let gold=rand(10,20);
+        let baseGold=rand(10,20),gold=Math.floor(baseGold*getDifficultyGoldMultiplier());
         save.gold=(save.gold||0)+gold;
-        print(`你获得了 ${gold} 枚金币！当前：${save.gold}`);
+        print(`你获得了 ${gold} 枚金币（基础${baseGold} ×难度金币倍率${getDifficultyGoldMultiplier().toFixed(2)}，已取整）！当前：${save.gold}`);
         writeSave();
     }
     if(hasSet("火4")){
-        let bonus=Math.floor(player.atk*0.10);
+        let bonus=Math.floor(player.atk*scaledElementEffect(0.10));
         player.atk+=bonus;
         print(`【火焰四件】攻击力永久提升${bonus}点！`);
     }else if(hasSet("火2")){
-        let bonus=Math.floor(player.atk*0.04);
+        let bonus=Math.floor(player.atk*scaledElementEffect(0.04));
         player.atk+=bonus;
         print(`【火焰两件】攻击力永久提升${bonus}点！`);
     }
     if(hasSet("水4")){
-        let bonus=Math.floor(player.maxHp*0.10);
+        let bonus=Math.floor(player.maxHp*scaledElementEffect(0.10));
         player.maxHp+=bonus;player.hp+=bonus;
         print(`【流水四件】血量上限永久提升${bonus}点！`);
     }else if(hasSet("水2")){
-        let bonus=Math.floor(player.maxHp*0.04);
+        let bonus=Math.floor(player.maxHp*scaledElementEffect(0.04));
         player.maxHp+=bonus;player.hp+=bonus;
         print(`【流水两件】血量上限永久提升${bonus}点！`);
     }
