@@ -567,6 +567,7 @@ function classifyRecommendation(result){
     if(damage>=0.05&&survival>=0.05)return {tone:"strong",text:"强烈推荐"};
     if((damage>=0.03&&survival>=-0.02)||(survival>=0.03&&damage>=-0.02))return {tone:"recommended",text:"推荐"};
     if(damage<=-0.03&&survival<=-0.03)return {tone:"avoid",text:"不推荐"};
+    if(Math.abs(damage)<0.005&&Math.abs(survival)<0.005)return {tone:"neutral",text:"普通"};
     if(damage>0||survival>0)return {tone:"tradeoff",text:damage>survival?"谨慎选择 · 偏伤害":"谨慎选择 · 偏生存"};
     return {tone:"avoid",text:"不推荐"};
 }
