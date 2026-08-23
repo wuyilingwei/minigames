@@ -173,7 +173,7 @@ header h1{font-size:18px;}header .sub{font-size:14px;}#term-titlebar{font-size:1
     </aside>
   </div>
   <div id="welcomeOverlay" class="overlay"><div class="overlay-panel"><div class="title-title">卡桑德里传说</div><div class="title-ver">7.0 · 像素终端版</div><div class="title-menu"><button class="choice-btn" id="btnContinue">继续自动存档</button><button class="choice-btn" id="btnNewGame">新的征途</button><button class="choice-btn" id="btnHomeSave">存档 / 读取</button><button class="choice-btn" id="btnChangelog">更新内容</button><button class="choice-btn" id="btnHomeShop">流动商城</button><a class="choice-btn portal-exit" id="btnHomeExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a></div></div></div>
-  <div id="settingsOverlay" class="overlay" hidden><div class="overlay-panel"><h2>设置</h2><div class="settings-field"><label class="toggle"><input type="checkbox" id="crtToggle"> CRT 扫描线</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="reduceMotionToggle"> 战斗反馈动画</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="collapseEventsToggle"> 完成事件后收起终端记录</label></div><div class="settings-field"><label class="settings-label" for="cheatCodeInput">秘钥输入</label><input type="text" id="cheatCodeInput" class="cheat-input" placeholder="输入秘钥…" autocomplete="off" spellcheck="false"><button class="choice-btn settings-submit" onclick="tryCheatCode()">确认秘钥</button><div id="cheatCodeNotice" class="modal-notice settings-notice"></div></div><div class="title-menu"><button class="choice-btn" id="btnOpenSaveFromSettings">存档与继续</button><a class="choice-btn settings-exit" id="btnExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a><button class="choice-btn" id="btnSettingsClose">关闭</button></div></div></div>
+  <div id="settingsOverlay" class="overlay" hidden><div class="overlay-panel"><h2>设置</h2><div class="settings-field"><label class="toggle"><input type="checkbox" id="crtToggle"> CRT 扫描线</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="reduceMotionToggle"> 战斗反馈动画</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="collapseEventsToggle"> 完成事件后收起终端记录</label></div><div class="settings-field"><label class="toggle pixel-switch"><input type="checkbox" id="settingsAutoBattle"> 自动战斗</label></div><div class="settings-field"><label class="toggle pixel-switch"><input type="checkbox" id="settingsLootAutoSelect"> 自动选择装备</label></div><div class="settings-field"><label class="settings-label" for="cheatCodeInput">秘钥输入</label><input type="text" id="cheatCodeInput" class="cheat-input" placeholder="输入秘钥…" autocomplete="off" spellcheck="false"><button class="choice-btn settings-submit" onclick="tryCheatCode()">确认秘钥</button><div id="cheatCodeNotice" class="modal-notice settings-notice"></div></div><div class="title-menu"><button class="choice-btn" id="btnOpenSaveFromSettings">存档与继续</button><a class="choice-btn settings-exit" id="btnExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a><button class="choice-btn" id="btnSettingsClose">关闭</button></div></div></div>
   <div id="changelogOverlay" class="overlay" hidden><div class="overlay-panel"><h2>更新内容 · 7.0</h2><ol class="changelog-list"><li>装备特性扩展至 36 种并支持多特性叠加，概率随波次和难度提升。</li><li>防御可蓄力两层；自动战斗会评估生存风险、主动防御并在满能量时释放必杀。</li><li>职业、祝福、敌人特性与高难度数值按 7.0 重新平衡。</li><li>难度 10 的 BOSS 必带特性；真实之眼攻击力上限调整为 600。</li><li>高难度失装、小偷偷窃和魔王震落装备加入可保存、可恢复的确认节点。</li><li>它之血珠上限为 10；“它”每回合都会侵蚀一项属性。</li><li>新增本地作弊模式；商城道具和第五槽位可调整，退出后回退进入前的数据。</li><li>旧版单词条运行存档会自动迁移，不影响永久成长和手动存档槽。</li></ol><div class="title-menu"><button class="choice-btn" id="btnChangelogClose">关闭</button></div></div></div>
   <div id="shopOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>流动商城</h2><p class="modal-note">购买永久生效；战斗中的行动选项会在关闭商城后保留。</p><div id="shopNotice" class="modal-notice" aria-live="polite"></div><div id="shopContent" class="modal-grid"></div><div class="modal-actions"><button class="choice-btn" id="btnShopClose">关闭商城</button></div></div></div>
   <div id="saveOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>存档与继续</h2><p class="modal-note">自动存档会在可续玩的战斗和装备选择阶段刷新；三个手动槽可自由覆盖。存档同时保存本局状态和永久成长。</p><div id="saveContent" class="save-slots"></div><div class="modal-actions"><button class="choice-btn" id="btnSaveClose">关闭</button></div></div></div>
@@ -219,12 +219,13 @@ function writeSave(){localStorage.setItem("kasandri6_save",JSON.stringify(save))
 loadSave();
 try{let backup=localStorage.getItem("kasandri6_cheat_backup");if(backup){cheatBackup=normalizeSave(JSON.parse(backup));cheatMode=true;}}catch(e){cheatBackup=null;cheatMode=false;}
 
-const defaultPreferences={crt:true,reduceMotion:false,collapseEvents:true,tutorialSeen:false,autoLootSelect:false};
+const defaultPreferences={crt:true,reduceMotion:false,collapseEvents:true,tutorialSeen:false};
 let preferences={...defaultPreferences};
 function loadPreferences(){
     try{let raw=localStorage.getItem("kasandri6_preferences");let stored=raw?JSON.parse(raw):{};preferences={...defaultPreferences,...(isRecord(stored)?stored:{})};}
     catch(e){preferences={...defaultPreferences};}
     for(let key of Object.keys(defaultPreferences))preferences[key]=Boolean(preferences[key]);
+    delete preferences.autoLootSelect;
 }
 function writePreferences(){localStorage.setItem("kasandri6_preferences",JSON.stringify(preferences));}
 function applyPreferences(){
@@ -246,6 +247,8 @@ let lootDeferred=false;
 let lootAutoSelectTimer=null;
 let lootAutoSelectToken=0;
 let lootAutoSelectRemaining=0;
+let lootAutoSelectEnabled=false;
+let autoBattleBeforeSettings=false;
 let bannedJob=null,bannedBless=null;
 let lastBattleSnapshot=null;
 let defeatAnimating=false;
@@ -295,7 +298,6 @@ function restoreRunSnapshot(snapshot){
     bannedBless=valid.bannedBless||null;
     lastBattleSnapshot=valid.lastBattleSnapshot||null;
     lastEquipAction=null;
-    autoBattle=false;
     gamePaused=false;
     writeSave();
     hideGameOverlays();
@@ -1046,39 +1048,53 @@ function renderLootChoice(){
     let drops=[pendingLoot.e1,pendingLoot.e2];
     let advice=getDropAdvice(drops),hasInferior=advice.inferiorIndexes.length>0;
     let adviceText=hasInferior?"无特殊词条且基础属性全面不占优的装备已标红；其余装备请按当前构筑与词条自行选择。":"两件装备各有取舍，请按输出、生存与特殊词条自行选择。";
-    document.getElementById("lootContent").innerHTML=`<div class="drop-advice">${adviceText}</div><label class="toggle loot-auto-toggle"><input id="lootAutoSelect" type="checkbox" ${preferences.autoLootSelect?"checked":""} onchange="toggleLootAutoSelect(this.checked)">自动选择装备 <span id="lootAutoStatus">${preferences.autoLootSelect?"3 秒后自动选择推荐装备":"勾选后 3 秒自动选择推荐装备"}</span></label><div class="loot-grid">${drops.map((item,index)=>{let inferior=advice.inferiorIndexes.includes(index);return `<article class="loot-choice ${inferior?"is-inferior":""}"><h3>装备${index+1}${inferior?` <span class="loot-status">· 不建议</span>`:""}</h3>${equipmentCardHtml(item,true)}<button class="choice-btn" onclick="chooseLoot(${index+1})">选择装备${index+1}</button></article>`;}).join("")}</div><div class="modal-actions"><button class="choice-btn" onclick="deferLootChoice()">暂时收起</button><button class="choice-btn danger" onclick="declineLoot()">都放弃</button></div>`;
-    if(preferences.autoLootSelect)startLootAutoSelect();
+    document.getElementById("lootContent").innerHTML=`<div class="drop-advice">${adviceText}</div><label class="toggle pixel-switch loot-auto-toggle"><input id="lootAutoSelect" type="checkbox" ${lootAutoSelectEnabled?"checked":""} onchange="toggleLootAutoSelect(this.checked)">自动选择装备 <span id="lootAutoStatus">${lootAutoSelectEnabled?"5 秒后自动选择推荐装备":"开启后 5 秒自动选择推荐装备"}</span></label><div class="loot-grid">${drops.map((item,index)=>{let inferior=advice.inferiorIndexes.includes(index);return `<article class="loot-choice ${inferior?"is-inferior":""}" data-loot-index="${index+1}"><h3>装备${index+1}${inferior?` <span class="loot-status">· 不建议</span>`:""}</h3>${equipmentCardHtml(item,true)}<button class="choice-btn" onclick="chooseLoot(${index+1})">选择装备${index+1}</button></article>`;}).join("")}</div><div class="modal-actions"><button class="choice-btn" onclick="deferLootChoice()">暂时收起</button><button class="choice-btn danger" onclick="declineLoot()">都放弃</button></div>`;
+    syncLootAutoSelectControls();
+    if(lootAutoSelectEnabled)startLootAutoSelect();
 }
 function cancelLootAutoSelect(){
     if(lootAutoSelectTimer!==null){clearInterval(lootAutoSelectTimer);lootAutoSelectTimer=null;}
+    document.querySelectorAll("#lootContent .auto-select-target").forEach(card=>card.classList.remove("auto-select-target"));
     lootAutoSelectToken++;
     lootAutoSelectRemaining=0;
 }
 function updateLootAutoStatus(){
     let status=document.getElementById("lootAutoStatus");
-    if(status)status.textContent=lootAutoSelectRemaining>0?`${lootAutoSelectRemaining} 秒后自动选择推荐装备`:"勾选后 3 秒自动选择推荐装备";
+    if(status)status.textContent=lootAutoSelectRemaining>0?`${lootAutoSelectRemaining} 秒后自动选择推荐装备`:"开启后 5 秒自动选择推荐装备";
 }
 function startLootAutoSelect(){
     cancelLootAutoSelect();
-    if(!pendingLoot||lootDeferred||document.getElementById("lootOverlay").hidden)return;
+    if(!lootAutoSelectEnabled||!pendingLoot||lootDeferred||document.getElementById("lootOverlay").hidden||!document.getElementById("settingsOverlay").hidden)return;
     let token=lootAutoSelectToken;
-    lootAutoSelectRemaining=3;
+    lootAutoSelectRemaining=5;
     updateLootAutoStatus();
     lootAutoSelectTimer=setInterval(()=>{
-        if(token!==lootAutoSelectToken||!pendingLoot||lootDeferred||document.getElementById("lootOverlay").hidden){cancelLootAutoSelect();return;}
+        if(token!==lootAutoSelectToken||!lootAutoSelectEnabled||!pendingLoot||lootDeferred||document.getElementById("lootOverlay").hidden){cancelLootAutoSelect();return;}
         lootAutoSelectRemaining--;
         updateLootAutoStatus();
+        if(lootAutoSelectRemaining===4)flashRecommendedLootChoice();
         if(lootAutoSelectRemaining<=0){
             cancelLootAutoSelect();
             autoEquipRecommendedLoot();
         }
     },1000);
 }
+function getRecommendedLootChoice(){
+    if(!pendingLoot)return null;
+    let candidates=[pendingLoot.e1,pendingLoot.e2].map((item,index)=>({item,chosenIdx:index+1,comparison:getEquipmentComparisons(item)[0]}));
+    return candidates[1].comparison.score>candidates[0].comparison.score?candidates[1]:candidates[0];
+}
+function flashRecommendedLootChoice(){
+    if(!lootAutoSelectEnabled||!pendingLoot)return;
+    let best=getRecommendedLootChoice();
+    let card=best?document.querySelector(`#lootContent [data-loot-index="${best.chosenIdx}"]`):null;
+    if(card)card.classList.add("auto-select-target");
+}
 function autoEquipRecommendedLoot(){
     if(!pendingLoot)return;
     cancelLootAutoSelect();
-    let candidates=[pendingLoot.e1,pendingLoot.e2].map((item,index)=>({item,chosenIdx:index+1,comparison:getEquipmentComparisons(item)[0]}));
-    let best=candidates[1].comparison.score>candidates[0].comparison.score?candidates[1]:candidates[0];
+    let best=getRecommendedLootChoice();
+    if(!best)return;
     let slotIndex=best.comparison.slotIndex,oldEquip=player.slots[slotIndex];
     lastEquipAction={slotIdx:slotIndex,oldEquip,newEquip:best.item,chosenIdx:best.chosenIdx};
     player.slots[slotIndex]=best.item;
@@ -1088,10 +1104,13 @@ function autoEquipRecommendedLoot(){
     afterEquip(`已自动选择推荐装备【${best.item.name}】并${result}，继续冒险。`);
 }
 function toggleLootAutoSelect(enabled){
-    preferences.autoLootSelect=Boolean(enabled);
-    writePreferences();
-    if(enabled)startLootAutoSelect();
+    lootAutoSelectEnabled=Boolean(enabled);
+    syncLootAutoSelectControls();
+    if(lootAutoSelectEnabled)startLootAutoSelect();
     else{cancelLootAutoSelect();updateLootAutoStatus();}
+}
+function syncLootAutoSelectControls(){
+    for(let id of ["lootAutoSelect","settingsLootAutoSelect"]){let control=document.getElementById(id);if(control)control.checked=lootAutoSelectEnabled;}
 }
 function chooseLoot(chosenIdx){
     cancelLootAutoSelect();
@@ -1701,7 +1720,7 @@ function battleLoop(){
     clearChoices();
     print(`\n【${enemy.name}】 ATK:${enemy.atk} HP: ${Math.max(0,enemy.hp)}/${enemy.maxHp} | 能量: ${player.energy}/100`);
     if(autoBattle){
-        addChoice("停止自动战斗",()=>{autoBattle=false;print("已停止自动战斗。");battleLoop();},"btn-danger");
+        addChoice("停止自动战斗",()=>{setAutoBattle(false);print("已停止自动战斗。");battleLoop();},"btn-danger");
         setTimeout(doAttackRound,300);
         return;
     }
@@ -1710,7 +1729,7 @@ function battleLoop(){
     if(player.energy>=100){
         addChoice("必杀技",()=>{burstAttack();if(enemy.hp<=0){onEnemyDefeat();return;}applyDots();if(enemy.hp<=0){onEnemyDefeat();return;}if(!enemyAttack())return;if(player.hp<=0){onPlayerDefeat();return;}battleLoop();});
     }
-    addChoice("自动战斗",()=>{autoBattle=true;print("自动战斗开启，将持续攻击直到战斗结束。");battleLoop();});
+    addChoice("自动战斗",()=>{setAutoBattle(true);print("自动战斗开启，将持续攻击直到战斗结束。");battleLoop();});
     if(gameState==="bossBattle"){
         addChoice("一键跳过最终决战",()=>{simulateBossSkip();},"btn-danger");
     }
@@ -2005,7 +2024,6 @@ function selectBlessing(b){
     player.blessAtkAdd=0;player.blessHpAdd=0;player.blessBjAdd=0;player.blessBsAdd=0;player.blessCrtAdd=0;
     player.permAtkAdd=0;player.permHpAdd=0;
     player.energy=0;player.nextDefendBoost=false;player.ZBSPECIALUSED1=0;player.ZDYHP=0;
-    autoBattle=false;
     initSlots();
     print(`你获得了 ${b}`);
     applyEquipStats();
@@ -2084,9 +2102,20 @@ function syncPreferenceControls(){
     if(crt)crt.checked=preferences.crt;
     if(motion)motion.checked=!preferences.reduceMotion;
     if(collapse)collapse.checked=preferences.collapseEvents;
+    syncLootAutoSelectControls();
+    syncAutoBattleControl();
+}
+function syncAutoBattleControl(){
+    let control=document.getElementById("settingsAutoBattle");
+    if(control)control.checked=autoBattle;
+}
+function setAutoBattle(enabled){
+    autoBattle=Boolean(enabled);
+    syncAutoBattleControl();
 }
 function openSettings(){
     cancelLootAutoSelect();
+    autoBattleBeforeSettings=autoBattle;
     gamePaused=true;
     syncPreferenceControls();
     document.getElementById("settingsOverlay").hidden=false;
@@ -2097,7 +2126,8 @@ function closeSettings(){
     settings.hidden=true;
     if(!wasOpen)return;
     gamePaused=false;
-    if(autoBattle&&(gameState==="battle"||gameState==="bossBattle"))battleLoop();
+    if(lootAutoSelectEnabled&&pendingLoot&&!lootDeferred&&!document.getElementById("lootOverlay").hidden)startLootAutoSelect();
+    if((autoBattle||autoBattle!==autoBattleBeforeSettings)&&(gameState==="battle"||gameState==="bossBattle"))battleLoop();
 }
 
 function initApp(){
@@ -2108,6 +2138,8 @@ function initApp(){
     const crtToggle=document.getElementById("crtToggle");
     const reduceMotionToggle=document.getElementById("reduceMotionToggle");
     const collapseEventsToggle=document.getElementById("collapseEventsToggle");
+    const settingsAutoBattle=document.getElementById("settingsAutoBattle");
+    const settingsLootAutoSelect=document.getElementById("settingsLootAutoSelect");
     const continueButton=document.getElementById("btnContinue");
     document.getElementById("btnNewGame").onclick=()=>{welcome.hidden=true;startGame();};
     continueButton.onclick=()=>{let snapshot=readRunSave("auto");if(snapshot)restoreRunSnapshot(snapshot);};
@@ -2128,6 +2160,8 @@ function initApp(){
     crtToggle.onchange=()=>{preferences.crt=crtToggle.checked;writePreferences();applyPreferences();};
     reduceMotionToggle.onchange=()=>{preferences.reduceMotion=!reduceMotionToggle.checked;writePreferences();applyPreferences();};
     collapseEventsToggle.onchange=()=>{preferences.collapseEvents=collapseEventsToggle.checked;writePreferences();};
+    settingsAutoBattle.onchange=()=>setAutoBattle(settingsAutoBattle.checked);
+    settingsLootAutoSelect.onchange=()=>toggleLootAutoSelect(settingsLootAutoSelect.checked);
     document.addEventListener("keydown",event=>{if(event.key!=="Escape")return;closeSettings();changelog.hidden=true;closeShop();document.getElementById("setOverlay").hidden=true;closeDifficultyPanel();closeSaveManager();});
     applyPreferences();
     syncPreferenceControls();
