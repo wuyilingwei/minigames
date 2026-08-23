@@ -7,7 +7,7 @@ const runtime = await readFile(resolve(root, 'games/cassandri-legend/game.js'), 
 const model = runtime.match(/const equipmentSlots=\[[\s\S]*?function initSlots\(\)\{[\s\S]*?\n\}/)?.[0];
 const actionModel = runtime.match(/function buildEquipAction\(item,slotIndex,slots=player\.slots\)\{[\s\S]*?\n\}/)?.[0];
 if (!model || !actionModel) throw new Error('Could not extract the equipment model.');
-const createModel = new Function('save', 'elements', `function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}\n${model}\n${actionModel.replace('slots=player.slots', 'slots=[]')}\nreturn {equipmentSlots,normalizeEquipment,normalizeEquipmentSlots,buildEquipAction,getSlotCount,makeStarterEquipment};`);
+const createModel = new Function('save', 'elements', `function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}\n${model}\n${actionModel.replace('slots=player.slots', 'slots=[]')}\nreturn {equipmentSlots,getEquipmentSlots,normalizeEquipment,normalizeEquipmentSlots,buildEquipAction,getSlotCount,makeStarterEquipment};`);
 
 const low = createModel({ slot5Unlocked: false, useBlood: 0 }, ['火', '水', '草', '雷']);
 if (low.getSlotCount() !== 4 || low.makeStarterEquipment().some(item => item.atk || item.hp || item.traits.length)) throw new Error('A new low-difficulty game must start with four zero-stat, traitless items.');
@@ -55,7 +55,10 @@ for (const [level, traits] of [[0, 0], [3, 1], [6, 2], [9, 3]]) {
   const expected = level === 0 ? 'let maxTraits=tier;' : 'let tier=save.useBlood>=9?3:save.useBlood>=6?2:save.useBlood>=3?1:0;';
   if (!runtime.includes(expected)) throw new Error(`Difficulty ${level} equipment trait tier is missing.`);
 }
-for (const text of ['id:"armorBreak"', 'trait.id==="armorBreak"', 'function buildEquipAction', 'function normalizeEquipmentSlots', 'accepts:["accessory","outerwear"]', 'save.slot5Unlocked||save.useBlood>=6?5:4']) {
+for (const text of ['id:"armorBreak"', 'trait.id==="armorBreak"', 'function buildEquipAction', 'function normalizeEquipmentSlots', 'accepts:["accessory","outerwear"]']) {
   if (!runtime.includes(text)) throw new Error(`Missing 8.0 equipment contract: ${text}`);
+}
+if (low.getEquipmentSlots().length !== 4 || hard.getEquipmentSlots()[4]?.id !== 'accessory' || shopLow.getEquipmentSlots()[4]?.id !== 'purchase') {
+  throw new Error('Dynamic equipment definitions must expose the correct fifth slot for each unlock source.');
 }
 console.log('Verified 8.0 equipment slots, compatibility, legal combinations, and difficulty tiers.');

@@ -62,16 +62,18 @@ const equipmentSlots=[
     {id:"mainHand",name:"主手",accepts:["oneHand","twoHand"]},{id:"offHand",name:"副手",accepts:["oneHand","offHand"]}
 ];
 const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品",outerwear:"附加",purchase:"购买"};
-function hasAddonSlot(){return save.useBlood>=6||save.legacyAddonSlotUnlocked||Boolean(save.slot5Unlocked&&!save.purchaseSlotUnlocked);}
-function hasPurchaseSlot(){return Boolean(save.purchaseSlotUnlocked||save.slot5Unlocked);}
-function getEquipmentSlots(){
+function hasAddonSlotFor(saveState=save){return saveState.useBlood>=6||saveState.legacyAddonSlotUnlocked||Boolean(saveState.slot5Unlocked&&!saveState.purchaseSlotUnlocked);}
+function hasPurchaseSlotFor(saveState=save){return Boolean(saveState.purchaseSlotUnlocked||saveState.slot5Unlocked);}
+function getEquipmentSlotsFor(saveState=save){
     let slots=equipmentSlots.slice();
-    if(hasAddonSlot())slots.push({id:"accessory",name:"附加",accepts:["accessory","outerwear"]});
-    if(hasPurchaseSlot())slots.push({id:"purchase",name:"购买",accepts:["purchase"]});
+    if(hasAddonSlotFor(saveState))slots.push({id:"accessory",name:"附加",accepts:["accessory","outerwear"]});
+    if(hasPurchaseSlotFor(saveState))slots.push({id:"purchase",name:"购买",accepts:["purchase"]});
     return slots;
 }
+function getEquipmentSlots(){return getEquipmentSlotsFor(save);}
+function hasAddonSlot(){return hasAddonSlotFor(save);}
+function hasPurchaseSlot(){return hasPurchaseSlotFor(save);}
 function getSlotCount(){return getEquipmentSlots().length;}
-// Historical expression retained for compatibility checks: save.slot5Unlocked||save.useBlood>=6?5:4
 function getSlotLabel(index){let slots=getEquipmentSlots();return slots[index]?slots[index].name:`槽位${index+1}`;}
 function inferEquipmentPart(item,index=0){
     let name=String(item&&item.name||"");
@@ -102,8 +104,7 @@ function normalizeEquipment(item,index=0){
     delete normalized.trait;
     return normalized;
 }
-function normalizeEquipmentSlots(slots,slotCount=getSlotCount()){
-    let slotDefinitions=getEquipmentSlots();
+function normalizeEquipmentSlots(slots,slotCount=getSlotCount(),slotDefinitions=getEquipmentSlots()){
     let next=Array.from({length:slotCount},()=>null);
     for(let sourceIndex=0;sourceIndex<(Array.isArray(slots)?slots.length:0);sourceIndex++){
         let item=normalizeEquipment(slots[sourceIndex],sourceIndex);
@@ -241,8 +242,8 @@ function validateRunSnapshot(snapshot){
     normalizeCombatant(normalized.player);
     normalizeCombatant(normalized.enemy);
     let snapshotSave=normalizeSave(normalized.save);
-    let slotCount=4+(snapshotSave.useBlood>=6||snapshotSave.legacyAddonSlotUnlocked||Boolean(snapshotSave.slot5Unlocked&&!snapshotSave.purchaseSlotUnlocked)?1:0)+(snapshotSave.purchaseSlotUnlocked||snapshotSave.slot5Unlocked?1:0);
-    normalized.player.slots=normalizeEquipmentSlots(normalized.player.slots,slotCount);
+    let snapshotSlotDefinitions=getEquipmentSlotsFor(snapshotSave);
+    normalized.player.slots=normalizeEquipmentSlots(normalized.player.slots,snapshotSlotDefinitions.length,snapshotSlotDefinitions);
     if(normalized.pendingLoot){for(let key of ["e1","e2","e3"])if(normalized.pendingLoot[key])normalized.pendingLoot[key]=normalizeEquipment(normalized.pendingLoot[key]);}
     return normalized;
 }
@@ -1030,7 +1031,7 @@ function renderShop(notice=""){
     if(save.purchaseSlotUnlocked){
         purchaseHtml+=`<article class="modal-card"><h3>职业护符</h3><div>无基础属性；当前职业所有数值效果 +25%，不放大祝福。切换职业后自动按当前职业生效。</div><div>${purchaseEquipment?.id==="jobAmulet"?"已装备":"价格：1200 金币"}</div><button class="choice-btn" onclick="buyPurchaseEquipment('jobAmulet',1200)" ${purchaseEquipment?.id==="jobAmulet"?"disabled":""}>${purchaseEquipment?.id==="jobAmulet"?"已装备":"购买并装备"}</button></article>`;
     }
-    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难第五槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatSlot5()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难附加槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
+    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难第五槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难附加槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
     document.getElementById("shopContent").innerHTML=productHtml+extraHtml;
 }
 function closeShop(){
@@ -1043,17 +1044,7 @@ function closeShop(){
 function tryCheatCode(){let input=document.getElementById("cheatCodeInput"),notice=document.getElementById("cheatCodeNotice"),value=(input.value||"").trim();if(!value){notice.textContent="请输入秘钥。";return;}if(value!==CHEAT_SECRET){notice.textContent="秘钥错误。";return;}if(!cheatMode){cheatBackup=cloneForStorage(save);cheatMode=true;localStorage.setItem("kasandri6_cheat_backup",JSON.stringify(cheatBackup));save.eyeTotal=24;save.blood=10;save.useBlood=10;writeSave();if(player.job){applyEquipStats();refreshStatPanel();}autoSaveRun();}input.value="";notice.textContent="作弊模式已激活。";}
 function exitCheatMode(){if(!cheatMode||!cheatBackup)return;save=normalizeSave(cheatBackup);cheatMode=false;cheatBackup=null;localStorage.removeItem("kasandri6_cheat_backup");if(player.job){syncSlotCapacity();applyEquipStats();}writeSave();renderShop("已退出作弊模式，数据已回退。");}
 function adjustCheatItem(key,delta){if(!cheatMode)return;save.purchased[key]=Math.max(0,Math.min(10,(save.purchased[key]||0)+delta));writeSave();if(player.job)applyEquipStats();renderShop();}
-function toggleCheatSlot5(){if(!cheatMode)return;save.purchaseSlotUnlocked=!save.purchaseSlotUnlocked;if(player.job){syncSlotCapacity();applyEquipStats();}writeSave();renderShop();}
-function buySlot5(){
-    if(save.purchaseSlotUnlocked){renderShop("购买槽已经解锁。");return;}
-    if((save.gold||0)<5000){renderShop("金币不足，无法购买独立购买槽。");return;}
-    save.gold-=5000;
-    save.purchaseSlotUnlocked=true;
-    writeSave();
-    if(player.job){syncSlotCapacity();applyEquipStats();refreshStatPanel();}
-    autoSaveRun();
-    renderShop("独立购买槽已永久解锁！");
-}
+function toggleCheatPurchaseSlot(){if(!cheatMode)return;save.purchaseSlotUnlocked=!save.purchaseSlotUnlocked;if(player.job){syncSlotCapacity();applyEquipStats();}writeSave();renderShop();}
 function buyPurchaseSlot(){
     if(save.purchaseSlotUnlocked){renderShop("购买槽已经解锁。");return;}
     if((save.gold||0)<5000){renderShop("金币不足，无法购买独立购买槽。");return;}
@@ -2070,7 +2061,7 @@ function finishEnemyDefeat(){
     }
     if(player.job==="隐士"){
         player.crt+=0.02*jobEffectMultiplier();
-        print(`【隐士】闪避率+2%！`);
+        print(`【隐士】闪避率+${(2*jobEffectMultiplier()).toFixed(1)}%！`);
     }
     let atkGain=Math.floor(player.atk*0.02);
     let hpGain=Math.floor(player.maxHp*0.02);
