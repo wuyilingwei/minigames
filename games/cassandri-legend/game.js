@@ -703,6 +703,27 @@ function pixelSpriteMarkup(kind){
     const weapon=(kind==="hero"||kind==="guardian")?`<rect x="13" y="9" width="2" height="6" fill="#e9e3c2"/><rect x="14" y="8" width="1" height="1" fill="#fff6c4"/>`:kind==="caster"?`<rect x="13" y="8" width="2" height="7" fill="#8b6b43"/><rect x="13" y="7" width="3" height="2" fill="#d78cff"/>`:"";
     return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位"><rect x="5" y="2" width="6" height="2" fill="${skin}"/>${ears}<rect x="4" y="4" width="8" height="5" fill="${skin}"/><rect x="5" y="5" width="2" height="2" fill="#10140f"/><rect x="9" y="5" width="2" height="2" fill="#10140f"/><rect x="6" y="7" width="4" height="1" fill="${shade}"/><rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>${weapon}</svg>`;
 }
+function enemyAvatarSeed(name){
+    let text=String(name||"敌人");
+    let hash=2166136261;
+    for(let index=0;index<text.length;index++){hash^=text.charCodeAt(index);hash=Math.imul(hash,16777619);}
+    return hash>>>0;
+}
+function enemyPixelSpriteMarkup(name,kind="enemy"){
+    let safeName=String(name||"敌人").replace(/[&<>"']/g,character=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[character]));
+    let seed=enemyAvatarSeed(name),pick=(count,offset=0)=>(seed+offset) % count;
+    const palettes=[
+        ["#ff4d4d","#d48a6a","#641f32"],["#ff9d5c","#e8b08b","#723c29"],["#d78cff","#d7b1ff","#4b2f82"],
+        ["#64e6c0","#b6ffe9","#218f79"],["#b5c3cc","#d7e2e8","#596875"],["#ffe16b","#ffd0a3","#8a5a21"]
+    ];
+    let palette=palettes[pick(palettes.length,17)],body=palette[0],skin=palette[1],shade=palette[2];
+    let silhouette=pick(3,29),feature=pick(6,47),eye=pick(3,71);
+    let top=silhouette===0?`<polygon points="2,6 4,2 6,4 8,1 10,4 12,2 14,6" fill="${shade}"/>`:silhouette===1?`<polygon points="2,5 4,2 6,4 8,3 10,4 12,2 14,5 13,9 3,9" fill="${shade}"/>`:"";
+    let append=feature===0?`<polygon points="3,4 0,1 1,7" fill="${shade}"/><polygon points="13,4 16,1 15,7" fill="${shade}"/>`:feature===1?`<polygon points="3,5 0,3 1,8 5,7" fill="${body}"/><polygon points="13,5 16,3 15,8 11,7" fill="${body}"/>`:feature===2?`<polygon points="3,8 0,5 1,10 4,9" fill="${body}"/><polygon points="13,8 16,5 15,10 12,9" fill="${body}"/>`:feature===3?`<rect x="1" y="10" width="2" height="4" fill="${shade}"/><rect x="13" y="10" width="2" height="4" fill="${shade}"/>`:feature===4?`<rect x="2" y="1" width="2" height="5" fill="${shade}"/><rect x="12" y="1" width="2" height="5" fill="${shade}"/>`:"";
+    let eyes=eye===0?`<rect x="4" y="6" width="2" height="2" fill="#10140f"/><rect x="10" y="6" width="2" height="2" fill="#10140f"/>`:eye===1?`<rect x="4" y="6" width="3" height="1" fill="#10140f"/><rect x="9" y="6" width="3" height="1" fill="#10140f"/>`:`<rect x="7" y="5" width="2" height="3" fill="#10140f"/>`;
+    let tentacles=feature===5?`<rect x="4" y="14" width="1" height="2" fill="${shade}"/><rect x="7" y="14" width="1" height="2" fill="${shade}"/><rect x="10" y="14" width="1" height="2" fill="${shade}"/>`:"";
+    return `<svg class="pixel-sprite enemy-pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="敌方像素头像：${safeName}" data-avatar-seed="${seed}">${top}${append}<rect x="4" y="4" width="8" height="6" fill="${skin}"/>${eyes}<rect x="6" y="8" width="4" height="1" fill="${shade}"/><rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>${tentacles}</svg>`;
+}
 function rosterUnits(side){
     let source=side==="ally"?player:enemy;
     let explicit=source&&(Array.isArray(source.allies)&&side==="ally"?source.allies:Array.isArray(source.enemies)&&side!=="ally"?source.enemies:Array.isArray(source.roster)?source.roster:null);
@@ -712,7 +733,7 @@ function rosterUnits(side){
 function setCombatantSprite(card,unit,side){
     let kind=unitKind(unit,side),avatar=card&&card.querySelector(".pixel-avatar");
     if(card){card.dataset.unitKind=kind;card.setAttribute("aria-label",`${side==="ally"?"我方":"敌方"}单位：${unit.name||unit.job||"未命名"}`);}
-    if(avatar)avatar.innerHTML=pixelSpriteMarkup(kind);
+    if(avatar)avatar.innerHTML=side==="enemy"?enemyPixelSpriteMarkup(unit&&unit.name,kind):pixelSpriteMarkup(kind);
     return kind;
 }
 function createRosterCard(unit,side,index){

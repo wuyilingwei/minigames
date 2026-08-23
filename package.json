@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node test/legend-runtime-assets.test.mjs && node test/build-output.test.mjs && node test/worker-config.test.mjs && node test/cassandri-v7-compat.test.mjs && node test/save-import-export.test.mjs && node test/loot-auto-select.test.mjs && node test/legend-v8-equipment.test.mjs && node test/legend-v8-combat.test.mjs && node test/legend-v8-pixel-units.test.mjs && node test/checkbox-animation.test.mjs && node test/portal-logo.test.mjs && node test/legend-brand-assets.test.mjs && node test/legend-boat-icon.test.mjs && node test/legend-western-fantasy-cover.test.mjs && node test/legend-menu-cover.test.mjs && node test/portal-game-cover.test.mjs && node test/ten-light-years-preview.test.mjs",
+    "test": "node test/legend-runtime-assets.test.mjs && node test/build-output.test.mjs && node test/worker-config.test.mjs && node test/cassandri-v7-compat.test.mjs && node test/save-import-export.test.mjs && node test/loot-auto-select.test.mjs && node test/legend-v8-equipment.test.mjs && node test/legend-v8-combat.test.mjs && node test/legend-v8-pixel-units.test.mjs && node test/legend-v8-enemy-avatars.test.mjs && node test/checkbox-animation.test.mjs && node test/portal-logo.test.mjs && node test/legend-brand-assets.test.mjs && node test/legend-boat-icon.test.mjs && node test/legend-western-fantasy-cover.test.mjs && node test/legend-menu-cover.test.mjs && node test/portal-game-cover.test.mjs && node test/ten-light-years-preview.test.mjs",
     "check": "npm run build && npm run test",
     "deploy": "npm run build && npx wrangler deploy"
   }
