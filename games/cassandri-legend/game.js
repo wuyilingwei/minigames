@@ -55,16 +55,19 @@ let player={name:"",job:"",atk:0,hp:0,maxHp:0,bj:0,bs:0,crt:0,ZDYHP:0,shields:nu
 const equipmentSlots=[
     {id:"head",name:"头部",accepts:["head"]},{id:"body",name:"身体",accepts:["body"]},
     {id:"mainHand",name:"主手",accepts:["oneHand","twoHand"]},{id:"offHand",name:"副手",accepts:["oneHand","offHand"]},
-    {id:"accessory",name:"饰品",accepts:["accessory"]}
+    {id:"accessory",name:"附加",accepts:["accessory","outerwear"]}
 ];
-const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品"};
+const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品",outerwear:"附加"};
 function getSlotCount(){return save.slot5Unlocked||save.useBlood>=6?5:4;}
 function getSlotLabel(index){return equipmentSlots[index]?equipmentSlots[index].name:`槽位${index+1}`;}
 function inferEquipmentPart(item,index=0){
-    if(item&&equipmentPartNames[item.part])return item.part;
     let name=String(item&&item.name||"");
+    // Older versions classified wearable add-ons as body or oneHand. Name-based
+    // migration must run before trusting the persisted part so they can reach slot 5.
+    if(/斗篷|披风|靴子|鞋子|手套|翅膀|背包|臂甲|胫甲|护腿|护肩|披肩|围巾/.test(name))return "outerwear";
+    if(item&&equipmentPartNames[item.part])return item.part;
     if(/头盔|假发|面纱|帽子/.test(name))return "head";
-    if(/铠甲|毛衣|连衣裙|斗篷|披风|臂甲|裤子/.test(name))return "body";
+    if(/铠甲|胸甲|战甲|布衣|毛衣|连衣裙|裤子/.test(name))return "body";
     if(/盾/.test(name))return "offHand";
     if(/大剑|巨锤|巨斧|长弓|弩|战戟|双刃剑/.test(name))return "twoHand";
     if(/戒指|项链|护符|腰带|念珠|水晶球|号角|香炉|钱包|钥匙/.test(name))return "accessory";
@@ -81,10 +84,18 @@ function normalizeEquipment(item,index=0){
     delete normalized.trait;
     return normalized;
 }
-function normalizeEquipmentSlots(slots){
-    let next=Array.from({length:getSlotCount()},(_,index)=>normalizeEquipment(Array.isArray(slots)?slots[index]:null,index));
+function normalizeEquipmentSlots(slots,slotCount=getSlotCount()){
+    let next=Array.from({length:slotCount},()=>null);
+    for(let sourceIndex=0;sourceIndex<(Array.isArray(slots)?slots.length:0);sourceIndex++){
+        let item=normalizeEquipment(slots[sourceIndex],sourceIndex);
+        if(!item)continue;
+        let targetIndex=sourceIndex<next.length&&equipmentSlots[sourceIndex]?.accepts.includes(item.part)&&!next[sourceIndex]
+            ?sourceIndex
+            :next.findIndex((slot,index)=>!slot&&equipmentSlots[index]?.accepts.includes(item.part));
+        if(targetIndex>=0)next[targetIndex]=item;
+    }
     if(next[2]&&next[2].part==="twoHand")next[3]=null;
-    for(let index=0;index<next.length;index++)if(next[index]&&!equipmentSlots[index].accepts.includes(next[index].part))next[index]=null;
+    if(next[3]&&next[3].part==="twoHand"){next[2]=null;next[3]=null;}
     return next;
 }
 function syncSlotCapacity(){player.slots=normalizeEquipmentSlots(player.slots);}
@@ -176,9 +187,7 @@ function validateRunSnapshot(snapshot){
     normalizeCombatant(normalized.enemy);
     let snapshotSave=normalizeSave(normalized.save);
     let slotCount=snapshotSave.slot5Unlocked||snapshotSave.useBlood>=6?5:4;
-    normalized.player.slots=Array.from({length:slotCount},(_,index)=>normalizeEquipment((normalized.player.slots||[])[index],index));
-    if(normalized.player.slots[2]&&normalized.player.slots[2].part==="twoHand")normalized.player.slots[3]=null;
-    for(let index=0;index<normalized.player.slots.length;index++)if(normalized.player.slots[index]&&!equipmentSlots[index].accepts.includes(normalized.player.slots[index].part))normalized.player.slots[index]=null;
+    normalized.player.slots=normalizeEquipmentSlots(normalized.player.slots,slotCount);
     if(normalized.pendingLoot){for(let key of ["e1","e2"])normalized.pendingLoot[key]=normalizeEquipment(normalized.pendingLoot[key]);}
     return normalized;
 }
@@ -448,6 +457,9 @@ function getSetBonus(){
     return active;
 }
 function hasSet(tag){return getSetBonus().indexOf(tag)>=0;}
+function hasPrismaticResonanceFor(slots){let count={火:0,水:0,草:0,雷:0};for(let slot of slots||[]){if(slot&&Object.prototype.hasOwnProperty.call(count,slot.element))count[slot.element]++;}return Object.values(count).every(value=>value>=1);}
+function elementSetScale(slots=player.slots){return hasPrismaticResonanceFor(slots)?1.5:1;}
+function scaledElementEffect(value,slots=player.slots){return value*elementSetScale(slots);}
 
 function getTraitMult(){
     let atkMult=1;
@@ -474,8 +486,8 @@ function countTrait(id){
 function getArmorBreakValue(){return Math.min(.80,player.slots.flatMap(slot=>slot?.traits||[]).filter(trait=>trait.id==="armorBreak").reduce((sum,trait)=>sum+(Number(trait.value)||.10),0));}
 
 function getTraitProbMult(){
-    if(hasSet("草4"))return 2.5;
-    if(hasSet("草2"))return 1.5;
+    if(hasSet("草4"))return scaledElementEffect(2.5);
+    if(hasSet("草2"))return scaledElementEffect(1.5);
     return 1;
 }
 
@@ -486,9 +498,16 @@ function getSetBonusFor(slots){
 }
 function countTraitFor(slots,id){let count=0;for(let slot of slots){if(slot&&slot.traits){for(let trait of slot.traits){if(trait.id===id)count++;}}}return count;}
 function getTraitMultFor(slots){return Math.pow(0.5,countTraitFor(slots,"deadlyStrike"))*Math.pow(0.7,countTraitFor(slots,"crit20x"));}
+function getPlayerDamageReductionFor(slots=player.slots,{includeResonance=true}={}){
+    let sets=getSetBonusFor(slots);
+    let waterReduction=sets.includes("水4")?scaledElementEffect(0.20,slots):sets.includes("水2")?scaledElementEffect(0.08,slots):0;
+    let traitReduction=countTraitFor(slots,"ironWall")*.15+(countTraitFor(slots,"antiThorns")>0?0.05:0)+(countTraitFor(slots,"dotResist")>0?0.05:0);
+    let resonanceReduction=includeResonance&&hasPrismaticResonanceFor(slots)?0.12:0;
+    return Math.min(.90,waterReduction+traitReduction+resonanceReduction);
+}
 function getTraitProbMultFor(slots){
     let sets=getSetBonusFor(slots);
-    return sets.includes("草4")?2.5:sets.includes("草2")?1.5:1;
+    return sets.includes("草4")?scaledElementEffect(2.5,slots):sets.includes("草2")?scaledElementEffect(1.5,slots):1;
 }
 function getExpectedCrit20xMultFor(slots){
     let count=countTraitFor(slots,"crit20x");
@@ -521,10 +540,8 @@ function deriveBuild(slots){
     hp+=((player.blessHpAdd||0)+(player.permHpAdd||0));
     bj+=(player.blessBjAdd||0);bs+=(player.blessBsAdd||0);crt+=(player.blessCrtAdd||0);
     let sets=getSetBonusFor(slots);
-    let fireMult=sets.includes("火4")?1.25:sets.includes("火2")?1.10:1;
-    let thunderRate=sets.includes("雷4")?0.06:sets.includes("雷2")?0.03:0;
-    let waterMult=sets.includes("水4")?0.80:sets.includes("水2")?0.92:1;
-    let ironMult=Math.max(0.1,1-0.15*countTraitFor(slots,"ironWall"));
+    let fireMult=sets.includes("火4")?1+scaledElementEffect(0.25,slots):sets.includes("火2")?1+scaledElementEffect(0.10,slots):1;
+    let thunderRate=sets.includes("雷4")?scaledElementEffect(0.06,slots):sets.includes("雷2")?scaledElementEffect(0.03,slots):0;
     let shield=slots.reduce((total,slot)=>total+(slot&&slot.traits?slot.traits.filter(trait=>trait.id==="shieldGain").reduce((sum,trait)=>sum+(trait.value||0),0):0),0);
     let target=getComparisonTarget();
     let targetHp=target.maxHp;
@@ -539,7 +556,7 @@ function deriveBuild(slots){
     if(targetHasTrait(target,"trueSight"))dodgeRate=0;
     else if(targetHasTrait(target,"phase"))dodgeRate*=0.5;
     let enemyCritMult=targetHasTrait(target,"crit")?1.125:1;
-    let incoming=targetAtk*enemyCritMult*(1-dodgeRate)*waterMult*ironMult;
+    let incoming=targetAtk*enemyCritMult*(1-dodgeRate)*(1-getPlayerDamageReductionFor(slots));
     let survival=(hp+shield)/Math.max(1,incoming);
     return {atk,hp,bj,bs,crt,sets,shield,damage,survival,incoming,target,expectedCrit20x};
 }
@@ -694,6 +711,31 @@ function pixelSpriteMarkup(kind){
     const weapon=(kind==="hero"||kind==="guardian")?`<rect x="13" y="9" width="2" height="6" fill="#e9e3c2"/><rect x="14" y="8" width="1" height="1" fill="#fff6c4"/>`:kind==="caster"?`<rect x="13" y="8" width="2" height="7" fill="#8b6b43"/><rect x="13" y="7" width="3" height="2" fill="#d78cff"/>`:"";
     return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位"><rect x="5" y="2" width="6" height="2" fill="${skin}"/>${ears}<rect x="4" y="4" width="8" height="5" fill="${skin}"/><rect x="5" y="5" width="2" height="2" fill="#10140f"/><rect x="9" y="5" width="2" height="2" fill="#10140f"/><rect x="6" y="7" width="4" height="1" fill="${shade}"/><rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>${weapon}</svg>`;
 }
+function enemyAvatarSeed(name){
+    let text=String(name||"敌人");
+    let hash=2166136261;
+    for(let index=0;index<text.length;index++){hash^=text.charCodeAt(index);hash=Math.imul(hash,16777619);}
+    return hash>>>0;
+}
+function enemyPixelSpriteMarkup(name,kind="enemy"){
+    let safeName=String(name||"敌人").replace(/[&<>"']/g,character=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[character]));
+    let seed=enemyAvatarSeed(name),pick=(count,offset=0)=>((seed>>>offset)%count);
+    const palettes=[
+        ["#ff4d4d","#d48a6a","#641f32"],["#ff9d5c","#e8b08b","#723c29"],["#d78cff","#d7b1ff","#4b2f82"],
+        ["#64e6c0","#b6ffe9","#218f79"],["#b5c3cc","#d7e2e8","#596875"],["#ffe16b","#ffd0a3","#8a5a21"]
+    ];
+    let palette=palettes[pick(palettes.length,17)],body=palette[0],skin=palette[1],shade=palette[2];
+    let silhouette=pick(3,29),feature=pick(6,47),eye=pick(3,71);
+    let top=silhouette===0?`<polygon points="2,6 4,2 6,4 8,1 10,4 12,2 14,6" fill="${shade}"/>`:silhouette===1?`<polygon points="2,5 4,2 6,4 8,3 10,4 12,2 14,5 13,9 3,9" fill="${shade}"/>`:"";
+    let append=feature===0?`<polygon points="3,4 0,1 1,7" fill="${shade}"/><polygon points="13,4 16,1 15,7" fill="${shade}"/>`:feature===1?`<polygon points="3,5 0,3 1,8 5,7" fill="${body}"/><polygon points="13,5 16,3 15,8 11,7" fill="${body}"/>`:feature===2?`<polygon points="3,8 0,5 1,10 4,9" fill="${body}"/><polygon points="13,8 16,5 15,10 12,9" fill="${body}"/>`:feature===3?`<rect x="1" y="10" width="2" height="4" fill="${shade}"/><rect x="13" y="10" width="2" height="4" fill="${shade}"/>`:feature===4?`<rect x="2" y="1" width="2" height="5" fill="${shade}"/><rect x="12" y="1" width="2" height="5" fill="${shade}"/>`:"";
+    let eyes=eye===0?`<rect x="4" y="6" width="2" height="2" fill="#10140f"/><rect x="10" y="6" width="2" height="2" fill="#10140f"/>`:eye===1?`<rect x="4" y="6" width="3" height="1" fill="#10140f"/><rect x="9" y="6" width="3" height="1" fill="#10140f"/>`:`<rect x="7" y="5" width="2" height="3" fill="#10140f"/>`;
+    let tentacles=feature===5?`<rect x="4" y="14" width="1" height="2" fill="${shade}"/><rect x="7" y="14" width="1" height="2" fill="${shade}"/><rect x="10" y="14" width="1" height="2" fill="${shade}"/>`:"";
+    // Twelve tiny hash-driven pixels keep close names visibly distinct, even when
+    // their broad silhouette or palette happens to match.
+    let pattern="";
+    for(let index=0;index<12;index++){let nibble=(seed>>>(index*2%32))&3;pattern+=`<rect x="${index%6+5}" y="${index<6?index%3+10:12+index%3}" width="${1+nibble%2}" height="${1+(nibble>1?1:0)}" fill="${index%3===0?skin:shade}"/>`;}
+    return `<svg class="pixel-sprite enemy-pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="敌方像素头像：${safeName}" data-avatar-seed="${seed}">${top}${append}<rect x="4" y="4" width="8" height="6" fill="${skin}"/>${eyes}<rect x="6" y="8" width="4" height="1" fill="${shade}"/><rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>${tentacles}${pattern}</svg>`;
+}
 function rosterUnits(side){
     let source=side==="ally"?player:enemy;
     let explicit=source&&(Array.isArray(source.allies)&&side==="ally"?source.allies:Array.isArray(source.enemies)&&side!=="ally"?source.enemies:Array.isArray(source.roster)?source.roster:null);
@@ -703,7 +745,7 @@ function rosterUnits(side){
 function setCombatantSprite(card,unit,side){
     let kind=unitKind(unit,side),avatar=card&&card.querySelector(".pixel-avatar");
     if(card){card.dataset.unitKind=kind;card.setAttribute("aria-label",`${side==="ally"?"我方":"敌方"}单位：${unit.name||unit.job||"未命名"}`);}
-    if(avatar)avatar.innerHTML=pixelSpriteMarkup(kind);
+    if(avatar)avatar.innerHTML=side==="enemy"?enemyPixelSpriteMarkup(unit&&unit.name,kind):pixelSpriteMarkup(kind);
     return kind;
 }
 function createRosterCard(unit,side,index){
@@ -823,23 +865,27 @@ function showSetInfo(){
         {element:"草",className:"elem-grass",two:"装备特性触发概率 ×1.5",four:"装备特性触发概率 ×2.5"},
         {element:"雷",className:"elem-thunder",two:"攻击附加敌方当前 HP 3% 伤害",four:"攻击附加敌方当前 HP 6% 伤害"}
     ];
-    let resonance=hasPrismaticResonance()?`<article class="set-card is-active"><h3>【四色共鸣】已激活</h3><div class="set-tier active">受到伤害 -12%；所有恢复上限 +20%；进战获得最大生命 8% 临时盾，每回合恢复 2% 临时盾。</div></article>`:`<article class="set-card"><h3>【四色共鸣】未激活</h3><div class="set-tier">火、水、草、雷各装备至少 1 件即可激活。</div></article>`;
+    let resonance=hasPrismaticResonance()?`<article class="set-card is-active"><h3>【四色共鸣】已激活</h3><div class="set-tier active">受到伤害 -12%；其他元素套装效果 +50%；所有恢复上限 +20%；进战获得最大生命 8% 临时盾，每回合恢复 2% 临时盾。</div></article>`:`<article class="set-card"><h3>【四色共鸣】未激活</h3><div class="set-tier">火、水、草、雷各装备至少 1 件即可激活。</div></article>`;
     document.getElementById("setContent").innerHTML=resonance+rules.map(rule=>{
         let amount=c[rule.element],twoActive=amount>=2&&amount<4,fourActive=amount>=4;
         let twoText=twoActive?"已激活":fourActive?"由四件套覆盖":`未激活 · 还差 ${2-amount} 件`;
         let fourText=fourActive?"已激活":`未激活 · 还差 ${4-amount} 件`;
-        return `<article class="set-card ${amount>=2?"is-active":""}"><h3 class="${rule.className}">【${rule.element}】 当前 ${amount} 件</h3><div class="set-tier ${twoActive?"active":""}">二件套 · ${twoText}<br>${rule.two}</div><div class="set-tier ${fourActive?"active":""}">四件套 · ${fourText}<br>${rule.four}</div></article>`;
+        let scale=hasPrismaticResonance()?1.5:1;
+        let actualTwo=rule.element==="火"?`攻击伤害 +${10*scale}%；战胜攻击 +${4*scale}%`:rule.element==="水"?`受到伤害 -${8*scale}%；战胜血量 +${4*scale}%`:rule.element==="草"?`装备特性触发概率 ×${1.5*scale}`:`攻击附加敌方当前 HP ${3*scale}% 伤害`;
+        let actualFour=rule.element==="火"?`攻击伤害 +${25*scale}%；战胜攻击 +${10*scale}%`:rule.element==="水"?`受到伤害 -${20*scale}%；战胜血量 +${10*scale}%`:rule.element==="草"?`装备特性触发概率 ×${2.5*scale}`:`攻击附加敌方当前 HP ${6*scale}% 伤害`;
+        return `<article class="set-card ${amount>=2?"is-active":""}"><h3 class="${rule.className}">【${rule.element}】 当前 ${amount} 件</h3><div class="set-tier ${twoActive?"active":""}">二件套 · ${twoText}<br>${actualTwo}</div><div class="set-tier ${fourActive?"active":""}">四件套 · ${fourText}<br>${actualFour}</div></article>`;
     }).join("");
     document.getElementById("setOverlay").hidden=false;
 }
 function getDifficultyEffects(level){
     let effects=[];
+    if(level>=1)effects.push(`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(level)-1)*100)}%`);
     if(level>=3)effects.push("开局随机禁用一个职业和一项祝福；回复上限从最大生命60%起继续衰减");
     if(level>=5)effects.push("敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%");
     if(level>=7)effects.push("玩家造成的伤害 -20%");
     if(level>=9)effects.push("遭遇普通敌人时有 30% 概率随机失去一件装备");
     if(level>=3)effects.push("装备掉落开放额外效果与 1 条词条");
-    if(level>=6)effects.push("装备掉落至多 2 条词条，并开放饰品第五槽");
+    if(level>=6)effects.push("装备掉落至多 2 条词条，并开放附加第五槽");
     if(level>=9)effects.push("装备掉落至多 3 条强化词条");
     return effects.length?effects.join("；"):"暂无额外规则。";
 }
@@ -849,6 +895,8 @@ function getDifficultyTraits(level){
     if(level>=4)return "敌人最多拥有 3 种词条。";
     return "敌人最多拥有 1 种词条，按基础概率出现。";
 }
+function getDifficultyGoldMultiplier(level=save.useBlood){return 1+Math.min(10,Math.max(0,Math.floor(Number(level)||0)))*0.10;}
+function getDifficultyGoldReward(baseGold,level=save.useBlood){return Math.floor(Math.max(0,Number(baseGold)||0)*getDifficultyGoldMultiplier(level));}
 function renderDifficultyPanel(){
     let unlocked=Math.min(10,Math.max(0,Number(save.blood)||0));
     let level=Math.min(unlocked,Math.max(0,Math.floor(difficultyDraft)));
@@ -856,7 +904,7 @@ function renderDifficultyPanel(){
     let adjustable=Boolean(player.canAdjustPoint);
     document.getElementById("difficultySelected").textContent=level;
     document.getElementById("difficultyFocusCaption").textContent=`难度 ${level}`;
-    document.getElementById("difficultyMultiplier").textContent=`敌人攻击力与生命值 ×${Math.pow(1.4,level).toFixed(2)}（每级 ×1.4）。`;
+    document.getElementById("difficultyMultiplier").textContent=`敌人攻击力与生命值 ×${Math.pow(1.4,level).toFixed(2)}；胜利金币 ×${getDifficultyGoldMultiplier(level).toFixed(2)}（每级金币 +10%）。`;
     document.getElementById("difficultyTraits").textContent=getDifficultyTraits(level);
     document.getElementById("difficultyEffects").textContent=getDifficultyEffects(level);
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
@@ -997,7 +1045,9 @@ function buyPandora(){
 }
 function refreshStatPanel(){
     let sets=getSetBonus();
-    let setText=sets.length>0?sets.map(t=>`<span class="${elemClass(t.charAt(0))}">【${t.charAt(0)}${t.length>1&&t.charAt(1)==="4"?"四件":"两件"}】</span>`).join(" "):"无";
+    let setLabels=sets.map(t=>`<span class="${elemClass(t.charAt(0))}">【${t.charAt(0)}${t.length>1&&t.charAt(1)==="4"?"四件":"两件"}】</span>`);
+    if(hasPrismaticResonance())setLabels.push(`<span class="trait-note">【四色共鸣 · 防御-12% · 元素+50%】</span>`);
+    let setText=setLabels.length?setLabels.join(" "):"无";
     let usedEye=save.pointAtk+save.pointHp+save.pointBj+save.pointBs+save.pointCrt;
     let html=`
     <div class="eye-info">魔王之眼：${save.eyeTotal}/24 | 已用：${usedEye}</div>
@@ -1043,9 +1093,9 @@ function adjPoint(type,delta){
 function genEquip(wave){
     if(wave===undefined)wave=player.wave;
     let parts=["head","body","oneHand","oneHand","twoHand","offHand"];
-    if(getSlotCount()>=5)parts.push("accessory");
+    if(getSlotCount()>=5)parts.push("accessory","outerwear");
     let part=pick(parts);
-    let nounByPart={head:["头盔","面纱","假发"],body:["铠甲","披风","斗篷"],oneHand:["长剑","战斧","匕首","法杖","短刀"],twoHand:["巨锤","大剑","长弓","战戟","双刃剑"],offHand:["盾牌","骨盾","护臂"],accessory:["戒指","项链","护符","念珠","水晶球"]};
+    let nounByPart={head:["头盔","面纱","假发"],body:["铠甲","胸甲","战甲","布衣"],oneHand:["长剑","战斧","匕首","法杖","短刀"],twoHand:["巨锤","大剑","长弓","战戟","双刃剑"],offHand:["盾牌","骨盾"],accessory:["戒指","项链","护符","念珠","水晶球"],outerwear:["披风","斗篷","靴子","鞋子","手套","翅膀","背包","臂甲","胫甲"]};
     let name=pick(lootAdj)+pick(nounByPart[part]||lootNoun);
     let element=pick(elements);
     let scale=1+Math.min(1,wave/20)*1.0;
@@ -1420,16 +1470,16 @@ function playerAttack(){
     let ex=countTrait("execute");
     if(ex>0&&enemy.hp/enemy.maxHp<0.2){dmg=Math.floor(dmg*(1+1.0*ex));print(`【斩杀】敌人血量低于20%，伤害×${1+ex}！`);}
     if(hasSet("雷4")){
-        let thunderDmg=Math.floor(enemy.hp*0.06);
+        let thunderDmg=Math.floor(enemy.hp*scaledElementEffect(0.06));
         dmg+=thunderDmg;
         print(`【雷电四件】额外造成${thunderDmg}点雷电伤害`);
     }else if(hasSet("雷2")){
-        let thunderDmg=Math.floor(enemy.hp*0.03);
+        let thunderDmg=Math.floor(enemy.hp*scaledElementEffect(0.03));
         dmg+=thunderDmg;
         print(`【雷电两件】额外造成${thunderDmg}点雷电伤害`);
     }
-    if(hasSet("火4")){dmg=Math.floor(dmg*1.25);}
-    else if(hasSet("火2")){dmg=Math.floor(dmg*1.10);}
+    if(hasSet("火4")){dmg=Math.floor(dmg*(1+scaledElementEffect(0.25)));}
+    else if(hasSet("火2")){dmg=Math.floor(dmg*(1+scaledElementEffect(0.10)));}
     if(hasTrait("trueStrike")){dmg=Math.floor(dmg*1.08);print("【必中打击】攻击无视闪避，伤害+8%。");}
     if(!hasTrait("trueStrike")&&Math.random()<enemy.dodge){
         showBattleFeedback("enemy","闪避","dodge");
@@ -1539,16 +1589,16 @@ function burstAttack(){
         dmg=Math.floor(dmg*(1+dodgeBonus));
     }
     if(hasSet("雷4")){
-        let thunderDmg=Math.floor(enemy.hp*0.06);
+        let thunderDmg=Math.floor(enemy.hp*scaledElementEffect(0.06));
         dmg+=thunderDmg;
         print(`【雷电四件】额外造成${thunderDmg}点雷电伤害`);
     }else if(hasSet("雷2")){
-        let thunderDmg=Math.floor(enemy.hp*0.03);
+        let thunderDmg=Math.floor(enemy.hp*scaledElementEffect(0.03));
         dmg+=thunderDmg;
         print(`【雷电两件】额外造成${thunderDmg}点雷电伤害`);
     }
-    if(hasSet("火4")){dmg=Math.floor(dmg*1.25);}
-    else if(hasSet("火2")){dmg=Math.floor(dmg*1.10);}
+    if(hasSet("火4")){dmg=Math.floor(dmg*(1+scaledElementEffect(0.25)));}
+    else if(hasSet("火2")){dmg=Math.floor(dmg*(1+scaledElementEffect(0.10)));}
     if(hasTrait("trueStrike")){dmg=Math.floor(dmg*1.08);print("【必中打击】必杀技无视闪避，伤害+8%。");}
     if(!hasTrait("trueStrike")&&Math.random()<enemy.dodge){
         showBattleFeedback("enemy","闪避必杀","dodge");
@@ -1639,8 +1689,11 @@ function resolveEnemyAttackSegment(part,hits){
         print(`【致命】敌人造成了1.5倍伤害！`);
     }
     if(save.useBlood>=5){dmg=Math.floor(dmg*0.90);}
-    let reduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?0.20:hasSet("水2")?0.08:0)+(hasPrismaticResonance()?0.12:0);
-    dmg=Math.floor(dmg*Math.max(.10,1-reduction));
+    let otherReduction=getPlayerDamageReductionFor(player.slots,{includeResonance:false});
+    let resonanceReduction=hasPrismaticResonance()?0.12:0;
+    let beforeResonance=Math.floor(dmg*Math.max(.10,1-otherReduction));
+    dmg=Math.floor(dmg*Math.max(.10,1-otherReduction-resonanceReduction));
+    if(resonanceReduction>0)print(`【四色共鸣】本次受击额外减免${Math.floor(resonanceReduction*100)}%，具体减免${Math.max(0,beforeResonance-dmg)}点伤害。`);
     let isPierce=hasETrait("pierce");
     dmg=absorbDamage(player,dmg,{pierce:isPierce,label:`第${part}段`}).damage;
     if(isPierce&&dmg>0){print("【隔山打牛】敌人的攻击无视了你的护盾！");}
@@ -1703,8 +1756,7 @@ function autoBattleDecide(){
     let dodgeRate=hasETrait("trueSight")?0:getPlayerDodgeAgainst(enemy);
     if(hasETrait("phase"))dodgeRate*=.5;
     let incoming=enemy.atk*(1+.12*(Math.max(1,enemy.hits)-1))*(1-dodgeRate);
-    let reduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?0.20:hasSet("水2")?0.08:0)+(hasPrismaticResonance()?0.12:0);
-    incoming*=Math.max(.10,1-reduction);
+    incoming*=1-getPlayerDamageReductionFor();
     let healing=0;
     if(player.job==="战士")healing+=player.atk*0.20*(1-dodgeRate);
     if(player.blessing==="战士的祝福")healing+=player.maxHp*0.03;
@@ -1745,9 +1797,9 @@ function simulateBossSkip(){
     print("\n=== 快速模拟最终决战 ===");
     let avgDmg=player.atk;
     avgDmg=avgDmg*(1+Math.min(1,player.bj)*(player.bs-1));
-    if(hasSet("火4"))avgDmg*=1.25;else if(hasSet("火2"))avgDmg*=1.10;
+    if(hasSet("火4"))avgDmg*=1+scaledElementEffect(0.25);else if(hasSet("火2"))avgDmg*=1+scaledElementEffect(0.10);
     let thunderDot=0;
-    if(hasSet("雷4"))thunderDot=enemy.maxHp*0.06;else if(hasSet("雷2"))thunderDot=enemy.maxHp*0.03;
+    if(hasSet("雷4"))thunderDot=enemy.maxHp*scaledElementEffect(0.06);else if(hasSet("雷2"))thunderDot=enemy.maxHp*scaledElementEffect(0.03);
     avgDmg+=thunderDot;
     let burstEvery=100/15;
     avgDmg+=(player.atk*5)/burstEvery;
@@ -1759,10 +1811,7 @@ function simulateBossSkip(){
     let effCrt=getPlayerDodgeAgainst(enemy);
     if(enemy.name==="魔王"){effCrt=effCrt*0.95+effCrt*0.5*0.05;}
     bossDmg*=(1-effCrt);
-    if(hasSet("水4"))bossDmg*=0.80;else if(hasSet("水2"))bossDmg*=0.92;
-    if(hasPrismaticResonance())bossDmg*=0.88;
-    let iw=countTrait("ironWall");
-    if(iw>0)bossDmg*=Math.max(0.1,1-0.15*iw);
+    bossDmg*=1-getPlayerDamageReductionFor();
     let healPerTurn=0;
     if(player.job==="战士")healPerTurn+=avgDmg*0.20;
     if(player.blessing==="战士的祝福")healPerTurn+=player.maxHp*0.03;
@@ -1847,31 +1896,31 @@ function finishEnemyDefeat(){
         healPlayer(heal,"斩杀回复");
     }
     if(gameState==="bossBattle"){
-        let gold=rand(100,200);
+        let baseGold=rand(100,200),gold=getDifficultyGoldReward(baseGold);
         save.gold=(save.gold||0)+gold;
-        print(`你获得了 ${gold} 枚金币！当前：${save.gold}`);
+        print(`你获得了 ${gold} 枚金币（基础${baseGold} ×难度金币倍率${getDifficultyGoldMultiplier().toFixed(2)}，已取整）！当前：${save.gold}`);
         writeSave();
     }else{
-        let gold=rand(10,20);
+        let baseGold=rand(10,20),gold=getDifficultyGoldReward(baseGold);
         save.gold=(save.gold||0)+gold;
-        print(`你获得了 ${gold} 枚金币！当前：${save.gold}`);
+        print(`你获得了 ${gold} 枚金币（基础${baseGold} ×难度金币倍率${getDifficultyGoldMultiplier().toFixed(2)}，已取整）！当前：${save.gold}`);
         writeSave();
     }
     if(hasSet("火4")){
-        let bonus=Math.floor(player.atk*0.10);
+        let bonus=Math.floor(player.atk*scaledElementEffect(0.10));
         player.atk+=bonus;
         print(`【火焰四件】攻击力永久提升${bonus}点！`);
     }else if(hasSet("火2")){
-        let bonus=Math.floor(player.atk*0.04);
+        let bonus=Math.floor(player.atk*scaledElementEffect(0.04));
         player.atk+=bonus;
         print(`【火焰两件】攻击力永久提升${bonus}点！`);
     }
     if(hasSet("水4")){
-        let bonus=Math.floor(player.maxHp*0.10);
+        let bonus=Math.floor(player.maxHp*scaledElementEffect(0.10));
         player.maxHp+=bonus;player.hp+=bonus;
         print(`【流水四件】血量上限永久提升${bonus}点！`);
     }else if(hasSet("水2")){
-        let bonus=Math.floor(player.maxHp*0.04);
+        let bonus=Math.floor(player.maxHp*scaledElementEffect(0.04));
         player.maxHp+=bonus;player.hp+=bonus;
         print(`【流水两件】血量上限永久提升${bonus}点！`);
     }
