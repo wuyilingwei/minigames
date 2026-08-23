@@ -41,3 +41,8 @@
 - 应用内浏览器 390×844 窄屏验收：两张卡片单列、无横向溢出，传说封面保持显示且不会遮挡标题、说明、署名或动作链接。
 - 传说页面验收：页面无横向溢出，favicon 引用为 `./favicon.svg`，封面元数据引用为 `./assets/cover.png`；本地服务器记录两项资产均成功响应。
 - 浏览器初次等待使用不支持的 `networkidle` 状态，改用 `load` 后完成 DOM 与截图检查；该失败不影响页面实现。
+
+## Git 交付
+
+- 远端为 `https://github.com/wuyilingwei/minigames.git`。
+- GitHub main protection API 返回 `Branch not protected (HTTP 404)`，因此按全局规则将统一任务分支以本地 merge commit 合入 `main` 并推送。
