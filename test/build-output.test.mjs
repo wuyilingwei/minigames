@@ -61,8 +61,11 @@ const cassandri = await readFile(join(output, 'games', 'cassandri-legend', 'inde
 if (!cassandri.includes('fonts/fusion-pixel-12px-proportional-zh_hans.otf.woff2')) {
   throw new Error('The Cassandri Legend entry does not reference its packaged pixel font.');
 }
-if (!cassandri.includes('@media (max-width:760px)') || !cassandri.includes('#app{min-width:0') || !cassandri.includes('.modal-grid,.loot-grid,.set-grid{grid-template-columns:1fr')) {
+if (!cassandri.includes('@media (max-width:760px)') || !cassandri.includes('#app{--mobile-topbar:68px;min-width:0') || !cassandri.includes('.modal-grid,.loot-grid,.set-grid{grid-template-columns:1fr')) {
   throw new Error('Cassandri Legend is missing its narrow-screen layout rules.');
+}
+if (!cassandri.includes('.overlay{inset:var(--mobile-topbar) 0 0') || !cassandri.includes('max-height:calc(100dvh - var(--mobile-topbar) - 24px)')) {
+  throw new Error('Cassandri Legend mobile overlays must reserve the top bar area.');
 }
 
 const tenLightYears = await readFile(join(output, 'games', 'ten-light-years', 'index.html'), 'utf8');
