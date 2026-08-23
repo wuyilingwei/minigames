@@ -12,9 +12,9 @@ const createModel = new Function('save', 'elements', `function isRecord(value){r
 const low = createModel({ slot5Unlocked: false, useBlood: 0 }, ['火', '水', '草', '雷']);
 if (low.getSlotCount() !== 4 || low.makeStarterEquipment().some(item => item.atk || item.hp || item.traits.length)) throw new Error('A new low-difficulty game must start with four zero-stat, traitless items.');
 const hard = createModel({ slot5Unlocked: false, useBlood: 6 }, ['火', '水', '草', '雷']);
-const shop = createModel({ slot5Unlocked: true, useBlood: 6 }, ['火', '水', '草', '雷']);
-const shopLow = createModel({ slot5Unlocked: true, useBlood: 5 }, ['火', '水', '草', '雷']);
-if (hard.getSlotCount() !== 5 || shop.getSlotCount() !== 5 || shopLow.getSlotCount() !== 5) throw new Error('Difficulty 6 and shop ownership must share one fifth-slot cap.');
+const shop = createModel({ slot5Unlocked: false, useBlood: 6, purchaseSlotUnlocked: true }, ['火', '水', '草', '雷']);
+const shopLow = createModel({ slot5Unlocked: false, useBlood: 5, purchaseSlotUnlocked: true }, ['火', '水', '草', '雷']);
+if (hard.getSlotCount() !== 5 || shop.getSlotCount() !== 6 || shopLow.getSlotCount() !== 5) throw new Error('Difficulty and purchase slots must be independent and continuous.');
 const difficultyApply = runtime.match(/function applyDifficultySelection\(\)\{[\s\S]*?\n\}/)?.[0] || '';
 if (!/save\.useBlood=difficultyDraft;[\s\S]*syncSlotCapacity\(\);/.test(difficultyApply)) throw new Error('Raising difficulty to 6 must immediately synchronize the fifth accessory slot.');
 

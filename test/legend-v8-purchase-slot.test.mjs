@@ -11,16 +11,23 @@ const saveEnd=runtime.indexOf('\nfunction loadSave(',saveStart);
 const saveContext={defaultPurchased:{egg:0,potion:0,boots:0,hat:0,doll:0},defaultSave:{eyeTotal:0,blood:0,pointAtk:0,pointHp:0,pointBj:0,pointBs:0,pointCrt:0,useBlood:0,gold:0,purchased:{egg:0,potion:0,boots:0,hat:0,doll:0},slot5Unlocked:false,purchaseSlotUnlocked:false,purchaseEquipment:null}};
 vm.createContext(saveContext);vm.runInContext(runtime.slice(saveStart,saveEnd),saveContext);
 const legacy=saveContext.normalizeSave({slot5Unlocked:true,useBlood:0});
-if(!legacy.purchaseSlotUnlocked)throw new Error('Old shop-only slot5 save must migrate to purchaseSlotUnlocked');
+if(!legacy.purchaseSlotUnlocked||!legacy.legacyAddonSlotUnlocked)throw new Error('Old slot5 buyer must migrate to purchaseSlotUnlocked and retain an add-on slot');
 const difficulty=saveContext.normalizeSave({slot5Unlocked:true,useBlood:6});
-if(difficulty.purchaseSlotUnlocked)throw new Error('Difficulty sixth-level slot must not be mistaken for purchase slot');
+if(!difficulty.purchaseSlotUnlocked||!difficulty.legacyAddonSlotUnlocked)throw new Error('Every old slot5 save must migrate both purchase ownership and legacy add-on compatibility');
 
 const slotStart=runtime.indexOf('const equipmentSlots=');
 const slotEnd=runtime.indexOf('\nfunction normalizeCombatant(',slotStart);
-const slots={elements:['火','水','草','雷','无'],equipmentPartNames:{head:'头部',body:'身体',oneHand:'单手武器',twoHand:'双手武器',offHand:'副手',accessory:'饰品',outerwear:'附加',purchase:'购买'},save:{slot5Unlocked:true,useBlood:6,purchaseSlotUnlocked:true},player:{slots:[null,null,null,null,null,null]}};
+const slots={isRecord:value=>Boolean(value)&&typeof value==='object'&&!Array.isArray(value),elements:['火','水','草','雷','无'],equipmentPartNames:{head:'头部',body:'身体',oneHand:'单手武器',twoHand:'双手武器',offHand:'副手',accessory:'饰品',outerwear:'附加',purchase:'购买'},save:{slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:0,purchaseSlotUnlocked:true},player:{slots:[null,null,null,null,null,null]}};
 vm.createContext(slots);vm.runInContext(runtime.slice(slotStart,slotEnd),slots);
 if(slots.inferEquipmentPart({name:'职业护符',part:'accessory'},5)!=='purchase')throw new Error('Career amulet must normalize to purchase part');
-if(slots.getSlotCount()!==6)throw new Error('Difficulty add-on slot and purchase slot must coexist');
+if(slots.getSlotCount()!==5||slots.getEquipmentSlots()[4].id!=='purchase')throw new Error('Low difficulty purchase-only mode must expose purchase as visible slot 5');
+slots.save={slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:6,purchaseSlotUnlocked:false};
+if(slots.getSlotCount()!==5||slots.getEquipmentSlots()[4].id!=='accessory')throw new Error('High difficulty add-on-only mode must expose add-on as visible slot 5');
+slots.save={slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:6,purchaseSlotUnlocked:true};
+if(slots.getSlotCount()!==6||slots.getEquipmentSlots()[4].id!=='accessory'||slots.getEquipmentSlots()[5].id!=='purchase')throw new Error('High difficulty plus purchase must expose add-on slot 5 and purchase slot 6');
+slots.save=legacy;
+const migratedSlots=slots.normalizeEquipmentSlots([{name:'头盔',part:'head',element:'无'},{name:'铠甲',part:'body',element:'无'},{name:'长剑',part:'oneHand',element:'无'},{name:'盾牌',part:'offHand',element:'无'},{name:'披风',part:'outerwear',element:'无'}]);
+if(migratedSlots.length!==6||migratedSlots[4]?.part!=='outerwear'||migratedSlots[5]!==null)throw new Error('Legacy slot5 save must retain its old add-on and expose an empty purchase slot');
 
 const jobStart=runtime.indexOf('function calcBaseStats(');
 const jobEnd=runtime.indexOf('\nfunction applyEquipStats(',jobStart);
