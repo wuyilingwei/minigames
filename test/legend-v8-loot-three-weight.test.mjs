@@ -17,7 +17,7 @@ const base = hardWeights.filter(item => ['head', 'body', 'oneHand', 'twoHand', '
 const addOn = hardWeights.filter(item => ['accessory', 'outerwear'].includes(item.part));
 const baseWeight = base.reduce((sum, item) => sum + item.weight, 0);
 const addOnWeight = addOn.reduce((sum, item) => sum + item.weight, 0);
-if (addOn.length !== 2 || baseWeight !== 9 || addOnWeight !== 2) throw new Error('Expected five base entries at 1.5x each plus two add-on entries at 1x each.');
+if (addOn.length !== 2 || baseWeight !== 9 || addOnWeight !== 2) throw new Error('Expected six base-slot entries at 1.5x each plus two add-on entries at 1x each.');
 if (base.some(item => item.weight !== 1.5) || addOn.some(item => item.weight !== 1)) throw new Error('Base/add-on drop weights are incorrect.');
 
 const pickerSource = runtime.match(/function getEquipmentPartWeights\(\)[\s\S]*?function genEquip\(wave\)\{/)[0].replace(/function genEquip\(wave\)\{$/, '') + runtime.match(/function pickWeightedEquipmentPart\(\)[\s\S]*?\n\}/)[0];
