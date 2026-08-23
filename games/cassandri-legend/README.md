@@ -2,7 +2,7 @@
 
 浏览器文字冒险 RPG。当前发布版已兼容整合用户提供的《卡桑德里传说》7.0 源文件。
 
-在线游玩：<https://wuyilingwei.github.io/cassandri-legend/>
+在线游玩：<https://minigames.wuyilingwei.workers.dev/games/cassandri-legend/>
 
 ## 更新原则
 
