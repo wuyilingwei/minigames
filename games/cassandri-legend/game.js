@@ -719,7 +719,7 @@ function enemyAvatarSeed(name){
 }
 function enemyPixelSpriteMarkup(name,kind="enemy"){
     let safeName=String(name||"敌人").replace(/[&<>"']/g,character=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[character]));
-    let seed=enemyAvatarSeed(name),pick=(count,offset=0)=>(seed+offset) % count;
+    let seed=enemyAvatarSeed(name),pick=(count,offset=0)=>((seed>>>offset)%count);
     const palettes=[
         ["#ff4d4d","#d48a6a","#641f32"],["#ff9d5c","#e8b08b","#723c29"],["#d78cff","#d7b1ff","#4b2f82"],
         ["#64e6c0","#b6ffe9","#218f79"],["#b5c3cc","#d7e2e8","#596875"],["#ffe16b","#ffd0a3","#8a5a21"]
@@ -730,7 +730,11 @@ function enemyPixelSpriteMarkup(name,kind="enemy"){
     let append=feature===0?`<polygon points="3,4 0,1 1,7" fill="${shade}"/><polygon points="13,4 16,1 15,7" fill="${shade}"/>`:feature===1?`<polygon points="3,5 0,3 1,8 5,7" fill="${body}"/><polygon points="13,5 16,3 15,8 11,7" fill="${body}"/>`:feature===2?`<polygon points="3,8 0,5 1,10 4,9" fill="${body}"/><polygon points="13,8 16,5 15,10 12,9" fill="${body}"/>`:feature===3?`<rect x="1" y="10" width="2" height="4" fill="${shade}"/><rect x="13" y="10" width="2" height="4" fill="${shade}"/>`:feature===4?`<rect x="2" y="1" width="2" height="5" fill="${shade}"/><rect x="12" y="1" width="2" height="5" fill="${shade}"/>`:"";
     let eyes=eye===0?`<rect x="4" y="6" width="2" height="2" fill="#10140f"/><rect x="10" y="6" width="2" height="2" fill="#10140f"/>`:eye===1?`<rect x="4" y="6" width="3" height="1" fill="#10140f"/><rect x="9" y="6" width="3" height="1" fill="#10140f"/>`:`<rect x="7" y="5" width="2" height="3" fill="#10140f"/>`;
     let tentacles=feature===5?`<rect x="4" y="14" width="1" height="2" fill="${shade}"/><rect x="7" y="14" width="1" height="2" fill="${shade}"/><rect x="10" y="14" width="1" height="2" fill="${shade}"/>`:"";
-    return `<svg class="pixel-sprite enemy-pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="敌方像素头像：${safeName}" data-avatar-seed="${seed}">${top}${append}<rect x="4" y="4" width="8" height="6" fill="${skin}"/>${eyes}<rect x="6" y="8" width="4" height="1" fill="${shade}"/><rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>${tentacles}</svg>`;
+    // Twelve tiny hash-driven pixels keep close names visibly distinct, even when
+    // their broad silhouette or palette happens to match.
+    let pattern="";
+    for(let index=0;index<12;index++){let nibble=(seed>>>(index*2%32))&3;pattern+=`<rect x="${index%6+5}" y="${index<6?index%3+10:12+index%3}" width="${1+nibble%2}" height="${1+(nibble>1?1:0)}" fill="${index%3===0?skin:shade}"/>`;}
+    return `<svg class="pixel-sprite enemy-pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="敌方像素头像：${safeName}" data-avatar-seed="${seed}">${top}${append}<rect x="4" y="4" width="8" height="6" fill="${skin}"/>${eyes}<rect x="6" y="8" width="4" height="1" fill="${shade}"/><rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>${tentacles}${pattern}</svg>`;
 }
 function rosterUnits(side){
     let source=side==="ally"?player:enemy;

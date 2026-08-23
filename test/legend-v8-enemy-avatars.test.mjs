@@ -22,6 +22,17 @@ test("enemy avatar identity is stable and visibly differentiated", () => {
   assert.match(first,/data-avatar-seed="\d+"/);
 });
 
+test("all current monster nouns have unique visible avatar markup", () => {
+  const nouns=JSON.parse(runtime.match(/const monsterNoun=(\[[^;]+\]);/)[1]);
+  const context={};
+  vm.runInNewContext(`${extractFunction("enemyAvatarSeed")}\n${extractFunction("enemyPixelSpriteMarkup")}\nthis.render=enemyPixelSpriteMarkup;`, context);
+  const visual=new Set(nouns.map(name=>context.render(name,"enemy")
+    .replace(/ aria-label="[^"]*"/g,"")
+    .replace(/ data-avatar-seed="[^"]*"/g,"")));
+  assert.equal(nouns.length,62);
+  assert.equal(visual.size,nouns.length);
+});
+
 test("roster sprite injection selects the full enemy name avatar", () => {
   const context={};
   vm.runInNewContext(`${extractFunction("unitKind")}\n${extractFunction("enemyAvatarSeed")}\n${extractFunction("enemyPixelSpriteMarkup")}\n${extractFunction("pixelSpriteMarkup")}\n${extractFunction("setCombatantSprite")}\nthis.set=setCombatantSprite;`, context);
