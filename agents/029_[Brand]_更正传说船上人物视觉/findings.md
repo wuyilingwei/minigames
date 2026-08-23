@@ -50,3 +50,8 @@ Constraints: exactly one person and exactly one boat; no modern objects; no busi
 
 - 远端 `origin/main` 仍为任务创建时的 `9bc6d16`，没有并发远端提交需要重放。
 - GitHub main protection API 明确返回 `Branch not protected (HTTP 404)`，应按全局规则本地合并并推送 `main`。
+
+## Git 交付
+
+- 统一任务分支以 merge commit `737d543` 合入本地 `main`，并成功推送到 `origin/main`。
+- 子任务 heartbeat 在两项提交完成并通过审查后已停用。
