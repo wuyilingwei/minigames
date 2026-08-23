@@ -298,8 +298,49 @@ function applyPreferences(){
 loadPreferences();
 
 let player={name:"",job:"",atk:0,hp:0,maxHp:0,bj:0,bs:0,crt:0,ZDYHP:0,slots:[null,null,null,null],Q3:0,Q4:0,ZBSPECIALUSED1:0,ZBSPECIALUSED2:false,ZBSPECIALUSED3:false,nextDodgeBoost:false,canAdjustPoint:true,wave:0,blessAtkAdd:0,blessHpAdd:0,blessBjAdd:0,blessBsAdd:0,blessCrtAdd:0,energy:0,defendStack:0,permAtkAdd:0,permHpAdd:0,revengeActive:false,energySurgeBoost:false};
-function getSlotCount(){return save.slot5Unlocked?5:4;}
-function initSlots(){player.slots=[];for(let i=0;i<getSlotCount();i++)player.slots.push(null);}
+const equipmentSlots=[
+    {id:"head",name:"头部",accepts:["head"]},{id:"body",name:"身体",accepts:["body"]},
+    {id:"mainHand",name:"主手",accepts:["oneHand","twoHand"]},{id:"offHand",name:"副手",accepts:["oneHand","offHand"]},
+    {id:"accessory",name:"饰品",accepts:["accessory"]}
+];
+const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品"};
+function getSlotCount(){return save.slot5Unlocked||save.useBlood>=6?5:4;}
+function getSlotLabel(index){return equipmentSlots[index]?equipmentSlots[index].name:`槽位${index+1}`;}
+function inferEquipmentPart(item,index=0){
+    if(item&&equipmentPartNames[item.part])return item.part;
+    let name=String(item&&item.name||"");
+    if(/头盔|假发|面纱|帽子/.test(name))return "head";
+    if(/铠甲|毛衣|连衣裙|斗篷|披风|臂甲|裤子/.test(name))return "body";
+    if(/盾/.test(name))return "offHand";
+    if(/大剑|巨锤|巨斧|长弓|弩|战戟|双刃剑/.test(name))return "twoHand";
+    if(/戒指|项链|护符|腰带|念珠|水晶球|号角|香炉|钱包|钥匙/.test(name))return "accessory";
+    return index===0?"head":index===1?"body":index===3?"offHand":"oneHand";
+}
+function normalizeEquipment(item,index=0){
+    if(!isRecord(item))return null;
+    let normalized={...item};
+    normalized.part=inferEquipmentPart(normalized,index);
+    normalized.element=elements.includes(normalized.element)?normalized.element:"无";
+    for(let key of ["atk","hp","bj","bs","crt"]){let value=Number(normalized[key]);normalized[key]=Number.isFinite(value)?value:0;}
+    if(normalized.trait&&!normalized.traits)normalized.traits=[normalized.trait];
+    normalized.traits=Array.isArray(normalized.traits)?normalized.traits.filter(isRecord):[];
+    delete normalized.trait;
+    return normalized;
+}
+function normalizeEquipmentSlots(slots){
+    let next=Array.from({length:getSlotCount()},(_,index)=>normalizeEquipment(Array.isArray(slots)?slots[index]:null,index));
+    if(next[2]&&next[2].part==="twoHand")next[3]=null;
+    for(let index=0;index<next.length;index++)if(next[index]&&!equipmentSlots[index].accepts.includes(next[index].part))next[index]=null;
+    return next;
+}
+function syncSlotCapacity(){player.slots=normalizeEquipmentSlots(player.slots);}
+function makeStarterEquipment(){return [
+    {name:"朴素头巾",element:"无",part:"head",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
+    {name:"朴素布衣",element:"无",part:"body",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
+    {name:"训练短剑",element:"无",part:"oneHand",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
+    {name:"空白护臂",element:"无",part:"offHand",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]}
+];}
+function initSlots(){player.slots=normalizeEquipmentSlots(makeStarterEquipment());}
 let enemy={name:"",atk:0,hp:0,maxHp:0,traits:[],shield:0,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0};
 let gameState="start";
 let pendingLoot=null;
@@ -337,8 +378,12 @@ function validateRunSnapshot(snapshot){
     normalized.player.defendStack=Math.min(2,Math.max(0,Number(normalized.player.defendStack)||(normalized.player.nextDefendBoost?1:0)));
     normalized.player.revengeActive=Boolean(normalized.player.revengeActive);
     normalized.player.energySurgeBoost=Boolean(normalized.player.energySurgeBoost);
-    for(let item of normalized.player.slots||[]){if(item&&item.trait&&!item.traits)item.traits=[item.trait];if(item&&item.traits)delete item.trait;}
-    if(normalized.pendingLoot){for(let key of ["e1","e2"]){let item=normalized.pendingLoot[key];if(item&&item.trait&&!item.traits)item.traits=[item.trait];if(item&&item.traits)delete item.trait;}}
+    let snapshotSave=normalizeSave(normalized.save);
+    let slotCount=snapshotSave.slot5Unlocked||snapshotSave.useBlood>=6?5:4;
+    normalized.player.slots=Array.from({length:slotCount},(_,index)=>normalizeEquipment((normalized.player.slots||[])[index],index));
+    if(normalized.player.slots[2]&&normalized.player.slots[2].part==="twoHand")normalized.player.slots[3]=null;
+    for(let index=0;index<normalized.player.slots.length;index++)if(normalized.player.slots[index]&&!equipmentSlots[index].accepts.includes(normalized.player.slots[index].part))normalized.player.slots[index]=null;
+    if(normalized.pendingLoot){for(let key of ["e1","e2"])normalized.pendingLoot[key]=normalizeEquipment(normalized.pendingLoot[key]);}
     return normalized;
 }
 function readRunSave(slot){
@@ -441,6 +486,7 @@ function restoreRunSnapshot(snapshot){
     if(!valid)return false;
     save=normalizeSave(valid.save);
     player=cloneForStorage(valid.player);
+    player.slots=normalizeEquipmentSlots(player.slots);
     enemy=cloneForStorage(valid.enemy);
     gameState=valid.state;
     pendingLoot=cloneForStorage(valid.pendingLoot);
@@ -717,12 +763,24 @@ function statDeltaHtml(label,next,current,percent=false){
     return `<span class="${relative}">${label} ${formatted}</span>`;
 }
 function describeSets(sets){return sets.length?sets.map(set=>`${set.charAt(0)}${set.charAt(1)==="4"?"四件":"两件"}`).join(" · "):"无";}
+function buildEquipAction(item,slotIndex,slots=player.slots){
+    item=normalizeEquipment(item,slotIndex);
+    if(!item||!equipmentSlots[slotIndex]||!equipmentSlots[slotIndex].accepts.includes(item.part))return null;
+    let next=slots.slice();
+    let removed=[];
+    if(next[slotIndex])removed.push({slotIdx:slotIndex,equip:next[slotIndex]});
+    next[slotIndex]=item;
+    if(slotIndex===2&&item.part==="twoHand"&&next[3]){removed.push({slotIdx:3,equip:next[3]});next[3]=null;}
+    if(slotIndex===3&&next[2]&&next[2].part==="twoHand"){removed.push({slotIdx:2,equip:next[2]});next[2]=null;}
+    return {slotIdx:slotIndex,newEquip:item,oldEquip:slots[slotIndex]||null,removed,slots:next};
+}
 function compareCandidate(item,slotIndex){
-    let slots=player.slots.slice();
-    slots[slotIndex]=item;
+    let action=buildEquipAction(item,slotIndex);
+    if(!action)return null;
+    let slots=action.slots;
     let current=deriveBuild(player.slots),next=deriveBuild(slots);
     let damageDelta=pctDelta(next.damage,current.damage),survivalDelta=pctDelta(next.survival,current.survival),pressure=getSurvivalPressure(current);
-    return {slotIndex,current,next,pressure,damageDelta,survivalDelta,score:damageDelta*pressure.damageWeight+survivalDelta*pressure.survivalWeight};
+    return {slotIndex,action,current,next,pressure,damageDelta,survivalDelta,score:damageDelta*pressure.damageWeight+survivalDelta*pressure.survivalWeight};
 }
 function comparisonSummaryHtml(result){
     return `<div class="compare-summary"><span class="compare-pill">输出 ${percentDeltaHtml(result.damageDelta)}</span><span class="compare-pill">生存 ${percentDeltaHtml(result.survivalDelta)}</span></div>`;
@@ -740,9 +798,7 @@ function classifyRecommendation(result){
     return {tone:"avoid",text:"不推荐"};
 }
 function getEquipmentComparisons(item){
-    let empty=player.slots.indexOf(null);
-    let indexes=empty>=0?[empty]:player.slots.map((_,index)=>index);
-    return indexes.map(index=>({...compareCandidate(item,index),oldEquip:player.slots[index]})).sort((a,b)=>b.score-a.score);
+    return player.slots.map((_,index)=>compareCandidate(item,index)).filter(Boolean).map(result=>({...result,oldEquip:player.slots[result.slotIndex]})).sort((a,b)=>b.score-a.score);
 }
 function hasSpecialTrait(item){return Boolean(item&&item.traits&&item.traits.length);}
 function isBaseStatDominated(item,alternative){
@@ -795,9 +851,9 @@ function applyEquipStats(){
 
 function oneSlotHtml(idx){
     let s=player.slots[idx];
-    if(!s)return `<div class="slot">槽位${idx+1}：空</div>`;
+    if(!s)return `<div class="slot">${getSlotLabel(idx)}：空</div>`;
     let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${trait.id==="shieldGain"?`装备时获得${trait.value}点护盾`:trait.desc}</div>`).join("");
-    return `<div class="slot filled"><span class="ename">${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span>
+    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note">【${equipmentPartNames[s.part]}】</span>
     <div class="estats">
     <span class="estat-item stat-atk">ATK+${s.atk}</span>
     <span class="estat-item stat-hp">HP+${s.hp}</span>
@@ -971,6 +1027,9 @@ function getDifficultyEffects(level){
     if(level>=5)effects.push("敌人无视 30% 闪避率，攻击伤害 -10%");
     if(level>=7)effects.push("玩家造成的伤害 -20%");
     if(level>=9)effects.push("遭遇普通敌人时有 30% 概率随机失去一件装备");
+    if(level>=3)effects.push("装备掉落开放额外效果与 1 条词条");
+    if(level>=6)effects.push("装备掉落至多 2 条词条，并开放饰品第五槽");
+    if(level>=9)effects.push("装备掉落至多 3 条强化词条");
     return effects.length?effects.join("；"):"暂无额外规则。";
 }
 function getDifficultyTraits(level){
@@ -992,7 +1051,7 @@ function renderDifficultyPanel(){
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
     document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
     document.getElementById("btnDifficultyApply").disabled=!adjustable||level===save.useBlood;
-    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；确认后将以难度 ${level} 开始本局。`:"本局已经开始，难度已锁定。";
+    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备词条，6 级起第五槽由难度或商城任一来源开放。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
     cancelLootAutoSelect();
@@ -1009,7 +1068,7 @@ function applyDifficultySelection(){
     if(!player.canAdjustPoint)return;
     save.useBlood=difficultyDraft;
     writeSave();
-    if(player.job)applyEquipStats();
+    if(player.job){syncSlotCapacity();applyEquipStats();}
     refreshStatPanel();
     document.getElementById("difficultyOverlay").hidden=true;
 }
@@ -1046,16 +1105,16 @@ function closeShop(){
     resumeLootAutoSelectIfReady();
 }
 function tryCheatCode(){let input=document.getElementById("cheatCodeInput"),notice=document.getElementById("cheatCodeNotice"),value=(input.value||"").trim();if(!value){notice.textContent="请输入秘钥。";return;}if(value!==CHEAT_SECRET){notice.textContent="秘钥错误。";return;}if(!cheatMode){cheatBackup=cloneForStorage(save);cheatMode=true;localStorage.setItem("kasandri6_cheat_backup",JSON.stringify(cheatBackup));save.eyeTotal=24;save.blood=10;save.useBlood=10;writeSave();if(player.job){applyEquipStats();refreshStatPanel();}autoSaveRun();}input.value="";notice.textContent="作弊模式已激活。";}
-function exitCheatMode(){if(!cheatMode||!cheatBackup)return;save=normalizeSave(cheatBackup);cheatMode=false;cheatBackup=null;localStorage.removeItem("kasandri6_cheat_backup");if(player.job){player.slots=player.slots.slice(0,getSlotCount());while(player.slots.length<getSlotCount())player.slots.push(null);applyEquipStats();}writeSave();renderShop("已退出作弊模式，数据已回退。");}
+function exitCheatMode(){if(!cheatMode||!cheatBackup)return;save=normalizeSave(cheatBackup);cheatMode=false;cheatBackup=null;localStorage.removeItem("kasandri6_cheat_backup");if(player.job){syncSlotCapacity();applyEquipStats();}writeSave();renderShop("已退出作弊模式，数据已回退。");}
 function adjustCheatItem(key,delta){if(!cheatMode)return;save.purchased[key]=Math.max(0,Math.min(10,(save.purchased[key]||0)+delta));writeSave();if(player.job)applyEquipStats();renderShop();}
-function toggleCheatSlot5(){if(!cheatMode)return;save.slot5Unlocked=!save.slot5Unlocked;if(player.job){player.slots=player.slots.slice(0,getSlotCount());while(player.slots.length<getSlotCount())player.slots.push(null);applyEquipStats();}writeSave();renderShop();}
+function toggleCheatSlot5(){if(!cheatMode)return;save.slot5Unlocked=!save.slot5Unlocked;if(player.job){syncSlotCapacity();applyEquipStats();}writeSave();renderShop();}
 function buySlot5(){
     if(save.slot5Unlocked){renderShop("第五个装备槽位已经解锁。");return;}
     if((save.gold||0)<5000){renderShop("金币不足，无法购买第五个装备槽位。");return;}
     save.gold-=5000;
     save.slot5Unlocked=true;
     writeSave();
-    if(player.job){player.slots.push(null);applyEquipStats();refreshStatPanel();}
+    if(player.job){syncSlotCapacity();applyEquipStats();refreshStatPanel();}
     autoSaveRun();
     renderShop("第五个装备槽位已永久解锁！");
 }
@@ -1172,44 +1231,45 @@ function adjPoint(type,delta){
 
 function genEquip(wave){
     if(wave===undefined)wave=player.wave;
-    let name=pick(lootAdj)+pick(lootNoun);
+    let part=pick(["head","body","oneHand","oneHand","twoHand","offHand","accessory"]);
+    let nounByPart={head:["头盔","面纱","假发"],body:["铠甲","披风","斗篷"],oneHand:["长剑","战斧","匕首","法杖","短刀"],twoHand:["巨锤","大剑","长弓","战戟","双刃剑"],offHand:["盾牌","骨盾","护臂"],accessory:["戒指","项链","护符","念珠","水晶球"]};
+    let name=pick(lootAdj)+pick(nounByPart[part]||lootNoun);
     let element=pick(elements);
     let scale=1+Math.min(1,wave/20)*1.0;
     let atk=Math.floor(rand(5,25)*scale),hp=Math.floor(rand(10,80)*scale),bj=rand(0,8)/100,bs=rand(0,10)/100,crt=rand(0,6)/100;
     bj=Math.floor(bj*scale*100)/100;bs=Math.floor(bs*scale*100)/100;crt=Math.floor(crt*scale*100)/100;
     let traits=[];
-    let traitProb=0.15+Math.min(1,wave/20)*0.15;
-    if(save.useBlood>=3)traitProb+=0.08;
-    let maxTraits=save.useBlood>=6?2:1;
+    let tier=save.useBlood>=9?3:save.useBlood>=6?2:save.useBlood>=3?1:0;
+    let traitProb=0.15+Math.min(1,wave/20)*0.15+(tier?0.08:0);
+    let maxTraits=tier;
     let used={};
     for(let index=0;index<maxTraits;index++)if(Math.random()<traitProb){
         let candidates=traitList.filter(trait=>!used[trait.id]);
-        if(candidates.length){let trait=pick(candidates);used[trait.id]=true;if(trait.id==="shieldGain")trait={...trait,value:pick([1000,800,500])};traits.push(trait);}
+        if(candidates.length){let trait=pick(candidates);used[trait.id]=true;if(trait.id==="shieldGain")trait={...trait,value:pick([500,800,1000].slice(0,tier).pop()};if(trait.id==="armorBreak")trait={...trait,value:[0.10,0.15,0.20][Math.max(0,tier-1)]};traits.push(trait);}
     }
-    return {name,element,atk,hp,bj,bs,crt,traits};
+    return {name,element,part,atk,hp,bj,bs,crt,traits,affixTier:tier};
 }
 
 function equipmentCardHtml(e,includeRecommendation=false){
     let traitHtml="";
     if(e.traits){
-        traitHtml=e.traits.map(trait=>`<div class="trait">【${trait.name}】${trait.id==="shieldGain"?`装备时获得${trait.value}点护盾`:trait.desc}</div>`).join("");
+        traitHtml=e.traits.map(trait=>`<div class="trait">【${trait.name}】${trait.id==="shieldGain"?`装备时获得${trait.value}点护盾`:trait.id==="armorBreak"?`攻击时破甲 ${(trait.value||0.10)*100}%`:trait.desc}</div>`).join("");
     }
     let recommendation=includeRecommendation?equipmentRecommendationHtml(e):"";
-    return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
+    return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note">【${equipmentPartNames[e.part]||"未知部位"}】${e.affixTier?` · 词条阶 ${e.affixTier}`:""}</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
 }
 function showEquip(e,includeRecommendation=false){
     print(equipmentCardHtml(e,includeRecommendation),"",true);
 }
 
 function equipToSlot(e,chosenIdx){
-    let empty=player.slots.indexOf(null);
-    if(empty>=0){
-        lastEquipAction={slotIdx:empty,oldEquip:null,newEquip:e,chosenIdx:chosenIdx};
-        player.slots[empty]=e;
-    }else{
-        renderReplacementChoices(e,chosenIdx);
-        return true;
-    }
+    let comparisons=getEquipmentComparisons(e);
+    if(!comparisons.length){print("该装备没有可用部位，已放弃。");return false;}
+    let empty=comparisons.find(result=>!result.oldEquip&&result.action.removed.length===0);
+    if(!empty){renderReplacementChoices(e,chosenIdx);return true;}
+    let action=empty.action;
+    lastEquipAction={...action,chosenIdx:chosenIdx,previousSlots:player.slots.slice()};
+    player.slots=action.slots;
     applyEquipStats();
     refreshStatPanel();
     confirmEquip();
@@ -1217,19 +1277,20 @@ function equipToSlot(e,chosenIdx){
 function renderReplacementChoices(e,chosenIdx){
     cancelLootAutoSelect();
     let best=getEquipmentComparisons(e)[0];
-    let choices=player.slots.map((oldEquip,index)=>{
-        let recommended=index===best.slotIndex;
-        let comparison=compareCandidate(e,index);
-        return `<article class="modal-card ${recommended?"is-recommended":""}"><h3>槽位 ${index+1}</h3>${equipmentCardHtml(oldEquip)}<div class="replace-delta">更换后：${comparisonSummaryHtml(comparison)}</div><button class="choice-btn" onclick="replaceEquip(${index},${chosenIdx})">替换此槽位</button></article>`;
+    let choices=getEquipmentComparisons(e).map(comparison=>{
+        let index=comparison.slotIndex,recommended=index===best.slotIndex,removed=comparison.action.removed.map(entry=>`【${entry.equip.name}】`).join("、")||"无";
+        return `<article class="modal-card ${recommended?"is-recommended":""}"><h3>${getSlotLabel(index)}</h3>${player.slots[index]?equipmentCardHtml(player.slots[index]):"<p>空位</p>"}<div class="replace-delta">更换后：${comparisonSummaryHtml(comparison)}<br>将卸下：${removed}</div><button class="choice-btn" onclick="replaceEquip(${index},${chosenIdx})">装备到${getSlotLabel(index)}</button></article>`;
     }).join("");
-    document.getElementById("lootContent").innerHTML=`<p class="modal-note">装备槽已满；请选择要替换的已装备槽位。</p><div class="modal-grid">${choices}</div><div class="modal-actions"><button class="choice-btn" onclick="renderLootChoice()">返回掉落选择</button><button class="choice-btn danger" onclick="declineLoot()">放弃这件装备</button></div>`;
+    document.getElementById("lootContent").innerHTML=`<p class="modal-note">请选择合法装备位置；双手武器会卸下副手，副手或双持会卸下双手武器。</p><div class="modal-grid">${choices}</div><div class="modal-actions"><button class="choice-btn" onclick="renderLootChoice()">返回掉落选择</button><button class="choice-btn danger" onclick="declineLoot()">放弃这件装备</button></div>`;
 }
 function replaceEquip(slotIndex,chosenIdx){
     if(!pendingLoot)return;
     cancelLootAutoSelect();
     let e=chosenIdx===1?pendingLoot.e1:pendingLoot.e2;
-    lastEquipAction={slotIdx:slotIndex,oldEquip:player.slots[slotIndex],newEquip:e,chosenIdx};
-    player.slots[slotIndex]=e;
+    let action=buildEquipAction(e,slotIndex);
+    if(!action){renderLootChoice();return;}
+    lastEquipAction={...action,chosenIdx,previousSlots:player.slots.slice()};
+    player.slots=action.slots;
     applyEquipStats();
     refreshStatPanel();
     confirmEquip();
@@ -1238,12 +1299,13 @@ function confirmEquip(){
     if(!lastEquipAction)return;
     cancelLootAutoSelect();
     let action=lastEquipAction;
-    document.getElementById("lootContent").innerHTML=`<div class="drop-recommendation">已将【${action.newEquip.name}】${action.oldEquip?`替换【${action.oldEquip.name}】`:`装备至空槽位${action.slotIdx+1}`}。确认后进入下一阶段。</div><div class="loot-choice">${equipmentCardHtml(action.newEquip,true)}</div><div class="modal-actions"><button class="choice-btn" onclick="afterEquip()">确认选择，继续冒险</button><button class="choice-btn" onclick="undoEquip()">反悔，重新选择</button></div>`;
+    let removed=action.removed&&action.removed.length?action.removed.map(entry=>`【${entry.equip.name}】`).join("、"):"无";
+    document.getElementById("lootContent").innerHTML=`<div class="drop-recommendation">已将【${action.newEquip.name}】装备至${getSlotLabel(action.slotIdx)}；将卸下：${removed}。确认后进入下一阶段。</div><div class="loot-choice">${equipmentCardHtml(action.newEquip,true)}</div><div class="modal-actions"><button class="choice-btn" onclick="afterEquip()">确认选择，继续冒险</button><button class="choice-btn" onclick="undoEquip()">反悔，重新选择</button></div>`;
 }
 function undoEquip(){
     if(!lastEquipAction)return;
     let act=lastEquipAction;
-    player.slots[act.slotIdx]=act.oldEquip;
+    player.slots=act.previousSlots;
     applyEquipStats();
     refreshStatPanel();
     lastEquipAction=null;
@@ -1333,12 +1395,12 @@ function autoEquipRecommendedLoot(){
     cancelLootAutoSelect();
     let best=getRecommendedLootChoice();
     if(!best||best.comparison.score<=0){autoDeclineLoot();return;}
-    let slotIndex=best.comparison.slotIndex,oldEquip=player.slots[slotIndex];
-    lastEquipAction={slotIdx:slotIndex,oldEquip,newEquip:best.item,chosenIdx:best.chosenIdx};
-    player.slots[slotIndex]=best.item;
+    let action=best.comparison.action;
+    lastEquipAction={...action,chosenIdx:best.chosenIdx,previousSlots:player.slots.slice()};
+    player.slots=action.slots;
     applyEquipStats();
     refreshStatPanel();
-    let result=oldEquip?`替换【${oldEquip.name}】`:`装备至空槽位${slotIndex+1}`;
+    let result=action.removed.length?`卸下${action.removed.map(entry=>`【${entry.equip.name}】`).join("、")}`:`装备至空${getSlotLabel(action.slotIdx)}`;
     afterEquip(`已自动选择推荐装备【${best.item.name}】并${result}，继续冒险。`);
 }
 function autoDeclineLoot(){

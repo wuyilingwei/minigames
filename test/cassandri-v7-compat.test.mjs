@@ -42,7 +42,7 @@ requirePattern(/function doAttackRound\([\s\S]*autoBattleDecide\([\s\S]*if\(!ene
 // New equipment/enemy data is additive: multiple traits and the 7.0 combat
 // effects must render and participate in calculations without dropping the
 // existing loot, set, difficulty, and navigation surfaces.
-requirePattern(/function genEquip\([\s\S]*let traits=\[\][\s\S]*return \{[^}]*traits\}/, 'Equipment must use the multi-trait 7.0 shape');
+requirePattern(/function genEquip\([\s\S]*let traits=\[\][\s\S]*return \{[^}]*traits[^}]*\}/, 'Equipment must use the multi-trait equipment shape');
 requireText('function countTraitFor(slots,id)', 'Trait calculations must support multiple traits per equipment');
 requireText('function equipmentRecommendationHtml(item)', 'Loot recommendation UI must remain available');
 requireText('function getNextEnemyForecast()', 'The existing next-enemy recommendation must remain available');

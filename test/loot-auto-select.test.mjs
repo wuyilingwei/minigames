@@ -45,10 +45,10 @@ for (const [score, expected] of [[1, { equipped: 1, declined: 0 }], [0, { equipp
     throw new Error(`Auto resolution failed for score ${score}: ${JSON.stringify(actual)}`);
   }
 }
-requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*getRecommendedLootChoice\(\)[\s\S]*comparison\.slotIndex[\s\S]*player\.slots\[slotIndex\]=best\.item[\s\S]*afterEquip\(/, 'Auto-select must use the best equipment and replacement slot, then close the loot flow');
+requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*getRecommendedLootChoice\(\)[\s\S]*comparison\.action[\s\S]*player\.slots=action\.slots[\s\S]*afterEquip\(/, 'Auto-select must apply the best legal equipment action, then close the loot flow');
 requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*if\(!best\|\|best\.comparison\.score<=0\)\{autoDeclineLoot\(\);return;\}/, 'Auto-equip must fall back to automatic decline for zero or negative gains');
 requirePattern(/function autoDeclineLoot\(\)[\s\S]*两件装备都没有正收益[\s\S]*afterEquip\(/, 'Automatic decline must close the loot flow without player intervention');
-requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*lastEquipAction=\{slotIdx:slotIndex,oldEquip,newEquip:best\.item,chosenIdx:best\.chosenIdx\}[\s\S]*applyEquipStats\(\);[\s\S]*refreshStatPanel\(\);/, 'Auto-select must record and apply the selected equipment before settlement');
+requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*lastEquipAction=\{\.\.\.action,chosenIdx:best\.chosenIdx,previousSlots:player\.slots\.slice\(\)\}[\s\S]*applyEquipStats\(\);[\s\S]*refreshStatPanel\(\);/, 'Auto-select must record and apply the selected legal action before settlement');
 requirePattern(/function chooseLoot\(chosenIdx\)\{[\s\S]*cancelLootAutoSelect\(\);/, 'Manual selection must cancel the pending timer');
 requirePattern(/function deferLootChoice\(\)[\s\S]*cancelLootAutoSelect\(\);/, 'Deferring loot must cancel the pending timer');
 requirePattern(/function afterEquip\([\s\S]*cancelLootAutoSelect\(\);/, 'Settling loot must cancel the pending timer');
