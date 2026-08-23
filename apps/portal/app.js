@@ -16,6 +16,10 @@ function createCard(game, index) {
   description.className = 'card-description';
   description.textContent = game.description;
 
+  const credit = document.createElement('p');
+  credit.className = 'card-credit';
+  credit.textContent = game.credit;
+
   const footer = document.createElement('div');
   footer.className = 'card-footer';
 
@@ -28,7 +32,7 @@ function createCard(game, index) {
   link.setAttribute('aria-label', `${game.action}：${game.title}`);
 
   footer.append(meta, link);
-  article.append(kicker, title, description, footer);
+  article.append(kicker, title, description, credit, footer);
   return article;
 }
 

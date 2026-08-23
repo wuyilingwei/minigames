@@ -30,7 +30,7 @@ await cp(portal, output, { recursive: true });
 
 for (const game of catalog) {
   assert(/^[a-z0-9-]+$/.test(game.slug), `Invalid game slug: ${game.slug}`);
-  assert(game.title && game.description && game.action, `Catalog entry ${game.slug} is incomplete.`);
+  assert(game.title && game.description && game.credit && game.action, `Catalog entry ${game.slug} is incomplete.`);
 
   const source = join(gameRoot, game.slug);
   const entry = join(source, 'index.html');

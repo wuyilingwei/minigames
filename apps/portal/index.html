@@ -3,35 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0d1020" />
+    <meta name="theme-color" content="#181818" />
     <meta
       name="description"
-      content="一个收藏可直接游玩的小游戏与互动资源的静态档案室。"
+      content="一个收录可直接游玩的小游戏与互动作品的静态小站。"
     />
-    <title>游戏档案室</title>
+    <title>小游戏站</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="ambient ambient-one" aria-hidden="true"></div>
-    <div class="ambient ambient-two" aria-hidden="true"></div>
     <header class="site-header shell">
-      <a class="wordmark" href="./" aria-label="返回游戏档案室首页">GAME ARCHIVE</a>
-      <a class="quiet-link" href="#collection">探索收藏 <span aria-hidden="true">↓</span></a>
+      <a class="wordmark" href="./" aria-label="返回小游戏站首页">小游戏站</a>
+      <a class="quiet-link" href="#collection">作品列表 <span aria-hidden="true">↓</span></a>
     </header>
 
     <main>
       <section class="hero shell" aria-labelledby="page-title">
-        <p class="section-label">PLAYABLE COLLECTION · 01</p>
-        <h1 id="page-title">把值得重访的<br /><em>世界</em>收进一处。</h1>
-        <p class="hero-copy">小游戏、交互实验与可漫游的资料集。每一项都保持独立、完整，也都能从这里立即出发。</p>
-        <a class="primary-link" href="#collection">查看现有收藏 <span aria-hidden="true">↘</span></a>
+        <p class="section-label">MINI GAMES</p>
+        <h1 id="page-title">可以直接游玩的<br />小游戏与互动作品。</h1>
+        <p class="hero-copy">这是一个收录小游戏与互动作品的小站。点击卡片即可进入，所有内容都在浏览器中运行。</p>
+        <a class="primary-link" href="#collection">查看作品 <span aria-hidden="true">↓</span></a>
       </section>
 
       <section class="collection shell" id="collection" aria-labelledby="collection-title">
         <div class="section-heading">
           <div>
-            <p class="section-label">THE COLLECTION</p>
-            <h2 id="collection-title">现在就进入</h2>
+            <p class="section-label">作品</p>
+            <h2 id="collection-title">游戏与互动作品</h2>
           </div>
           <p id="collection-count" class="collection-count" aria-live="polite"></p>
         </div>
@@ -39,15 +37,15 @@
       </section>
 
       <section class="about shell" aria-labelledby="about-title">
-        <p class="section-label">GROWING ARCHIVE</p>
-        <h2 id="about-title">持续收藏，<br />无需安装。</h2>
-        <p>这里的每一项内容都是独立静态应用：点击即开，便于保存、分享和长期维护。新的小游戏与互动资源会陆续归档进来。</p>
+        <p class="section-label">关于本站</p>
+        <h2 id="about-title">小而完整，<br />打开就能玩。</h2>
+        <p>每一项内容都保持独立运行。新的小游戏和互动作品会在这里持续收录。</p>
       </section>
     </main>
 
     <footer class="site-footer shell">
-      <span>GAME ARCHIVE</span>
-      <span>静态构建 · 持续收录</span>
+      <span>小游戏站</span>
+      <span>静态发布 · 持续收录</span>
     </footer>
     <script type="module" src="./app.js"></script>
   </body>

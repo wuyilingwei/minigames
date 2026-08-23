@@ -22,6 +22,7 @@ for (const game of catalog) {
   const entry = join(output, 'games', game.slug, 'index.html');
   await mustExist(entry);
   if (!(await stat(entry)).isFile()) throw new Error(`Expected a file: ${entry}`);
+  if (!game.credit) throw new Error(`Catalog entry ${game.slug} is missing its creator credit.`);
 }
 
 await Promise.all([
@@ -47,8 +48,18 @@ if (!cassandri.includes('fonts/fusion-pixel-12px-proportional-zh_hans.otf.woff2'
   throw new Error('The Cassandri Legend entry does not reference its packaged pixel font.');
 }
 
+const tenLightYears = await readFile(join(output, 'games', 'ten-light-years', 'index.html'), 'utf8');
+for (const [slug, entry] of [
+  ['cassandri-legend', cassandri],
+  ['ten-light-years', tenLightYears]
+]) {
+  if (!entry.includes('class="archive-exit"') || !entry.includes('href="../../"')) {
+    throw new Error(`The ${slug} entry is missing its return-to-portal exit control.`);
+  }
+}
+
 const home = await readFile(join(output, 'index.html'), 'utf8');
-if (!home.includes('game-grid') || !home.includes('app.js')) {
+if (!home.includes('game-grid') || !home.includes('app.js') || !home.includes('小游戏站')) {
   throw new Error('The portal home page is missing its collection mount point.');
 }
 
