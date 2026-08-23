@@ -66,10 +66,10 @@ const tenLightYears = await readFile(join(output, 'games', 'ten-light-years', 'i
 if (cassandri.includes('archive-exit') || tenLightYears.includes('archive-exit')) {
   throw new Error('A game exit control must be located in its settings menu, not fixed to the page.');
 }
-if (!cassandri.includes('id="btnExitToPortal"') || !cassandri.includes('href="../../"')) {
+if (!cassandri.includes('id="btnExitToPortal"') || !cassandri.includes('href="../../"') || !cassandri.includes('返回迷你游戏')) {
   throw new Error('Cassandri Legend is missing its settings-menu exit control.');
 }
-if (!tenLightYears.includes('id="exit-game"') || !tenLightYears.includes('href="../../"')) {
+if (!tenLightYears.includes('id="exit-game"') || !tenLightYears.includes('href="../../"') || !tenLightYears.includes('返回迷你游戏')) {
   throw new Error('Ten Light Years is missing its settings-menu exit control.');
 }
 const cassandriMenu = [
