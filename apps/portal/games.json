@@ -4,7 +4,7 @@
     "kind": "game",
     "eyebrow": "文字冒险 RPG",
     "title": "卡桑德里传说",
-    "description": "在像素终端中选择职业、祝福与装备，穿过二十波随机战斗。",
+    "description": "选择职业、祝福与装备，穿过二十波随机战斗。",
     "cover": "./games/cassandri-legend/assets/cover.png",
     "credit": "主创：槃清 · 编码：武乙凌薇",
     "meta": "单人 · 自动存档 · 6.5",
