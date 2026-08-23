@@ -50,10 +50,16 @@ for (const [score, expected] of [[1, { equipped: 1, declined: 0 }], [0, { equipp
 }
 requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*getRecommendedLootChoice\(\)[\s\S]*comparison\.action[\s\S]*player\.slots=action\.slots[\s\S]*afterEquip\(/, 'Auto-select must apply the best legal equipment action, then close the loot flow');
 requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*if\(!best\|\|best\.comparison\.score<=0\)\{autoDeclineLoot\(\);return;\}/, 'Auto-equip must fall back to automatic decline for zero or negative gains');
-requirePattern(/function autoDeclineLoot\(\)[\s\S]*两件装备都没有正收益[\s\S]*afterEquip\(/, 'Automatic decline must close the loot flow without player intervention');
+requirePattern(/function autoDeclineLoot\(\)[\s\S]*装备都没有正收益[\s\S]*afterEquip\(/, 'Automatic decline must close the loot flow without player intervention');
 requirePattern(/function autoEquipRecommendedLoot\(\)[\s\S]*lastEquipAction=\{\.\.\.action,chosenIdx:best\.chosenIdx,previousSlots:player\.slots\.slice\(\)\}[\s\S]*applyEquipStats\(\);[\s\S]*refreshStatPanel\(\);/, 'Auto-select must record and apply the selected legal action before settlement');
 requirePattern(/function chooseLoot\(chosenIdx\)\{[\s\S]*cancelLootAutoSelect\(\);/, 'Manual selection must cancel the pending timer');
 requirePattern(/function deferLootChoice\(\)[\s\S]*cancelLootAutoSelect\(\);/, 'Deferring loot must cancel the pending timer');
+requirePattern(/function showDeferredLootAction\(\)\{[\s\S]*clearChoices\(\);[\s\S]*addChoice\("继续选择装备",resumeLootChoice,"loot-resume-action"\);/, 'Deferred loot must render its resume action in the bottom choice area');
+requirePattern(/function deferLootChoice\(\)[\s\S]*showDeferredLootAction\(\);[\s\S]*autoSaveRun\(\);/, 'Deferring loot must immediately show the bottom resume action');
+requirePattern(/if\(gameState==="loot"\|\|gameState==="bossLoot"\)\{[\s\S]*if\(lootDeferred\)showDeferredLootAction\(\);[\s\S]*else showLootChoice/, 'Restoring a deferred loot save must rebuild the bottom resume action');
+const statPanelBody = runtime.slice(runtime.indexOf('function refreshStatPanel()'), runtime.indexOf('function genEquip('));
+if (statPanelBody.includes('继续选择装备')) throw new Error('The hero panel must no longer contain the deferred loot resume action');
+requireText('#choices .loot-resume-action', 'The relocated resume action must retain visible accent styling');
 requirePattern(/function afterEquip\([\s\S]*cancelLootAutoSelect\(\);/, 'Settling loot must cancel the pending timer');
 requirePattern(/function cancelLootAutoSelect\(\)[\s\S]*auto-select-target[\s\S]*lootAutoSelectToken\+\+/, 'Cancellation must remove the auto-select target emphasis');
 requirePattern(/function renderReplacementChoices\([\s\S]*cancelLootAutoSelect\(\);/, 'Manual full-slot selection must retain the existing replacement flow');
