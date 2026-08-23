@@ -47,6 +47,9 @@ requireText('function countTraitFor(slots,id)', 'Trait calculations must support
 requireText('function equipmentRecommendationHtml(item)', 'Loot recommendation UI must remain available');
 requireText('function getNextEnemyForecast()', 'The existing next-enemy recommendation must remain available');
 requireText('function getExpectedCrit20xMultFor(slots)', 'The existing critical-hit expectation must remain available');
+if (html.includes('<div class="trait-note">预测：')) {
+  throw new Error('Loot cards must not display the next-enemy forecast');
+}
 for (const trait of ['armorBreak', 'purify', 'antiHeal', 'trueStrike', 'antiThorns', 'stealGuard', 'dotResist', 'critExecute', 'energyShield', 'revenge', 'shieldBash', 'secondWind']) {
   requireText(`id:"${trait}"`, `The 7.0 trait ${trait} must remain available`);
 }

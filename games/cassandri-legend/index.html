@@ -591,8 +591,7 @@ function equipmentRecommendationHtml(item){
     let before=best.current,after=best.next;
     let beforeTrait=best.oldEquip&&best.oldEquip.traits&&best.oldEquip.traits.length?best.oldEquip.traits.map(trait=>trait.name).join("·"):"无";
     let afterTrait=item.traits&&item.traits.length?item.traits.map(trait=>trait.name).join("·"):"无";
-    let target=before.target;
-    return `<div class="recommendation ${decision.tone==="avoid"?"avoid":""}"><div class="recommend-title">${decision.text}</div>${comparisonSummaryHtml(best)}<div>${statDeltaHtml("ATK",after.atk,before.atk)} · ${statDeltaHtml("HP",after.hp,before.hp)} · ${statDeltaHtml("BJ",after.bj,before.bj,true)} · ${statDeltaHtml("BS",after.bs,before.bs,true)} · ${statDeltaHtml("闪避",after.crt,before.crt,true)}</div><div class="trait-note">预测：${target.label}（ATK ${target.atk} · HP ${target.maxHp}） · 套装：${describeSets(before.sets)} → ${describeSets(after.sets)} · 特性：${beforeTrait} → ${afterTrait}</div></div>`;
+    return `<div class="recommendation ${decision.tone==="avoid"?"avoid":""}"><div class="recommend-title">${decision.text}</div>${comparisonSummaryHtml(best)}<div>${statDeltaHtml("ATK",after.atk,before.atk)} · ${statDeltaHtml("HP",after.hp,before.hp)} · ${statDeltaHtml("BJ",after.bj,before.bj,true)} · ${statDeltaHtml("BS",after.bs,before.bs,true)} · ${statDeltaHtml("闪避",after.crt,before.crt,true)}</div><div class="trait-note">套装：${describeSets(before.sets)} → ${describeSets(after.sets)} · 特性：${beforeTrait} → ${afterTrait}</div></div>`;
 }
 
 function calcBaseStats(){
