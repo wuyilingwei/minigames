@@ -62,6 +62,23 @@ const equipmentSlots=[
     {id:"mainHand",name:"主手",accepts:["oneHand","twoHand"]},{id:"offHand",name:"副手",accepts:["oneHand","offHand"]}
 ];
 const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品",outerwear:"附加",purchase:"购买"};
+const equipmentTierData=[
+    {id:0,name:"制式",description:"基础装备"},
+    {id:1,name:"精工",description:"解锁第一档词条"},
+    {id:2,name:"秘藏",description:"解锁第二档词条"},
+    {id:3,name:"神铸",description:"解锁第三档词条"}
+];
+function normalizeAffixTier(value){
+    let tier=Number(value);
+    return Number.isFinite(tier)?Math.max(0,Math.min(3,Math.floor(tier))):0;
+}
+function getEquipmentTier(tier){return equipmentTierData[normalizeAffixTier(tier)];}
+const starterEquipmentData={
+    "朴素头巾":{hp:25,crt:0.02},
+    "朴素布衣":{hp:80},
+    "训练短剑":{atk:15,bj:0.02},
+    "空白护臂":{hp:35,crt:0.02}
+};
 function hasAddonSlotFor(saveState=save){return saveState.useBlood>=6||saveState.legacyAddonSlotUnlocked||Boolean(saveState.slot5Unlocked&&!saveState.purchaseSlotUnlocked);}
 function hasPurchaseSlotFor(saveState=save){return Boolean(saveState.purchaseSlotUnlocked||saveState.slot5Unlocked);}
 function getEquipmentSlotsFor(saveState=save){
@@ -98,6 +115,9 @@ function normalizeEquipment(item,index=0){
     for(let key of ["atk","hp","bj","bs","crt"]){let value=Number(normalized[key]);normalized[key]=Number.isFinite(value)?value:0;}
     if(normalized.trait&&!normalized.traits)normalized.traits=[normalized.trait];
     normalized.traits=Array.isArray(normalized.traits)?normalized.traits.filter(isRecord):[];
+    normalized.affixTier=normalizeAffixTier(normalized.affixTier);
+    let starter=starterEquipmentData[normalized.name];
+    if(starter)for(let [key,value] of Object.entries(starter))normalized[key]=Math.max(normalized[key],value);
     if(normalized.id==="emergencyShield"){
         normalized.emergencyCharges=Math.max(0,Math.min(4,Math.floor(Number(normalized.emergencyCharges??4)||0)));
     }
@@ -127,10 +147,10 @@ function syncSlotCapacity(){
     }
 }
 function makeStarterEquipment(){return [
-    {name:"朴素头巾",element:"无",part:"head",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
-    {name:"朴素布衣",element:"无",part:"body",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
-    {name:"训练短剑",element:"无",part:"oneHand",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
-    {name:"空白护臂",element:"无",part:"offHand",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]}
+    {name:"朴素头巾",element:"无",part:"head",atk:0,hp:25,bj:0,bs:0,crt:0.02,traits:[],affixTier:0},
+    {name:"朴素布衣",element:"无",part:"body",atk:0,hp:80,bj:0,bs:0,crt:0,traits:[],affixTier:0},
+    {name:"训练短剑",element:"无",part:"oneHand",atk:15,hp:0,bj:0.02,bs:0,crt:0,traits:[],affixTier:0},
+    {name:"空白护臂",element:"无",part:"offHand",atk:0,hp:35,bj:0,bs:0,crt:0.02,traits:[],affixTier:0}
 ];}
 function makeEmergencyShield(){return {id:"emergencyShield",name:"高难应急护盾",element:"无",part:"outerwear",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],emergencyCharges:4};}
 function initSlots(){
@@ -373,10 +393,10 @@ function restoreRunSnapshot(snapshot){
 }
 
 const jobData={
-"战士":{atk:220,hp:900,bj:0.08,bs:1.5,crt:0.03,desc:"高攻击，攻击吸血20%，战胜加攻击"},
-"天使":{atk:130,hp:1450,bj:0.08,bs:1.5,crt:0.05,desc:"高血量，血量增伤，战胜加血量"},
-"勇者":{atk:180,hp:1100,bj:0.28,bs:2.2,crt:0.05,desc:"高暴击，受击反伤15%"},
-"隐士":{atk:190,hp:900,bj:0.10,bs:1.6,crt:0.35,desc:"高闪避，溢出闪避增伤，战胜加闪避"}
+"战士":{atk:220,hp:900,bj:0.08,bs:1.5,crt:0.12,desc:"高攻击，攻击吸血20%，战胜加攻击"},
+"天使":{atk:130,hp:1450,bj:0.08,bs:1.5,crt:0.14,desc:"高血量，血量增伤，战胜加血量"},
+"勇者":{atk:180,hp:1100,bj:0.28,bs:2.2,crt:0.16,desc:"高暴击，受击反伤15%"},
+"隐士":{atk:190,hp:900,bj:0.10,bs:1.6,crt:0.42,desc:"高闪避，溢出闪避增伤，战胜加闪避"}
 };
 
 const blessingData={
@@ -1206,7 +1226,7 @@ function genEquip(wave){
     let name=pick(lootAdj)+pick(nounByPart[part]||lootNoun);
     let element=pick(elements);
     let scale=1+Math.min(1,wave/20)*1.0;
-    let atk=Math.floor(rand(5,25)*scale),hp=Math.floor(rand(10,80)*scale),bj=rand(0,8)/100,bs=rand(0,10)/100,crt=rand(0,8)/100;
+    let atk=Math.floor(rand(5,25)*scale),hp=Math.floor(rand(10,80)*scale),bj=rand(0,8)/100,bs=rand(0,10)/100,crt=rand(3,10)/100;
     bj=Math.floor(bj*scale*100)/100;bs=Math.floor(bs*scale*100)/100;crt=Math.floor(crt*scale*100)/100;
     let traits=[];
     let tier=save.useBlood>=9?3:save.useBlood>=6?2:save.useBlood>=3?1:0;
@@ -1226,7 +1246,8 @@ function equipmentCardHtml(e,includeRecommendation=false){
         traitHtml=e.traits.map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
     }
     let recommendation=includeRecommendation?equipmentRecommendationHtml(e):"";
-    return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note">【${equipmentPartNames[e.part]||"未知部位"}】${e.affixTier?` · 词条阶 ${e.affixTier}`:""}</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
+    let tier=getEquipmentTier(e.affixTier);
+    return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note">【${equipmentPartNames[e.part]||"未知部位"} · ${tier.name}】</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
 }
 function showEquip(e,includeRecommendation=false){
     print(equipmentCardHtml(e,includeRecommendation),"",true);
