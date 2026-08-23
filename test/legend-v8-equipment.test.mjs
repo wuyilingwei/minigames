@@ -30,9 +30,9 @@ if (hard.buildEquipAction({ ...shield, part: 'body' }, 2, slots) !== null) throw
 
 const legacy = hard.normalizeEquipment({ name: '古老的大剑', atk: 4, hp: 5, trait: { id: 'armorBreak' } }, 2);
 if (legacy.part !== 'twoHand' || !Array.isArray(legacy.traits) || legacy.traits.length !== 1) throw new Error('Legacy equipment must infer a part and migrate a single trait.');
-const tierStart = html.indexOf('const equipmentTraitIdsByTier=');
-const tierEnd = html.indexOf('\n\nconst elements=', tierStart);
-const tierModel = tierStart >= 0 && tierEnd > tierStart ? html.slice(tierStart, tierEnd) : '';
+const tierStart = runtime.indexOf('const equipmentTraitIdsByTier=');
+const tierEnd = runtime.indexOf('\n\nconst elements=', tierStart);
+const tierModel = tierStart >= 0 && tierEnd > tierStart ? runtime.slice(tierStart, tierEnd) : '';
 if (!tierModel) throw new Error('Could not extract difficulty trait pools.');
 const makeTierPool = new Function('traitList', `${tierModel}\nreturn getEquipmentTraitPool;`)([
   'attackHeal', 'armorBreak', 'reviveOnce', 'stealGuard',
