@@ -1,6 +1,6 @@
 # game.wuyilingwei.com 项目索引
 
-> 最后更新：2026-08-22
+> 最后更新：2026-08-23
 
 ## 项目目标
 
@@ -28,3 +28,4 @@ agents/                  项目审计与任务记录
 - 门户只负责发现、分类和跳转；发布时各游戏位于 `/games/<slug>/`。
 - 新资源通过清单加入，构建脚本统一复制并校验入口文件。
 - Cloudflare 发布使用 Wrangler Workers Static Assets；`wrangler.jsonc` 的 `assets.directory` 指向构建后的 `dist/`，不再使用 Pages 配置。
+- 《卡桑德里传说》的完整档案由永久成长、自动档和三个手动槽组成；迁移文件必须带可识别格式版本，并在覆盖本地数据前完成兼容校验。
