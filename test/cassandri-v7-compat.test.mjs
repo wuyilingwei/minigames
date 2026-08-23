@@ -58,7 +58,7 @@ requireText('{id:"weaken",name:"虚弱",desc:"攻击命中后降低玩家3-5%攻
 requireText('{id:"curse",name:"诅咒",desc:"攻击命中后降低玩家1-3%暴击率"}', 'Curse must retain its numeric effect description');
 requirePattern(/if\(enemy\.traits&&enemy\.traits\.length>0\)[\s\S]*item\.textContent=`【\$\{trait\.name\}】\$\{trait\.desc\}`[\s\S]*enemyTraitDesc\.appendChild\(item\)/, 'The battle UI must render every enemy trait name and full description');
 requireText('#terminal-wrap #battleArena .enemy .trait-note .trait-item{display:block', 'Multiple enemy trait descriptions must remain readable in the battle UI');
-for (const behavior of ['CHEAT_SECRET', 'kasandri6_cheat_backup', 'function exitCheatMode()', 'player.energySurgeBoost', '!hasTrait("stealGuard")', 'if(save.blood<10)', '欢迎来到卡桑德里传说8.0']) {
+for (const behavior of ['CHEAT_SECRET', 'kasandri6_cheat_backup', 'function exitCheatMode()', 'player.energySurgeBoost', 'function tryEnemyTheft()', 'hasTrait("stealGuard")', 'if(save.blood<10)', '欢迎来到卡桑德里传说8.0']) {
   requireText(behavior, `The 7.0 behavior ${behavior} must remain implemented`);
 }
 for (const surface of ['id="difficultyOverlay"', 'id="lootOverlay"', 'id="setOverlay"', 'id="btnExitToPortal"', '@media (max-width:760px)']) {

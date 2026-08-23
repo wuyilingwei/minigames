@@ -43,6 +43,7 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:"Microsoft YaHei",sans-serif;d
 .elem-water{color:#4fc3f7;}
 .elem-grass{color:#81c784;}
 .elem-thunder{color:#ffd54f;}
+.elem-none{color:#9aa39a;}
 .stat-atk{color:#ff8c00;}
 .stat-hp{color:#66bb6a;}
 .stat-bj{color:#ffd54f;}
@@ -235,9 +236,9 @@ header h1{font-size:18px;}header .sub{font-size:14px;}#term-titlebar{font-size:1
       <section class="hero-panel"><h2>勇者面板</h2><div id="statContent"></div></section>
     </aside>
   </div>
-  <div id="welcomeOverlay" class="overlay"><div class="overlay-panel welcome-panel"><div class="welcome-layout"><div class="welcome-copy"><div class="title-title">卡桑德里传说</div><div class="title-ver">7.0</div><div class="title-menu"><button class="choice-btn" id="btnContinue">继续自动存档</button><button class="choice-btn" id="btnNewGame">新的征途</button><button class="choice-btn" id="btnHomeSave">存档 / 读取</button><button class="choice-btn" id="btnChangelog">更新内容</button><button class="choice-btn" id="btnHomeShop">流动商城</button><a class="choice-btn portal-exit" id="btnHomeExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a></div></div><div class="welcome-cover-frame"><img class="welcome-cover" src="./assets/cover.png" alt="卡桑德里传说西幻方块化封面"></div></div></div></div>
+  <div id="welcomeOverlay" class="overlay"><div class="overlay-panel welcome-panel"><div class="welcome-layout"><div class="welcome-copy"><div class="title-title">卡桑德里传说</div><div class="title-ver">8.0</div><div class="title-menu"><button class="choice-btn" id="btnContinue">继续自动存档</button><button class="choice-btn" id="btnNewGame">新的征途</button><button class="choice-btn" id="btnHomeSave">存档 / 读取</button><button class="choice-btn" id="btnChangelog">更新内容</button><button class="choice-btn" id="btnHomeShop">流动商城</button><a class="choice-btn portal-exit" id="btnHomeExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a></div></div><div class="welcome-cover-frame"><img class="welcome-cover" src="./assets/cover.png" alt="卡桑德里传说西幻方块化封面"></div></div></div></div>
   <div id="settingsOverlay" class="overlay" hidden><div class="overlay-panel"><h2>设置</h2><div class="settings-field"><label class="toggle pixel-switch"><input type="checkbox" id="crtToggle"> CRT 扫描线</label></div><div class="settings-field"><label class="toggle pixel-switch"><input type="checkbox" id="reduceMotionToggle"> 战斗反馈动画</label></div><div class="settings-field"><label class="toggle pixel-switch"><input type="checkbox" id="collapseEventsToggle"> 完成事件后收起终端记录</label></div><div class="settings-field"><label class="toggle pixel-switch"><input type="checkbox" id="settingsAutoBattle"> 自动战斗</label></div><div class="settings-field"><label class="toggle pixel-switch"><input type="checkbox" id="settingsLootAutoSelect"> 自动选择装备</label></div><div class="settings-field"><label class="settings-label" for="cheatCodeInput">秘钥输入</label><input type="text" id="cheatCodeInput" class="cheat-input" placeholder="输入秘钥…" autocomplete="off" spellcheck="false"><button class="choice-btn settings-submit" onclick="tryCheatCode()">确认秘钥</button><div id="cheatCodeNotice" class="modal-notice settings-notice"></div></div><div class="title-menu"><button class="choice-btn" id="btnOpenSaveFromSettings">存档与继续</button><a class="choice-btn settings-exit" id="btnExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a><button class="choice-btn" id="btnSettingsClose">关闭</button></div></div></div>
-  <div id="changelogOverlay" class="overlay" hidden><div class="overlay-panel"><h2>更新内容 · 8.0</h2><ol class="changelog-list"><li>高难恢复按难度衰减，单次及战后恢复至多为最大生命的 60%。</li><li>四色共鸣提供减伤、进战自然临时盾与恢复增强。</li><li>护盾拆分为【次数盾】、【临时盾】与【持续盾】；敌人拥有追踪、闪避、护甲和多段攻击。</li><li>旧版单词条与单值护盾存档会自动归一化，自动战斗和自动选装仍默认关闭。</li></ol><div class="title-menu"><button class="choice-btn" id="btnChangelogClose">关闭</button></div></div></div>
+  <div id="changelogOverlay" class="overlay" hidden><div class="overlay-panel"><h2>更新内容 · 8.0</h2><ol class="changelog-list"><li>高难恢复按难度衰减，单次及战后恢复至多为最大生命的 60%。</li><li>四色共鸣提供减伤、进战与回合自然临时盾、恢复增强。</li><li>护盾拆分为【次数盾】、【临时盾】与【持续盾】；敌人拥有追踪、闪避、护甲和多段攻击。</li><li>装备新增头部、身体、主手、副手与饰品部位；支持双持、剑盾和双手武器互斥。</li><li>新征途自带零属性基础装备；难度 3/6/9 逐步开放更多装备词条，难度 6 起开放第五槽。</li><li>战场新增职业与敌人类型像素小人，并预留多友军、多敌人阵列显示。</li><li>旧版单词条、无部位装备与单值护盾存档会自动归一化；自动战斗和自动选装仍默认关闭。</li></ol><div class="title-menu"><button class="choice-btn" id="btnChangelogClose">关闭</button></div></div></div>
   <div id="shopOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>流动商城</h2><p class="modal-note">购买永久生效；战斗中的行动选项会在关闭商城后保留。</p><div id="shopNotice" class="modal-notice" aria-live="polite"></div><div id="shopContent" class="modal-grid"></div><div class="modal-actions"><button class="choice-btn" id="btnShopClose">关闭商城</button></div></div></div>
   <div id="saveOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>存档与继续</h2><p class="modal-note">自动存档会在可续玩的战斗和装备选择阶段刷新；三个手动槽可自由覆盖。存档同时保存本局状态和永久成长。</p><section class="save-transfer"><h3>完整存档文件</h3><p>导出文件包含永久成长、自动存档和三个手动槽，可用于备份或迁移到其他设备。导入会覆盖当前全部存档。</p><div id="saveTransferNotice" class="modal-notice" aria-live="polite"></div><div id="saveImportConfirm" class="save-import-confirm" hidden><p id="saveImportSummary"></p><div class="modal-actions"><button class="choice-btn danger" id="btnConfirmSaveImport">确认覆盖并导入</button><button class="choice-btn" id="btnCancelSaveImport">取消</button></div></div><div class="save-transfer-actions"><button class="choice-btn" id="btnExportSave">导出存档文件</button><button class="choice-btn" id="btnImportSave">导入存档文件</button><input type="file" id="saveImportInput" accept=".json,application/json" hidden></div></section><div id="saveContent" class="save-slots"></div><div class="modal-actions"><button class="choice-btn" id="btnSaveClose">关闭</button></div></div></div>
   <div id="lootOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2 id="lootTitle">战利品选择</h2><div id="lootContent"></div></div></div>
@@ -357,6 +358,8 @@ function normalizeCombatant(unit){
 }
 function shieldTotal(unit){normalizeCombatant(unit);return unit.shields.hits.charges*unit.shields.hits.value+unit.shields.temp+unit.shields.persistent;}
 function grantShield(unit,type,value,charges=1){normalizeCombatant(unit);value=Math.max(0,Math.floor(value)||0);if(type==="hits"){unit.shields.hits.value=Math.max(unit.shields.hits.value,value);unit.shields.hits.charges+=Math.max(1,charges|0);}else unit.shields[type]=Math.max(0,unit.shields[type]+value);unit.ZDYHP=unit.shields.temp+unit.shields.persistent;unit.shield=unit.ZDYHP;}
+function setTemporaryShield(unit,value){normalizeCombatant(unit);unit.shields.temp=Math.max(0,Math.floor(value)||0);unit.ZDYHP=unit.shields.temp+unit.shields.persistent;unit.shield=unit.ZDYHP;}
+function restoreTemporaryShield(unit,value,cap){normalizeCombatant(unit);let before=unit.shields.temp,limit=Math.max(0,Math.floor(cap)||0);unit.shields.temp=Math.min(limit,before+Math.max(0,Math.floor(value)||0));unit.ZDYHP=unit.shields.temp+unit.shields.persistent;unit.shield=unit.ZDYHP;return unit.shields.temp-before;}
 function absorbDamage(unit,amount,{pierce=false,label="护盾"}={}){normalizeCombatant(unit);let left=Math.max(0,Math.floor(amount)||0),absorbed=0;
     if(!pierce&&left>0&&unit.shields.hits.charges>0){let block=Math.min(left,unit.shields.hits.value);left-=block;absorbed+=block;unit.shields.hits.charges--;print(`【次数盾】${label}抵挡${block}点伤害（剩余${unit.shields.hits.charges}次）。`);}
     for(let type of ["temp","persistent"]){if(!pierce&&left>0&&unit.shields[type]>0){let block=Math.min(left,unit.shields[type]);unit.shields[type]-=block;left-=block;absorbed+=block;print(`【${type==="temp"?"临时盾":"持续盾"}】${label}吸收${block}点伤害。`);}}
@@ -370,6 +373,15 @@ function healPlayer(amount,source="恢复"){
     print(`【${source}】回复${healed}/${requested}点生命${save.useBlood>=3?`（本次上限${perHealCap}）`:""}。`);return healed;
 }
 function hasPrismaticResonance(){let c=getElemCount();return ["火","水","草","雷"].every(element=>c[element]>=1);}
+function prepareBattleShields(){
+    normalizeCombatant(player);
+    setTemporaryShield(player,0);
+    if(hasPrismaticResonance()){
+        let shield=Math.max(1,Math.floor(player.maxHp*.08));
+        setTemporaryShield(player,shield);
+        print(`【四色共鸣】进战获得${shield}点自然临时盾。`);
+    }
+}
 let gameState="start";
 let pendingLoot=null;
 let lastEquipAction=null;
@@ -542,14 +554,14 @@ const jobData={
 "战士":{atk:220,hp:900,bj:0.08,bs:1.5,crt:0.03,desc:"高攻击，攻击吸血20%，战胜加攻击"},
 "天使":{atk:130,hp:1450,bj:0.08,bs:1.5,crt:0.05,desc:"高血量，血量增伤，战胜加血量"},
 "勇者":{atk:180,hp:1100,bj:0.28,bs:2.2,crt:0.05,desc:"高暴击，受击反伤15%"},
-"隐士":{atk:190,hp:900,bj:0.10,bs:1.6,crt:0.30,desc:"高闪避，溢出闪避增伤，战胜加闪避"}
+"隐士":{atk:190,hp:900,bj:0.10,bs:1.6,crt:0.35,desc:"高闪避，溢出闪避增伤，战胜加闪避"}
 };
 
 const blessingData={
 "战士的祝福":{atk:60,hp:100,bj:0,bs:0,crt:0,desc:"攻击+60血量+100，战胜攻击+5%，攻击回血3%"},
 "天使的祝福":{atk:20,hp:400,bj:0,bs:0,crt:0,desc:"血量+400攻击+20，满血增伤25%，战胜血量+5%"},
 "勇者的祝福":{atk:-30,hp:0,bj:0.20,bs:0.4,crt:0,desc:"暴击+20%爆伤+40%攻击-30，溢出暴击转护盾，战胜暴击+3%爆伤+5%"},
-"隐士的祝福":{atk:0,hp:0,bj:-0.05,bs:-0.2,crt:0.25,desc:"闪避+25%暴击-5%爆伤-20%，溢出闪避转增伤，战胜闪避+3%"}
+"隐士的祝福":{atk:0,hp:0,bj:-0.05,bs:-0.2,crt:0.30,desc:"闪避+30%暴击-5%爆伤-20%，溢出闪避转增伤，战胜闪避+3%"}
 };
 
 const monsterAdj=["凶猛的","狡猾的","嗜血的","狂暴的","阴暗的","腐朽的","狰狞的","咆哮的","巨型的","毒液的","烈焰的","寒冰的","暗影的","亡灵的","恶魔的","蛮荒的","深渊的","噩梦的","绝望的","快乐的","无语的","痴呆的","游荡的","成群的","路过的","帅气的","喝水的","发光的","癫狂的","丑陋的","散发香味的","散发臭气的","刻薄的","自大的","年老的","年幼的","会飞的","长翅膀的","胆小的","自卑的","写歌的","画画的","听虚拟歌姬的","试图逃跑的","讲笑话的","唱歌的","跳舞的","咬打火机的","玩游戏的","死翘翘的","尖叫的","状况外的","不想活了的","玩手指的","咬指甲的","打电动的","打音游的","悲鸣的","蠕动的","患有精神病的","好胜的","因为怕死就全点血量的","寂寞的","参悟人生的","立地成佛的","学猫叫的","愚蠢的","无聊的","只是来打着玩玩的","尿急的","正在吃饭的","多愁善感的","锈蚀的","冒烟的","覆满苔藓的","骨甲包裹的","吐毒沫的","浑身溃烂的","被诅咒的","星光笼罩的","暴怒的","昏昏欲睡的","幻视的","狂躁的","流亡的","洞穴栖息的","沼泽潜伏的","熔岩蛰伏的","雾中徘徊的"];
@@ -571,11 +583,11 @@ const traitList=[
 {id:"execute",name:"斩杀",desc:"敌人血量低于20%时造成的伤害翻倍",prob:1},
 {id:"dodgeHeal",name:"灵动自愈",desc:"闪避时回复5%最大生命值",prob:1},
 {id:"thorns",name:"荆棘反伤",desc:"被攻击时反弹10%伤害给敌人",prob:1},
-{id:"shieldGain",name:"护盾之核",desc:"装备时获得护盾值，战斗中优先消耗",prob:1},
+{id:"shieldGain",name:"护盾之核",desc:"装备后获得跨战斗保留的持续盾",prob:1},
 {id:"burn",name:"烈焰灼烧",desc:"攻击时使敌人灼烧，每回合受到攻击力20%伤害，持续3回合",prob:1},
 {id:"poison",name:"剧毒腐蚀",desc:"攻击时使敌人中毒，每回合损失最大血量3%，持续3回合",prob:1},
 {id:"bleed",name:"撕裂流血",desc:"攻击时使敌人流血，每回合损失当前血量5%，持续3回合",prob:1},
-{id:"critShield",name:"暴击护盾",desc:"暴击时获得最大血量5%的护盾",prob:1},
+{id:"critShield",name:"暴击护盾",desc:"暴击时获得最大血量5%的临时盾",prob:1},
 {id:"killHeal",name:"斩杀回复",desc:"击杀敌人时回复30%最大生命值",prob:1},
 {id:"firstStrike",name:"先发制人",desc:"每场战斗首次攻击伤害翻倍",prob:1},
 {id:"highHpBoost",name:"全盛之势",desc:"血量高于80%时攻击力提升30%",prob:1},
@@ -590,14 +602,14 @@ const traitList=[
 {id:"stealGuard",name:"防盗",desc:"免疫小偷偷窃装备，开局获得最大生命5%护盾",prob:1},
 {id:"dotResist",name:"抗毒",desc:"持续伤害降低50%，受到伤害降低5%",prob:1},
 {id:"critExecute",name:"暴击斩杀",desc:"暴击时若敌人生命低于30%则直接斩杀",prob:1},
-{id:"energyShield",name:"能量护盾",desc:"能量满时获得最大生命20%护盾",prob:1},
+{id:"energyShield",name:"能量护盾",desc:"能量满时获得最大生命20%的临时盾",prob:1},
 {id:"revenge",name:"复仇",desc:"受到攻击后下次攻击伤害提升30%",prob:1},
 {id:"shieldBash",name:"护盾猛击",desc:"拥有护盾时攻击伤害提升25%",prob:1},
 {id:"secondWind",name:"背水一战",desc:"生命低于20%时闪避率提升30%",prob:1}
 ];
 
 const elements=["火","水","草","雷"];
-function elemClass(e){return e==="火"?"elem-fire":e==="水"?"elem-water":e==="草"?"elem-grass":"elem-thunder";}
+function elemClass(e){return e==="火"?"elem-fire":e==="水"?"elem-water":e==="草"?"elem-grass":e==="雷"?"elem-thunder":"elem-none";}
 
 const enemyTraitList=[
 {id:"dot",name:"剧毒之体",desc:"攻击附加无法闪避的持续伤害"},
@@ -605,11 +617,11 @@ const enemyTraitList=[
 {id:"heal",name:"再生",desc:"每次攻击后回复5%最大生命值"},
 {id:"berserker",name:"战狂",desc:"攻击有概率连击，连击时损失10%生命"},
 {id:"pierce",name:"隔山打牛",desc:"攻击无视护盾（可被闪避）"},
-{id:"armor",name:"重甲",desc:"受到的所有伤害减少30%"},
+{id:"armor",name:"重甲",desc:"护甲至少提高至30%"},
 {id:"thorns",name:"荆棘之甲",desc:"被攻击时反弹15%伤害"},
 {id:"lifesteal",name:"嗜血",desc:"攻击时回复造成伤害20%的生命值"},
 {id:"rage",name:"狂暴",desc:"血量低于50%时攻击力提升50%"},
-{id:"dodge",name:"灵巧",desc:"有20%概率闪避玩家的攻击"},
+{id:"dodge",name:"灵巧",desc:"闪避率至少提高至20%"},
 {id:"crit",name:"致命",desc:"攻击有25%概率造成1.5倍伤害"},
 {id:"trueSight",name:"真实之眼",desc:"攻击完全无视闪避（必中）"},
 {id:"phase",name:"相位",desc:"攻击有50%概率无视闪避"},
@@ -663,7 +675,7 @@ function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
 
 function getElemCount(){
     let count={火:0,水:0,草:0,雷:0};
-    for(let s of player.slots){if(s)count[s.element]++;}
+    for(let s of player.slots){if(s&&Object.prototype.hasOwnProperty.call(count,s.element))count[s.element]++;}
     return count;
 }
 function getSetBonus(){
@@ -699,6 +711,7 @@ function countTrait(id){
     for(let s of player.slots){if(s&&s.traits){for(let trait of s.traits){if(trait.id===id)c++;}}}
     return c;
 }
+function getArmorBreakValue(){return Math.min(.80,player.slots.flatMap(slot=>slot?.traits||[]).filter(trait=>trait.id==="armorBreak").reduce((sum,trait)=>sum+(Number(trait.value)||.10),0));}
 
 function getTraitProbMult(){
     if(hasSet("草4"))return 2.5;
@@ -708,7 +721,7 @@ function getTraitProbMult(){
 
 function getSetBonusFor(slots){
     let count={火:0,水:0,草:0,雷:0};
-    for(let slot of slots){if(slot)count[slot.element]++;}
+    for(let slot of slots){if(slot&&Object.prototype.hasOwnProperty.call(count,slot.element))count[slot.element]++;}
     return elements.flatMap(element=>count[element]>=4?[element+"4"]:count[element]>=2?[element+"2"]:[]);
 }
 function countTraitFor(slots,id){let count=0;for(let slot of slots){if(slot&&slot.traits){for(let trait of slot.traits){if(trait.id===id)count++;}}}return count;}
@@ -729,14 +742,14 @@ function getNextEnemyForecast(){
     if(bossPending){
         let isIt=player.Q3>=3;
         let baseAtk=isIt?3000:2000,baseHp=isIt?300000:200000;
-        return {name:isIt?"它":"魔王",label:`下一场 Boss · ${isIt?"它":"魔王"}`,atk:Math.floor(baseAtk*diffMult),maxHp:Math.floor(baseHp*diffMult),traits:[]};
+        return {name:isIt?"它":"魔王",label:`下一场 Boss · ${isIt?"它":"魔王"}`,atk:Math.floor(baseAtk*diffMult),maxHp:Math.floor(baseHp*diffMult),tracking:isIt?0.18:0.12,dodge:isIt?0.12:0.08,armor:isIt?0.25:0.18,hits:isIt?4:3,traits:[]};
     }
     let baseAtk=50+nextWave*15,baseHp=300+nextWave*80;
     if(nextWave>=7){
         if(player.job==="战士")baseHp*=5;
         else if(player.job==="勇者")baseHp*=4;
     }
-    return {name:`第 ${nextWave} 波敌人`,label:`下一场 · 第 ${nextWave} 波`,atk:Math.floor(baseAtk*diffMult),maxHp:Math.floor(baseHp*diffMult),traits:[]};
+    return {name:`第 ${nextWave} 波敌人`,label:`下一场 · 第 ${nextWave} 波`,atk:Math.floor(baseAtk*diffMult),maxHp:Math.floor(baseHp*diffMult),tracking:Math.min(.30,.03+nextWave*.012+(save.useBlood||0)*.008),dodge:Math.min(.28,.02+nextWave*.008),armor:Math.min(.35,.04+nextWave*.012),hits:nextWave>=8?3:nextWave>=4?2:1,traits:[]};
 }
 function getComparisonTarget(){return getNextEnemyForecast();}
 function targetHasTrait(target,id){return target&&Array.isArray(target.traits)&&target.traits.some(trait=>trait.id===id);}
@@ -755,12 +768,14 @@ function deriveBuild(slots){
     let shield=slots.reduce((total,slot)=>total+(slot&&slot.traits?slot.traits.filter(trait=>trait.id==="shieldGain").reduce((sum,trait)=>sum+(trait.value||0),0):0),0);
     let target=getComparisonTarget();
     let targetHp=target.maxHp;
-    let targetDodge=targetHasTrait(target,"dodge")?0.20:0;
-    let targetArmor=targetHasTrait(target,"armor")?0.70:1;
+    let targetDodge=Math.max(0,Number(target.dodge)||(targetHasTrait(target,"dodge")?0.20:0));
+    let armorBreak=slots.flatMap(slot=>slot?.traits||[]).filter(trait=>trait.id==="armorBreak").reduce((sum,trait)=>sum+(Number(trait.value)||.10),0);
+    let targetArmor=Math.max(0,Number(target.armor)||(targetHasTrait(target,"armor")?0.30:0));
+    let armorMult=1-Math.max(0,targetArmor-armorBreak);
     let targetAtk=target&&target.atk>0?target.atk:50;
     let expectedCrit20x=getExpectedCrit20xMultFor(slots);
-    let damage=(atk*(1+Math.min(1,Math.max(0,bj))*(bs-1))*expectedCrit20x*fireMult*(1-targetDodge)*targetArmor)+targetHp*thunderRate;
-    let dodgeRate=Math.min(0.85,Math.max(0,crt));
+    let damage=(atk*(1+Math.min(1,Math.max(0,bj))*(bs-1))*expectedCrit20x*fireMult*(1-targetDodge)*armorMult)+targetHp*thunderRate;
+    let dodgeRate=Math.min(0.90,Math.max(0,crt-(Number(target.tracking)||0)));
     if(targetHasTrait(target,"trueSight"))dodgeRate=0;
     else if(targetHasTrait(target,"phase"))dodgeRate*=0.5;
     let enemyCritMult=targetHasTrait(target,"crit")?1.125:1;
@@ -842,7 +857,9 @@ function getDropAdvice(items){
     return {inferiorIndexes:items.map((item,index)=>items.some((alternative,alternativeIndex)=>alternativeIndex!==index&&isBaseStatDominated(item,alternative))).map((inferior,index)=>inferior?index:null).filter(index=>index!==null)};
 }
 function equipmentRecommendationHtml(item){
-    let comparisons=getEquipmentComparisons(item),best=comparisons[0],decision=classifyRecommendation(best);
+    let comparisons=getEquipmentComparisons(item),best=comparisons[0];
+    if(!best)return `<div class="recommendation avoid"><div class="recommend-title">当前没有可用部位</div><div>提升难度至 6 或永久解锁第五槽后可装备饰品。</div></div>`;
+    let decision=classifyRecommendation(best);
     let before=best.current,after=best.next;
     let beforeTrait=best.oldEquip&&best.oldEquip.traits&&best.oldEquip.traits.length?best.oldEquip.traits.map(trait=>trait.name).join("·"):"无";
     let afterTrait=item.traits&&item.traits.length?item.traits.map(trait=>trait.name).join("·"):"无";
@@ -858,11 +875,12 @@ function calcBaseStats(){
     let hp=Math.floor(j.hp*difficultyScale)+b.hp+save.pointHp*5+p.potion*100;
     let bj=j.bj+b.bj+save.pointBj*0.03+p.boots*0.05;
     let bs=j.bs+b.bs+save.pointBs*0.06+p.hat*0.10;
-    let crt=j.crt+b.crt+save.pointCrt*0.025+p.doll*0.05;
+    let crt=j.crt+b.crt+save.pointCrt*0.03+p.doll*0.05;
     return {atk,hp,bj,bs,crt};
 }
 
 function applyEquipStats(){
+    let previousMax=Number(player.maxHp)||0,previousHp=Number(player.hp)||0;
     let base=calcBaseStats();
     let atk=base.atk,hp=base.hp,bj=base.bj,bs=base.bs,crt=base.crt;
     for(let s of player.slots){
@@ -876,13 +894,14 @@ function applyEquipStats(){
     bj+=player.blessBjAdd||0;
     bs+=player.blessBsAdd||0;
     crt+=player.blessCrtAdd||0;
-    player.atk=atk;player.maxHp=hp;player.hp=hp;player.bj=bj;player.bs=bs;player.crt=crt;
+    player.atk=atk;player.maxHp=hp;player.hp=previousMax>0?Math.min(hp,Math.max(0,previousHp+Math.max(0,hp-previousMax))):hp;player.bj=bj;player.bs=bs;player.crt=crt;
 }
+function describeEquipmentTrait(trait){return trait.id==="shieldGain"?`装备后获得${trait.value||0}点持续盾`:trait.id==="armorBreak"?`攻击时破甲 ${Math.floor((trait.value||.10)*100)}%`:trait.desc;}
 
 function oneSlotHtml(idx){
     let s=player.slots[idx];
     if(!s)return `<div class="slot">${getSlotLabel(idx)}：空</div>`;
-    let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${trait.id==="shieldGain"?`装备时获得${trait.value}点护盾`:trait.desc}</div>`).join("");
+    let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
     return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note">【${equipmentPartNames[s.part]}】</span>
     <div class="estats">
     <span class="estat-item stat-atk">ATK+${s.atk}</span>
@@ -1056,7 +1075,7 @@ function showSetInfo(){
 function getDifficultyEffects(level){
     let effects=[];
     if(level>=3)effects.push("开局随机禁用一个职业和一项祝福；回复上限从最大生命60%起继续衰减");
-    if(level>=5)effects.push("敌人无视 30% 闪避率，攻击伤害 -10%");
+    if(level>=5)effects.push("敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%");
     if(level>=7)effects.push("玩家造成的伤害 -20%");
     if(level>=9)effects.push("遭遇普通敌人时有 30% 概率随机失去一件装备");
     if(level>=3)effects.push("装备掉落开放额外效果与 1 条词条");
@@ -1263,12 +1282,14 @@ function adjPoint(type,delta){
 
 function genEquip(wave){
     if(wave===undefined)wave=player.wave;
-    let part=pick(["head","body","oneHand","oneHand","twoHand","offHand","accessory"]);
+    let parts=["head","body","oneHand","oneHand","twoHand","offHand"];
+    if(getSlotCount()>=5)parts.push("accessory");
+    let part=pick(parts);
     let nounByPart={head:["头盔","面纱","假发"],body:["铠甲","披风","斗篷"],oneHand:["长剑","战斧","匕首","法杖","短刀"],twoHand:["巨锤","大剑","长弓","战戟","双刃剑"],offHand:["盾牌","骨盾","护臂"],accessory:["戒指","项链","护符","念珠","水晶球"]};
     let name=pick(lootAdj)+pick(nounByPart[part]||lootNoun);
     let element=pick(elements);
     let scale=1+Math.min(1,wave/20)*1.0;
-    let atk=Math.floor(rand(5,25)*scale),hp=Math.floor(rand(10,80)*scale),bj=rand(0,8)/100,bs=rand(0,10)/100,crt=rand(0,6)/100;
+    let atk=Math.floor(rand(5,25)*scale),hp=Math.floor(rand(10,80)*scale),bj=rand(0,8)/100,bs=rand(0,10)/100,crt=rand(0,8)/100;
     bj=Math.floor(bj*scale*100)/100;bs=Math.floor(bs*scale*100)/100;crt=Math.floor(crt*scale*100)/100;
     let traits=[];
     let tier=save.useBlood>=9?3:save.useBlood>=6?2:save.useBlood>=3?1:0;
@@ -1277,7 +1298,7 @@ function genEquip(wave){
     let used={};
     for(let index=0;index<maxTraits;index++)if(Math.random()<traitProb){
         let candidates=traitList.filter(trait=>!used[trait.id]);
-        if(candidates.length){let trait=pick(candidates);used[trait.id]=true;if(trait.id==="shieldGain")trait={...trait,value:pick([500,800,1000].slice(0,tier).pop()};if(trait.id==="armorBreak")trait={...trait,value:[0.10,0.15,0.20][Math.max(0,tier-1)]};traits.push(trait);}
+        if(candidates.length){let trait=pick(candidates);used[trait.id]=true;if(trait.id==="shieldGain")trait={...trait,value:pick([500,800,1000].slice(0,tier))};if(trait.id==="armorBreak")trait={...trait,value:[0.10,0.15,0.20][Math.max(0,tier-1)]};traits.push(trait);}
     }
     return {name,element,part,atk,hp,bj,bs,crt,traits,affixTier:tier};
 }
@@ -1285,7 +1306,7 @@ function genEquip(wave){
 function equipmentCardHtml(e,includeRecommendation=false){
     let traitHtml="";
     if(e.traits){
-        traitHtml=e.traits.map(trait=>`<div class="trait">【${trait.name}】${trait.id==="shieldGain"?`装备时获得${trait.value}点护盾`:trait.id==="armorBreak"?`攻击时破甲 ${(trait.value||0.10)*100}%`:trait.desc}</div>`).join("");
+        traitHtml=e.traits.map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
     }
     let recommendation=includeRecommendation?equipmentRecommendationHtml(e):"";
     return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note">【${equipmentPartNames[e.part]||"未知部位"}】${e.affixTier?` · 词条阶 ${e.affixTier}`:""}</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
@@ -1408,8 +1429,9 @@ function startLootAutoSelect(){
 }
 function getRecommendedLootChoice(){
     if(!pendingLoot)return null;
-    let candidates=[pendingLoot.e1,pendingLoot.e2].map((item,index)=>({item,chosenIdx:index+1,comparison:getEquipmentComparisons(item)[0]}));
-    return candidates[1].comparison.score>candidates[0].comparison.score?candidates[1]:candidates[0];
+    let candidates=[pendingLoot.e1,pendingLoot.e2].map((item,index)=>({item,chosenIdx:index+1,comparison:getEquipmentComparisons(item)[0]})).filter(candidate=>candidate.comparison);
+    if(!candidates.length)return null;
+    return candidates.length===1||candidates[0].comparison.score>=candidates[1].comparison.score?candidates[0]:candidates[1];
 }
 function flashRecommendedLootChoice(){
     if(!lootAutoSelectEnabled||!pendingLoot)return;
@@ -1489,7 +1511,7 @@ function afterEquip(settledMessage=""){
     if(sg>0){
         let totalShield=0;
         for(let s of player.slots){if(s&&s.traits){for(let trait of s.traits){if(trait.id==="shieldGain")totalShield+=trait.value||0;}}}
-        normalizeCombatant(player);player.shields.persistent=Math.max(player.shields.persistent,totalShield);player.ZDYHP=player.shields.temp+player.shields.persistent;
+        normalizeCombatant(player);player.shields.persistent=Math.max(player.shields.persistent,totalShield);player.ZDYHP=player.shields.temp+player.shields.persistent;player.shield=player.ZDYHP;
         print(`【护盾之核】获得${totalShield}点持续盾！`);
     }
     refreshStatPanel();
@@ -1503,11 +1525,12 @@ function genEnemy(isBoss,bossType){
         let bossTraits=[];
         if(save.useBlood>=10){for(let index=0,count=Math.random()<0.5?1:2;index<count;index++){let candidates=enemyTraitList.filter(trait=>!bossTraits.some(existing=>existing.id===trait.id));if(candidates.length)bossTraits.push(pick(candidates));}}
         if(bossType==="魔王"){
-            enemy=normalizeCombatant({name:"魔王",atk:Math.floor(2000*diffMult),hp:Math.floor(200000*diffMult),maxHp:Math.floor(200000*diffMult),tracking:.12,dodge:.08,armor:.18,hits:3,traits:bossTraits,shield:0,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0});
+            enemy=normalizeCombatant({name:"魔王",atk:Math.floor(2000*diffMult),hp:Math.floor(200000*diffMult),maxHp:Math.floor(200000*diffMult),tracking:.12,dodge:bossTraits.some(trait=>trait.id==="dodge")?0.20:0.08,armor:bossTraits.some(trait=>trait.id==="armor")?0.30:0.18,hits:3,traits:bossTraits,shield:0,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0});
         }else{
             let hp=Math.floor(300000*diffMult*(1+save.useBlood*0.4));
-            enemy=normalizeCombatant({name:"它",atk:Math.floor(3000*diffMult),hp,maxHp:hp,tracking:.18,dodge:.12,armor:.25,hits:4,traits:bossTraits,shield:0,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0});
+            enemy=normalizeCombatant({name:"它",atk:Math.floor(3000*diffMult),hp,maxHp:hp,tracking:.18,dodge:bossTraits.some(trait=>trait.id==="dodge")?0.20:0.12,armor:bossTraits.some(trait=>trait.id==="armor")?0.30:0.25,hits:4,traits:bossTraits,shield:0,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0});
         }
+        prepareBattleShields();
         for(let trait of bossTraits)print(`【BOSS特性】${bossType}拥有【${trait.name}】：${trait.desc}`);
         return true;
     }
@@ -1541,12 +1564,14 @@ function genEnemy(isBoss,bossType){
     if(eTraits.some(t=>t.id==="shield")){eShield=Math.floor((300+wave*80)*0.20*diffMult);}
     let eAtk=Math.floor(baseAtk*diffMult);
     if(eTraits.some(t=>t.id==="trueSight")){eAtk=Math.min(600,Math.floor(eAtk*0.50));}
-    enemy=normalizeCombatant({name:pick(monsterAdj)+pick(monsterNoun),atk:eAtk,hp:Math.floor(baseHp*diffMult),maxHp:Math.floor(baseHp*diffMult),tracking:Math.min(.30,.03+wave*.012+save.useBlood*.008),dodge:Math.min(.28,.02+wave*.008),armor:Math.min(.35,.04+wave*.012),hits:wave>=8?3:wave>=4?2:1,traits:eTraits,shield:eShield,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0});
+    let enemyDodge=Math.max(eTraits.some(trait=>trait.id==="dodge")?0.20:0,Math.min(.28,.02+wave*.008));
+    let enemyArmor=Math.max(eTraits.some(trait=>trait.id==="armor")?0.30:0,Math.min(.35,.04+wave*.012));
+    enemy=normalizeCombatant({name:pick(monsterAdj)+pick(monsterNoun),atk:eAtk,hp:Math.floor(baseHp*diffMult),maxHp:Math.floor(baseHp*diffMult),tracking:Math.min(.30,.03+wave*.012+save.useBlood*.008),dodge:enemyDodge,armor:enemyArmor,hits:wave>=8?3:wave>=4?2:1,traits:eTraits,shield:eShield,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0});
     if(enemy.hits>1)print(`【多段攻击】敌人每回合攻击${enemy.hits}段；每段独立判定。`);
     if(eTraits.length>0){for(let et of eTraits){print(`【敌人特性】这只敌人拥有【${et.name}】：${et.desc}`);}}
     if(hasTrait("stealGuard")){let shield=Math.floor(player.maxHp*.05);grantShield(player,"persistent",shield);print(`【防盗】装备受到保护，获得${shield}点持续盾！`);}
-    if(hasPrismaticResonance()){let shield=Math.floor(player.maxHp*.08);grantShield(player,"temp",shield);print(`【四色共鸣】进战获得${shield}点自然临时盾。`);}
-    if(save.useBlood>=9&&Math.random()<0.08){
+    prepareBattleShields();
+    if(save.useBlood>=9&&Math.random()<0.30){
         let filled=[];
         for(let i=0;i<player.slots.length;i++){if(player.slots[i])filled.push(i);}
         if(filled.length>0){
@@ -1582,10 +1607,7 @@ function applyDots(){
     }
     enemy.dots=newDots;
     if(totalDot>0){
-        if(enemy.shield>0){
-            if(enemy.shield>=totalDot){enemy.shield-=totalDot;print(`敌人护盾吸收了${totalDot}点持续伤害，剩余护盾${enemy.shield}`);totalDot=0;}
-            else{totalDot-=enemy.shield;print(`敌人护盾吸收了${enemy.shield}点持续伤害`);enemy.shield=0;}
-        }
+        totalDot=absorbDamage(enemy,totalDot,{label:"敌方持续盾"}).damage;
         if(totalDot>0){enemy.hp-=totalDot;showBattleFeedback("enemy",`持续 -${totalDot}`,"damage");print(`【持续伤害】敌人受到${totalDot}点持续伤害！`);}
     }
 }
@@ -1654,8 +1676,7 @@ function playerAttack(){
         print(`【灵巧】敌人闪避了你的攻击！`);
         dmg=0;
     }
-    let breakTraits=player.slots.flatMap(slot=>slot?.traits||[]).filter(trait=>trait.id==="armorBreak");
-    let armorBreak=breakTraits.reduce((sum,trait)=>sum+(Number(trait.value)||.10),0);
+    let armorBreak=getArmorBreakValue();
     if(dmg>0&&armorBreak>0){dmg=Math.floor(dmg*(1+armorBreak));print(`【破甲】削减敌方护甲${Math.floor(armorBreak*100)}%。`);}
     if(dmg>0&&hasTrait("antiHeal")){dmg=Math.floor(dmg*1.05);}
     if(dmg>0&&hasTrait("shieldBash")&&player.ZDYHP>0){dmg=Math.floor(dmg*1.25);print("【护盾猛击】伤害提升25%。");}
@@ -1725,11 +1746,17 @@ function playerAttack(){
     let dbl=countTrait("doubleStrike");
     if(dbl>0&&Math.random()<0.20*dbl&&enemy.hp>0){
         print("【连击】你追加了一次攻击！");
-        let dmg2=Math.floor(player.atk*(0.85+Math.random()*0.30));
-        if(Math.random()<player.bj){dmg2=Math.floor(dmg2*player.bs);print(`连击暴击造成 ${dmg2} 点伤害！`);}
-        else{print(`连击造成 ${dmg2} 点伤害`);}
+        let dmg2=Math.floor(player.atk*(0.85+Math.random()*0.30)),isCrit2=false;
+        if(!hasTrait("trueStrike")&&Math.random()<enemy.dodge){dmg2=0;print("【灵巧】敌人闪避了追加攻击！");}
+        if(dmg2>0&&Math.random()<player.bj){isCrit2=true;dmg2=Math.floor(dmg2*player.bs);print(`连击暴击造成 ${dmg2} 点伤害！`);}
+        let armorBreak=getArmorBreakValue();
+        if(dmg2>0)dmg2=Math.floor(dmg2*(1-Math.max(0,enemy.armor-armorBreak)));
+        if(dmg2>0&&save.useBlood>=7)dmg2=Math.floor(dmg2*.80);
+        if(dmg2>0)dmg2=absorbDamage(enemy,dmg2,{label:"敌方护盾"}).damage;
+        if(dmg2>0&&!isCrit2)print(`连击造成 ${dmg2} 点伤害`);
         enemy.hp-=dmg2;
         showBattleFeedback("enemy",`连击 -${dmg2}`,"damage");
+        if(dmg2>0&&hasETrait("enrage")&&enemy.hp>0){enemy.atk=Math.floor(enemy.atk*1.10);print("【激怒】敌人的攻击力提升了！");}
     }
 }
 function burstAttack(){
@@ -1762,20 +1789,17 @@ function burstAttack(){
     }
     if(hasSet("火4")){dmg=Math.floor(dmg*1.25);}
     else if(hasSet("火2")){dmg=Math.floor(dmg*1.10);}
-    if(!hasTrait("trueStrike")&&hasETrait("dodge")&&Math.random()<0.20){
+    if(hasTrait("trueStrike")){dmg=Math.floor(dmg*1.08);print("【必中打击】必杀技无视闪避，伤害+8%。");}
+    if(!hasTrait("trueStrike")&&Math.random()<enemy.dodge){
         showBattleFeedback("enemy","闪避必杀","dodge");
         print(`【灵巧】敌人闪避了你的必杀技！`);
         dmg=0;
     }
-    if(dmg>0&&hasETrait("armor")){
-        dmg=Math.floor(dmg*0.70);
-        print(`【重甲】敌人的护甲减免了部分必杀技伤害！`);
-    }
+    let armorBreak=getArmorBreakValue();
+    if(dmg>0&&armorBreak>0)print(`【破甲】必杀技削减敌方护甲${Math.floor(armorBreak*100)}%。`);
+    if(dmg>0&&enemy.armor>0){let reduction=Math.max(0,enemy.armor-armorBreak);dmg=Math.floor(dmg*(1-reduction));if(reduction>0)print(`【护甲】敌人的护甲减免了${Math.floor(reduction*100)}%必杀技伤害！`);}
     if(dmg>0&&save.useBlood>=7){dmg=Math.floor(dmg*0.80);}
-    if(dmg>0&&enemy.shield>0){
-        if(enemy.shield>=dmg){enemy.shield-=dmg;print(`敌人护盾吸收了${dmg}点必杀技伤害，剩余护盾${enemy.shield}`);dmg=0;}
-        else{dmg-=enemy.shield;print(`敌人护盾吸收了${enemy.shield}点必杀技伤害`);enemy.shield=0;}
-    }
+    if(dmg>0)dmg=absorbDamage(enemy,dmg,{label:"敌方护盾"}).damage;
     if(dmg>0&&hasETrait("thorns")&&!hasTrait("antiThorns")){
         let reflect=Math.floor(dmg*0.15);
         player.hp-=reflect;
@@ -1792,41 +1816,59 @@ function burstAttack(){
     refreshStatPanel();
 }
 
-function enemyAttackLegacy(){
-    if(enemy.name==="它"){
-        let key=pick(["atk","maxHp","bj","bs","crt"]),amount=key==="maxHp"?rand(3,8):key==="atk"?rand(1,2):key==="bs"?rand(5,15)/1000:rand(3,8)/1000;
-        player[key]=Math.max(key==="atk"||key==="maxHp"?1:0,player[key]-amount);if(key==="maxHp")player.hp=Math.min(player.hp,player.maxHp);
-        let labels={atk:"攻击力",maxHp:"血量上限",bj:"暴击率",bs:"暴击伤害",crt:"闪避率"};
-        print(`【它的侵蚀】${labels[key]}-${key==="bj"||key==="bs"||key==="crt"?`${Math.floor(amount*1000)/10}%`:amount}`);
-    }
-    let effCrt=player.crt;
+function getPlayerDodgeAgainst(unit){return Math.min(.95,Math.max(0,player.crt-(Number(unit.tracking)||0)));}
+function getEnemySegmentAttack(unit,hits){let count=Math.max(1,hits|0),turnScale=1+.12*(count-1);return Math.max(1,Math.floor(unit.atk*turnScale/count));}
+function applyEnemyDotDamage(part,hits){
+    if(!hasETrait("dot"))return;
+    let dotDmg=Math.floor(getEnemySegmentAttack(enemy,hits)*.15);
+    if(hasTrait("dotResist"))dotDmg=Math.floor(dotDmg*.5);
+    dotDmg=absorbDamage(player,dotDmg,{label:`剧毒第${part}段`}).damage;
+    if(dotDmg>0){player.hp-=dotDmg;print(`【剧毒之体】第${part}/${hits}段附加${dotDmg}点无法闪避的持续伤害！`);}
+}
+function tryPlayerRevive(){
+    if(player.hp>0)return true;
+    let pmult=getTraitProbMult(),reviveOnce=countTrait("reviveOnce");
+    if(reviveOnce>0&&player.ZBSPECIALUSED1<reviveOnce){player.hp=0;player.ZBSPECIALUSED1++;healPlayer(Math.floor(player.maxHp*.5),"不死意志");print(`【不死意志】剩余${reviveOnce-player.ZBSPECIALUSED1}次。`);return player.hp>0;}
+    let revive30=countTrait("revive30");
+    if(revive30>0&&Math.random()<.30*revive30*pmult){player.hp=1;print("【苟延残喘】你保留了1点生命！");return true;}
+    return false;
+}
+function tryEnemyTheft(){
+    if(!hasETrait("thief"))return true;
+    if(hasTrait("stealGuard")){print("【防盗】你的装备受到保护，小偷未能得逞！");return true;}
+    if(Math.random()>=.25)return true;
+    let filled=[];
+    for(let i=0;i<player.slots.length;i++)if(player.slots[i])filled.push(i);
+    if(!filled.length)return true;
+    let ridx=pick(filled),stolen=player.slots[ridx];player.slots[ridx]=null;
+    applyEquipStats();refreshStatPanel();gameState="equipLostConfirm";
+    print("【小偷】敌人偷走了你的装备：");showEquip(stolen);clearChoices();
+    addChoice("确认",()=>{gameState="battle";battleLoop();});autoSaveRun();return false;
+}
+function settleEnemyTurn(){
+    if(hasPrismaticResonance()&&player.hp>0&&enemy.hp>0){let cap=Math.max(1,Math.floor(player.maxHp*.08)),restored=restoreTemporaryShield(player,Math.max(1,Math.floor(player.maxHp*.02)),cap);if(restored>0)print(`【四色共鸣】自然临时盾恢复${restored}点。`);}
+    if(hasETrait("heal")&&enemy.hp>0&&!(enemy.antiHealTurns>0)){let healed=Math.floor(enemy.maxHp*.05);enemy.hp=Math.min(enemy.maxHp,enemy.hp+healed);print(`【再生】敌人回复了${healed}点生命值！`);}
+    if(enemy.antiHealTurns>0)enemy.antiHealTurns--;
+    if(enemy.purifyTurns>0){enemy.purifyTurns--;if(enemy.purifyTurns===0&&enemy.purifyPenalty){enemy.atk+=enemy.purifyPenalty;enemy.purifyPenalty=0;print("【净化】敌人的攻击力已恢复。");}}
+    return player.hp<=0||tryEnemyTheft();
+}
+function resolveEnemyAttackSegment(part,hits){
+    let effCrt=getPlayerDodgeAgainst(enemy);
     if(hasTrait("secondWind")&&player.hp/player.maxHp<0.2){effCrt+=0.30;print("【背水一战】闪避率提升30%。");}
-    if(save.useBlood>=5){effCrt=Math.max(0,effCrt-0.30);}
+    effCrt=Math.min(.95,Math.max(0,effCrt));
     if(hasETrait("trueSight")){effCrt=0;print("【真实之眼】敌人的攻击完全无视你的闪避！");}
     else if(hasETrait("phase")&&Math.random()<0.50){effCrt=0;print("【相位】敌人的攻击穿透了你的闪避！");}
     if(enemy.name==="魔王"&&Math.random()<0.05){effCrt=effCrt*0.5;print("【魔王】魔王的攻势凌厉，你的闪避率减半！");}
     if(Math.random()<effCrt){
         showBattleFeedback("player","闪避","dodge");
-        print("你闪避了敌人的攻击！");
+        print(`第${part}/${hits}段：你以${Math.floor(effCrt*100)}%有效闪避避开攻击（敌方追踪${Math.floor((enemy.tracking||0)*100)}%）。`);
         if(hasTrait("dodgeBoost")){player.nextDodgeBoost=true;print("【闪避反击】下次攻击伤害变为10倍！");}
         let dh=countTrait("dodgeHeal");
-        if(dh>0){
-            let heal=Math.floor(player.maxHp*0.05*dh);
-            player.hp=Math.min(player.maxHp,player.hp+heal);
-            print(`【灵动自愈】闪避回复${heal}点生命！`);
-        }
-        if(hasETrait("dot")){
-            let dotDmg=Math.floor(enemy.atk*0.15);
-            if(hasTrait("dotResist"))dotDmg=Math.floor(dotDmg*0.5);
-            if(player.ZDYHP>0){
-                if(player.ZDYHP>=dotDmg){player.ZDYHP-=dotDmg;print(`【剧毒之体】护盾吸收了${dotDmg}点持续伤害，剩余护盾${player.ZDYHP}`);dotDmg=0;}
-                else{dotDmg-=player.ZDYHP;print(`【剧毒之体】护盾吸收了${player.ZDYHP}点持续伤害`);player.ZDYHP=0;}
-            }
-            if(dotDmg>0){player.hp-=dotDmg;print(`【剧毒之体】你受到${dotDmg}点无法闪避的持续伤害！`);}
-        }
-        return true;
+        if(dh>0)healPlayer(Math.floor(player.maxHp*.05*dh),"灵动自愈");
+        applyEnemyDotDamage(part,hits);
+        return tryPlayerRevive();
     }
-    let dmg=Math.floor(enemy.atk*(0.8+Math.random()*0.40));
+    let dmg=Math.floor(getEnemySegmentAttack(enemy,hits)*(0.8+Math.random()*0.40));
     if(hasETrait("rage")&&enemy.hp/enemy.maxHp<0.5){
         dmg=Math.floor(dmg*1.50);
         print(`【狂暴】敌人血量低于50%，攻击力提升50%！`);
@@ -1836,22 +1878,15 @@ function enemyAttackLegacy(){
         print(`【致命】敌人造成了1.5倍伤害！`);
     }
     if(save.useBlood>=5){dmg=Math.floor(dmg*0.90);}
-    let iw=countTrait("ironWall");
-    if(iw>0){dmg=Math.floor(dmg*Math.max(0.1,1-0.15*iw));}
-    if(hasTrait("antiThorns"))dmg=Math.floor(dmg*0.95);
-    if(hasTrait("dotResist"))dmg=Math.floor(dmg*0.95);
-    if(hasSet("水4")){dmg=Math.floor(dmg*0.80);}
-    else if(hasSet("水2")){dmg=Math.floor(dmg*0.92);}
+    let reduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?0.20:hasSet("水2")?0.08:0)+(hasPrismaticResonance()?0.12:0);
+    dmg=Math.floor(dmg*Math.max(.10,1-reduction));
     let isPierce=hasETrait("pierce");
-    if(!isPierce&&player.ZDYHP>0){
-        if(player.ZDYHP>=dmg){player.ZDYHP-=dmg;print(`护盾吸收了${dmg}点伤害，剩余护盾${player.ZDYHP}`);dmg=0;}
-        else{dmg-=player.ZDYHP;print(`护盾吸收了${player.ZDYHP}点伤害`);player.ZDYHP=0;}
-    }
+    dmg=absorbDamage(player,dmg,{pierce:isPierce,label:`第${part}段`}).damage;
     if(isPierce&&dmg>0){print("【隔山打牛】敌人的攻击无视了你的护盾！");}
     if(dmg>0){
         player.hp-=dmg;
         showBattleFeedback("player",`-${dmg}`,"damage");
-        print(`敌人造成 ${dmg} 点伤害`);
+        print(`第${part}/${hits}段：敌人造成 ${dmg} 点伤害。`);
         player.energy=Math.min(100,player.energy+10);
         if(hasTrait("revenge"))player.revengeActive=true;
         let th=countTrait("thorns");
@@ -1880,105 +1915,23 @@ function enemyAttackLegacy(){
             player.bj=Math.max(0,player.bj-v);
             print(`【诅咒】你的暴击率降低了${Math.floor(v*1000)/10}%！`);
         }
-        if(hasETrait("dot")){
-            let dotDmg=Math.floor(enemy.atk*0.15);
-            if(hasTrait("dotResist"))dotDmg=Math.floor(dotDmg*0.5);
-            if(player.ZDYHP>0){
-                if(player.ZDYHP>=dotDmg){player.ZDYHP-=dotDmg;print(`【剧毒之体】护盾吸收了${dotDmg}点持续伤害，剩余护盾${player.ZDYHP}`);dotDmg=0;}
-                else{dotDmg-=player.ZDYHP;print(`【剧毒之体】护盾吸收了${player.ZDYHP}点持续伤害`);player.ZDYHP=0;}
-            }
-            if(dotDmg>0){player.hp-=dotDmg;print(`【剧毒之体】你受到${dotDmg}点无法闪避的持续伤害！`);}
-        }
     }
-    if(hasETrait("heal")&&enemy.hp>0&&!(enemy.antiHealTurns>0)){
-        let heal=Math.floor(enemy.maxHp*0.05);
-        enemy.hp=Math.min(enemy.maxHp,enemy.hp+heal);
-        print(`【再生】敌人回复了${heal}点生命值！`);
-    }
-    if(enemy.antiHealTurns>0)enemy.antiHealTurns--;
-    if(enemy.purifyTurns>0){enemy.purifyTurns--;if(enemy.purifyTurns===0&&enemy.purifyPenalty){enemy.atk+=enemy.purifyPenalty;enemy.purifyPenalty=0;print("【净化】敌人的攻击力已恢复。");}}
-    if(hasETrait("berserker")&&enemy.hp>0&&Math.random()<0.35){
-        let comboDmg=Math.floor(enemy.atk*(0.8+Math.random()*0.40));
-        if(iw>0){comboDmg=Math.floor(comboDmg*Math.max(0.1,1-0.15*iw));}
-        if(hasSet("水4")){comboDmg=Math.floor(comboDmg*0.80);}
-        else if(hasSet("水2")){comboDmg=Math.floor(comboDmg*0.92);}
-        if(!isPierce&&player.ZDYHP>0){
-            if(player.ZDYHP>=comboDmg){player.ZDYHP-=comboDmg;print(`【战狂连击】护盾吸收了${comboDmg}点伤害，剩余护盾${player.ZDYHP}`);comboDmg=0;}
-            else{comboDmg-=player.ZDYHP;print(`【战狂连击】护盾吸收了${player.ZDYHP}点伤害`);player.ZDYHP=0;}
-        }
-        if(comboDmg>0){player.hp-=comboDmg;print(`【战狂连击】敌人追加攻击造成${comboDmg}点伤害！`);}
-        let selfDmg=Math.floor(enemy.maxHp*0.10);
-        enemy.hp-=selfDmg;
-        print(`【战狂】敌人因连击损失${selfDmg}点生命值！`);
-    }
-    if(hasETrait("thief")&&!hasTrait("stealGuard")&&Math.random()<0.25){
-        let filled=[];
-        for(let i=0;i<player.slots.length;i++){if(player.slots[i])filled.push(i);}
-        if(filled.length>0){
-            let ridx=filled[Math.floor(Math.random()*filled.length)];
-            let stolen=player.slots[ridx];
-            player.slots[ridx]=null;
-            applyEquipStats();
-            refreshStatPanel();
-            gameState="equipLostConfirm";
-            print(`【小偷】敌人偷走了你的装备：`);
-            showEquip(stolen);
-            clearChoices();
-            addChoice("确认",()=>{gameState="battle";battleLoop();});
-            autoSaveRun();
-            return false;
-        }
-    }
-    if(hasETrait("thief")&&hasTrait("stealGuard"))print("【防盗】你的装备受到保护，小偷未能得逞！");
-    if(player.hp<=0){
-        let pmult=getTraitProbMult();
-        let ro=countTrait("reviveOnce");
-        if(ro>0&&player.ZBSPECIALUSED1<ro){
-            player.hp=Math.floor(player.maxHp*0.5);player.ZBSPECIALUSED1++;
-            print(`【不死意志】你回复了50%生命值！（剩余${ro-player.ZBSPECIALUSED1}次）`);
-        }else{
-            let r30=countTrait("revive30");
-            if(r30>0&&Math.random()<0.30*r30*pmult){
-                player.hp=1;
-                print("【苟延残喘】你保留了1点生命！");
-            }
-        }
-    }
-    refreshStatPanel();
-    return true;
+    applyEnemyDotDamage(part,hits);
+    return tryPlayerRevive();
 }
 
 function enemyAttack(){
     normalizeCombatant(player);normalizeCombatant(enemy);
     let hits=Math.max(1,enemy.hits);
-    for(let part=1;part<=hits&&player.hp>0;part++){
-        let dodge=Math.min(.95,Math.max(0,player.crt-enemy.tracking));
-        if(hasTrait("secondWind")&&player.hp/player.maxHp<.2)dodge=Math.min(.95,dodge+.30);
-        if(hasETrait("trueSight"))dodge=0;
-        else if(hasETrait("phase")&&Math.random()<.5)dodge=0;
-        if(Math.random()<dodge){
-            print(`第${part}/${hits}段：你闪避了敌人的攻击（闪避${Math.floor(dodge*100)}%，追踪${Math.floor(enemy.tracking*100)}%）。`);
-            showBattleFeedback("player","闪避","dodge");
-            if(hasTrait("dodgeBoost"))player.nextDodgeBoost=true;
-            let dodgeHeal=countTrait("dodgeHeal");if(dodgeHeal)healPlayer(Math.floor(player.maxHp*.05*dodgeHeal),"灵动自愈");
-            continue;
-        }
-        let dmg=Math.floor(enemy.atk*(.8+Math.random()*.4));
-        if(hasETrait("rage")&&enemy.hp/enemy.maxHp<.5)dmg=Math.floor(dmg*1.5);
-        if(hasETrait("crit")&&Math.random()<.25){dmg=Math.floor(dmg*1.5);print(`第${part}/${hits}段：【致命】暴击！`);}
-        let reduction=(countTrait("ironWall")*.15)+(hasSet("水4")?.20:hasSet("水2")?.08:0)+(hasPrismaticResonance()?.12:0);
-        dmg=Math.floor(dmg*Math.max(.1,1-reduction));
-        let result=absorbDamage(player,dmg,{pierce:hasETrait("pierce"),label:`第${part}段`});dmg=result.damage;
-        if(dmg>0){player.hp-=dmg;player.energy=Math.min(100,player.energy+10);print(`第${part}/${hits}段：敌人造成${dmg}点伤害。`);showBattleFeedback("player",`-${dmg}`,"damage");
-            if(hasTrait("revenge"))player.revengeActive=true;
-            if(hasETrait("lifesteal"))enemy.hp=Math.min(enemy.maxHp,enemy.hp+Math.floor(dmg*.2));
-            if(hasETrait("weaken"))player.atk=Math.max(1,player.atk-Math.max(1,Math.floor(player.atk*rand(3,5)/100)));
-        }
+    if(enemy.name==="它"){
+        let key=pick(["atk","maxHp","bj","bs","crt"]),amount=key==="maxHp"?rand(3,8):key==="atk"?rand(1,2):key==="bs"?rand(5,15)/1000:rand(3,8)/1000;
+        player[key]=Math.max(key==="atk"||key==="maxHp"?1:0,player[key]-amount);if(key==="maxHp")player.hp=Math.min(player.hp,player.maxHp);
+        let labels={atk:"攻击力",maxHp:"血量上限",bj:"暴击率",bs:"暴击伤害",crt:"闪避率"};
+        print(`【它的侵蚀】${labels[key]}-${key==="bj"||key==="bs"||key==="crt"?`${Math.floor(amount*1000)/10}%`:amount}`);
     }
-    if(hasPrismaticResonance()&&enemy.hp>0){grantShield(player,"temp",Math.max(1,Math.floor(player.maxHp*.02)));print("【四色共鸣】自然临时盾恢复2%最大生命。");}
-    if(hasETrait("heal")&&enemy.hp>0&&!(enemy.antiHealTurns>0))enemy.hp=Math.min(enemy.maxHp,enemy.hp+Math.floor(enemy.maxHp*.05));
-    if(enemy.antiHealTurns>0)enemy.antiHealTurns--;
-    refreshStatPanel();return true;
+    if(hasETrait("berserker")&&enemy.hp>0&&Math.random()<.35){hits++;let selfDmg=Math.floor(enemy.maxHp*.10);enemy.hp-=selfDmg;print(`【战狂】本回合追加第${hits}段攻击，并损失${selfDmg}点生命值！`);}
+    for(let part=1;part<=hits&&player.hp>0&&enemy.hp>0;part++)if(!resolveEnemyAttackSegment(part,hits))break;
+    let continued=settleEnemyTurn();refreshStatPanel();return continued;
 }
 
 function autoBattleDecide(){
@@ -1986,14 +1939,17 @@ function autoBattleDecide(){
     if(enemy.hp<=chargedAttack)return "attack";
     if(player.energy>=100)return "burst";
     if((player.defendStack||0)>=2)return "attack";
-    let dodgeRate=hasETrait("trueSight")?0:Math.min(0.95,player.crt);
-    let incoming=enemy.atk*(1-dodgeRate);
+    let dodgeRate=hasETrait("trueSight")?0:getPlayerDodgeAgainst(enemy);
+    if(hasETrait("phase"))dodgeRate*=.5;
+    let incoming=enemy.atk*(1+.12*(Math.max(1,enemy.hits)-1))*(1-dodgeRate);
+    let reduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?0.20:hasSet("水2")?0.08:0)+(hasPrismaticResonance()?0.12:0);
+    incoming*=Math.max(.10,1-reduction);
     let healing=0;
     if(player.job==="战士")healing+=player.atk*0.20*(1-dodgeRate);
     if(player.blessing==="战士的祝福")healing+=player.maxHp*0.03;
     healing+=countTrait("attackHeal")*player.maxHp*0.03;
     healing+=countTrait("lifesteal")*chargedAttack*0.10;
-    let effectiveHp=player.hp+(player.ZDYHP||0);
+    let effectiveHp=player.hp+shieldTotal(player);
     let turnsToDie=Math.ceil(effectiveHp/Math.max(1,incoming-healing));
     let turnsToKill=Math.ceil(enemy.hp/Math.max(1,chargedAttack));
     return turnsToDie<=turnsToKill+1?"defend":"attack";
@@ -2038,11 +1994,12 @@ function simulateBossSkip(){
     if(player.job==="隐士"&&player.crt>1){avgDmg*=(1+Math.floor((player.crt-1)*100/5)*0.02);}
     if(player.blessing==="天使的祝福"){avgDmg*=(1+(player.hp/player.maxHp)*0.25);}
     if(player.blessing==="隐士的祝福"&&player.crt>1){avgDmg*=(1+(player.crt-1));}
-    let bossDmg=enemy.atk;
-    let effCrt=Math.min(0.95,player.crt);
+    let bossDmg=enemy.atk*(1+.12*(Math.max(1,enemy.hits)-1));
+    let effCrt=getPlayerDodgeAgainst(enemy);
     if(enemy.name==="魔王"){effCrt=effCrt*0.95+effCrt*0.5*0.05;}
     bossDmg*=(1-effCrt);
     if(hasSet("水4"))bossDmg*=0.80;else if(hasSet("水2"))bossDmg*=0.92;
+    if(hasPrismaticResonance())bossDmg*=0.88;
     let iw=countTrait("ironWall");
     if(iw>0)bossDmg*=Math.max(0.1,1-0.15*iw);
     let healPerTurn=0;
@@ -2054,7 +2011,7 @@ function simulateBossSkip(){
     if(ls>0)healPerTurn+=avgDmg*0.10*ls;
     let ch=countTrait("critHeal");
     if(ch>0)healPerTurn+=player.maxHp*0.10*ch*Math.min(1,player.bj);
-    let totalHp=player.maxHp+(player.ZDYHP||0);
+    let totalHp=player.maxHp+shieldTotal(player);
     let turnsToKill=enemy.maxHp/avgDmg;
     let netLoss=Math.max(0,bossDmg-healPerTurn);
     let turnsSurvive=netLoss>0?totalHp/netLoss:9999;
@@ -2119,18 +2076,14 @@ function finishEnemyDefeat(){
     rememberLastBattle();
     if(hasETrait("explode")){
         let explodeDmg=Math.floor(player.maxHp*0.10);
-        if(player.ZDYHP>0){
-            if(player.ZDYHP>=explodeDmg){player.ZDYHP-=explodeDmg;print(`【爆裂】敌人死亡时爆炸！护盾吸收了${explodeDmg}点伤害，剩余护盾${player.ZDYHP}`);explodeDmg=0;}
-            else{explodeDmg-=player.ZDYHP;print(`【爆裂】敌人死亡时爆炸！护盾吸收了${player.ZDYHP}点伤害`);player.ZDYHP=0;}
-        }
+        explodeDmg=absorbDamage(player,explodeDmg,{label:"爆裂冲击"}).damage;
         if(explodeDmg>0){player.hp-=explodeDmg;print(`【爆裂】敌人死亡时爆炸，你受到${explodeDmg}点伤害！`);}
     }
     print(`你击败了 【${enemy.name}】！`);
     let kh=countTrait("killHeal");
     if(kh>0){
         let heal=Math.floor(player.maxHp*0.30*kh);
-        player.hp=Math.min(player.maxHp,player.hp+heal);
-        print(`【斩杀回复】回复${heal}点生命！`);
+        healPlayer(heal,"斩杀回复");
     }
     if(gameState==="bossBattle"){
         let gold=rand(100,200);
@@ -2275,7 +2228,7 @@ function enterBoss(){
         print("\n【魔王的加护】魔王的力量涌入你的体内！");
         player.atk=Math.floor(player.atk*5);
         player.maxHp=Math.floor(player.maxHp*5);
-        player.hp=player.maxHp;
+        healPlayer(player.maxHp,"魔王加护");
         player.bj=player.bj*2;
         player.bs=player.bs*2;
         player.crt=player.crt*3;
