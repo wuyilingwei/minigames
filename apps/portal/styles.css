@@ -37,10 +37,15 @@ body {
 }
 
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
   font-size: .82rem;
   font-weight: 700;
   letter-spacing: .08em;
 }
+
+.wordmark img { display: block; width: 24px; height: 24px; }
 
 .about-link {
   display: inline-flex;
