@@ -34,12 +34,11 @@ requireText('id="crtToggle"', 'Settings CRT checkbox must remain available');
 requireText('id="reduceMotionToggle"', 'Settings animation checkbox must remain available');
 requireText('id="collapseEventsToggle"', 'Settings event-collapse checkbox must remain available');
 requireText('id="lootAutoSelect"', 'Loot auto-select checkbox must remain available');
+requireText('id="settingsLootAutoSelect"', 'Settings auto-select checkbox must remain available');
 requirePixelSwitchLabel('crtToggle');
 requirePixelSwitchLabel('reduceMotionToggle');
 requirePixelSwitchLabel('collapseEventsToggle');
 requirePixelSwitchLabel('settingsAutoBattle');
-if (html.includes('settingsLootAutoSelect')) {
-  throw new Error('Settings auto-select checkbox must be removed from the HTML');
-}
+requirePixelSwitchLabel('settingsLootAutoSelect');
 
 console.log('Verified shared animated checkbox styles and reduced-motion fallbacks.');
