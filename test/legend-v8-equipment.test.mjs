@@ -30,6 +30,16 @@ if (hard.buildEquipAction({ ...shield, part: 'body' }, 2, slots) !== null) throw
 
 const legacy = hard.normalizeEquipment({ name: '古老的大剑', atk: 4, hp: 5, trait: { id: 'armorBreak' } }, 2);
 if (legacy.part !== 'twoHand' || !Array.isArray(legacy.traits) || legacy.traits.length !== 1) throw new Error('Legacy equipment must infer a part and migrate a single trait.');
+const tierStart = html.indexOf('const equipmentTraitIdsByTier=');
+const tierEnd = html.indexOf('\n\nconst elements=', tierStart);
+const tierModel = tierStart >= 0 && tierEnd > tierStart ? html.slice(tierStart, tierEnd) : '';
+if (!tierModel) throw new Error('Could not extract difficulty trait pools.');
+const makeTierPool = new Function('traitList', `${tierModel}\nreturn getEquipmentTraitPool;`)([
+  'attackHeal', 'armorBreak', 'reviveOnce', 'stealGuard',
+].map(id => ({ id })));
+if (makeTierPool(1).some(trait => trait.id === 'armorBreak')) throw new Error('Difficulty 3 must not expose tier-two armor break.');
+if (!makeTierPool(2).some(trait => trait.id === 'armorBreak')) throw new Error('Difficulty 6 must unlock armor break.');
+if (!makeTierPool(3).some(trait => trait.id === 'reviveOnce') || !makeTierPool(3).some(trait => trait.id === 'stealGuard')) throw new Error('Difficulty 9 must unlock rare tier-three effects.');
 for (const [level, traits] of [[0, 0], [3, 1], [6, 2], [9, 3]]) {
   const expected = level === 0 ? 'let maxTraits=tier;' : 'let tier=save.useBlood>=9?3:save.useBlood>=6?2:save.useBlood>=3?1:0;';
   if (!runtime.includes(expected)) throw new Error(`Difficulty ${level} equipment trait tier is missing.`);
