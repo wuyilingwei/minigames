@@ -498,6 +498,13 @@ function getSetBonusFor(slots){
 }
 function countTraitFor(slots,id){let count=0;for(let slot of slots){if(slot&&slot.traits){for(let trait of slot.traits){if(trait.id===id)count++;}}}return count;}
 function getTraitMultFor(slots){return Math.pow(0.5,countTraitFor(slots,"deadlyStrike"))*Math.pow(0.7,countTraitFor(slots,"crit20x"));}
+function getPlayerDamageReductionFor(slots=player.slots,{includeResonance=true}={}){
+    let sets=getSetBonusFor(slots);
+    let waterReduction=sets.includes("水4")?scaledElementEffect(0.20,slots):sets.includes("水2")?scaledElementEffect(0.08,slots):0;
+    let traitReduction=countTraitFor(slots,"ironWall")*.15+(countTraitFor(slots,"antiThorns")>0?0.05:0)+(countTraitFor(slots,"dotResist")>0?0.05:0);
+    let resonanceReduction=includeResonance&&hasPrismaticResonanceFor(slots)?0.12:0;
+    return Math.min(.90,waterReduction+traitReduction+resonanceReduction);
+}
 function getTraitProbMultFor(slots){
     let sets=getSetBonusFor(slots);
     return sets.includes("草4")?scaledElementEffect(2.5,slots):sets.includes("草2")?scaledElementEffect(1.5,slots):1;
@@ -535,8 +542,6 @@ function deriveBuild(slots){
     let sets=getSetBonusFor(slots);
     let fireMult=sets.includes("火4")?1+scaledElementEffect(0.25,slots):sets.includes("火2")?1+scaledElementEffect(0.10,slots):1;
     let thunderRate=sets.includes("雷4")?scaledElementEffect(0.06,slots):sets.includes("雷2")?scaledElementEffect(0.03,slots):0;
-    let waterMult=sets.includes("水4")?1-scaledElementEffect(0.20,slots):sets.includes("水2")?1-scaledElementEffect(0.08,slots):1;
-    let ironMult=Math.max(0.1,1-0.15*countTraitFor(slots,"ironWall"));
     let shield=slots.reduce((total,slot)=>total+(slot&&slot.traits?slot.traits.filter(trait=>trait.id==="shieldGain").reduce((sum,trait)=>sum+(trait.value||0),0):0),0);
     let target=getComparisonTarget();
     let targetHp=target.maxHp;
@@ -551,7 +556,7 @@ function deriveBuild(slots){
     if(targetHasTrait(target,"trueSight"))dodgeRate=0;
     else if(targetHasTrait(target,"phase"))dodgeRate*=0.5;
     let enemyCritMult=targetHasTrait(target,"crit")?1.125:1;
-    let incoming=targetAtk*enemyCritMult*(1-dodgeRate)*waterMult*ironMult;
+    let incoming=targetAtk*enemyCritMult*(1-dodgeRate)*(1-getPlayerDamageReductionFor(slots));
     let survival=(hp+shield)/Math.max(1,incoming);
     return {atk,hp,bj,bs,crt,sets,shield,damage,survival,incoming,target,expectedCrit20x};
 }
@@ -870,6 +875,7 @@ function showSetInfo(){
 }
 function getDifficultyEffects(level){
     let effects=[];
+    if(level>=1)effects.push(`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(level)-1)*100)}%`);
     if(level>=3)effects.push("开局随机禁用一个职业和一项祝福；回复上限从最大生命60%起继续衰减");
     if(level>=5)effects.push("敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%");
     if(level>=7)effects.push("玩家造成的伤害 -20%");
@@ -886,6 +892,7 @@ function getDifficultyTraits(level){
     return "敌人最多拥有 1 种词条，按基础概率出现。";
 }
 function getDifficultyGoldMultiplier(level=save.useBlood){return 1+Math.min(10,Math.max(0,Math.floor(Number(level)||0)))*0.10;}
+function getDifficultyGoldReward(baseGold,level=save.useBlood){return Math.floor(Math.max(0,Number(baseGold)||0)*getDifficultyGoldMultiplier(level));}
 function renderDifficultyPanel(){
     let unlocked=Math.min(10,Math.max(0,Number(save.blood)||0));
     let level=Math.min(unlocked,Math.max(0,Math.floor(difficultyDraft)));
@@ -1034,7 +1041,9 @@ function buyPandora(){
 }
 function refreshStatPanel(){
     let sets=getSetBonus();
-    let setText=sets.length>0?sets.map(t=>`<span class="${elemClass(t.charAt(0))}">【${t.charAt(0)}${t.length>1&&t.charAt(1)==="4"?"四件":"两件"}】</span>`).join(" "):"无";
+    let setLabels=sets.map(t=>`<span class="${elemClass(t.charAt(0))}">【${t.charAt(0)}${t.length>1&&t.charAt(1)==="4"?"四件":"两件"}】</span>`);
+    if(hasPrismaticResonance())setLabels.push(`<span class="trait-note">【四色共鸣 · 防御-12% · 元素+50%】</span>`);
+    let setText=setLabels.length?setLabels.join(" "):"无";
     let usedEye=save.pointAtk+save.pointHp+save.pointBj+save.pointBs+save.pointCrt;
     let html=`
     <div class="eye-info">魔王之眼：${save.eyeTotal}/24 | 已用：${usedEye}</div>
@@ -1676,7 +1685,7 @@ function resolveEnemyAttackSegment(part,hits){
         print(`【致命】敌人造成了1.5倍伤害！`);
     }
     if(save.useBlood>=5){dmg=Math.floor(dmg*0.90);}
-    let otherReduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?scaledElementEffect(0.20):hasSet("水2")?scaledElementEffect(0.08):0);
+    let otherReduction=getPlayerDamageReductionFor(player.slots,{includeResonance:false});
     let resonanceReduction=hasPrismaticResonance()?0.12:0;
     let beforeResonance=Math.floor(dmg*Math.max(.10,1-otherReduction));
     dmg=Math.floor(dmg*Math.max(.10,1-otherReduction-resonanceReduction));
@@ -1743,9 +1752,7 @@ function autoBattleDecide(){
     let dodgeRate=hasETrait("trueSight")?0:getPlayerDodgeAgainst(enemy);
     if(hasETrait("phase"))dodgeRate*=.5;
     let incoming=enemy.atk*(1+.12*(Math.max(1,enemy.hits)-1))*(1-dodgeRate);
-    let otherReduction=countTrait("ironWall")*.15+(hasTrait("antiThorns")?0.05:0)+(hasTrait("dotResist")?0.05:0)+(hasSet("水4")?scaledElementEffect(0.20):hasSet("水2")?scaledElementEffect(0.08):0);
-    let resonanceReduction=hasPrismaticResonance()?0.12:0;
-    incoming*=Math.max(.10,1-otherReduction-resonanceReduction);
+    incoming*=1-getPlayerDamageReductionFor();
     let healing=0;
     if(player.job==="战士")healing+=player.atk*0.20*(1-dodgeRate);
     if(player.blessing==="战士的祝福")healing+=player.maxHp*0.03;
@@ -1800,10 +1807,7 @@ function simulateBossSkip(){
     let effCrt=getPlayerDodgeAgainst(enemy);
     if(enemy.name==="魔王"){effCrt=effCrt*0.95+effCrt*0.5*0.05;}
     bossDmg*=(1-effCrt);
-    let bossWaterReduction=hasSet("水4")?scaledElementEffect(0.20):hasSet("水2")?scaledElementEffect(0.08):0;
-    bossDmg*=Math.max(.10,1-bossWaterReduction-(hasPrismaticResonance()?0.12:0));
-    let iw=countTrait("ironWall");
-    if(iw>0)bossDmg*=Math.max(0.1,1-0.15*iw);
+    bossDmg*=1-getPlayerDamageReductionFor();
     let healPerTurn=0;
     if(player.job==="战士")healPerTurn+=avgDmg*0.20;
     if(player.blessing==="战士的祝福")healPerTurn+=player.maxHp*0.03;
@@ -1888,12 +1892,12 @@ function finishEnemyDefeat(){
         healPlayer(heal,"斩杀回复");
     }
     if(gameState==="bossBattle"){
-        let baseGold=rand(100,200),gold=Math.floor(baseGold*getDifficultyGoldMultiplier());
+        let baseGold=rand(100,200),gold=getDifficultyGoldReward(baseGold);
         save.gold=(save.gold||0)+gold;
         print(`你获得了 ${gold} 枚金币（基础${baseGold} ×难度金币倍率${getDifficultyGoldMultiplier().toFixed(2)}，已取整）！当前：${save.gold}`);
         writeSave();
     }else{
-        let baseGold=rand(10,20),gold=Math.floor(baseGold*getDifficultyGoldMultiplier());
+        let baseGold=rand(10,20),gold=getDifficultyGoldReward(baseGold);
         save.gold=(save.gold||0)+gold;
         print(`你获得了 ${gold} 枚金币（基础${baseGold} ×难度金币倍率${getDifficultyGoldMultiplier().toFixed(2)}，已取整）！当前：${save.gold}`);
         writeSave();

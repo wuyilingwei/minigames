@@ -33,7 +33,7 @@ const attackContext={
   Math:deterministicMath,save:{useBlood:0},
   player:{hp:1000,maxHp:1000,atk:100,bj:.5,crt:0,energy:0,job:'战士',slots:[],ZBSPECIALUSED1:0},
   enemy:{name:'测试敌人',atk:100,hp:400,maxHp:500,tracking:.2,hits:2,traits:[{id:'lifesteal'},{id:'weaken'},{id:'curse'},{id:'dot'}]},
-  hasETrait(id){return this.enemy.traits.some(trait=>trait.id===id);},hasTrait:()=>false,countTrait:()=>0,hasSet:()=>false,hasPrismaticResonance:()=>false,
+  hasETrait(id){return this.enemy.traits.some(trait=>trait.id===id);},hasTrait:()=>false,countTrait:()=>0,hasSet:()=>false,hasPrismaticResonance:()=>false,getPlayerDamageReductionFor:()=>0,
   absorbDamage:(_unit,amount)=>({damage:amount,absorbed:0}),print:()=>{},showBattleFeedback:()=>{},healPlayer:()=>0,getTraitProbMult:()=>1,rand:(a)=>a,pick:(items)=>items[0],
   applyEquipStats:()=>{},refreshStatPanel:()=>{},showEquip:()=>{},clearChoices:()=>{},addChoice:()=>{},autoSaveRun:()=>{},normalizeCombatant:()=>{},restoreTemporaryShield:()=>0
 };

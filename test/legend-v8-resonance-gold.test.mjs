@@ -17,10 +17,12 @@ if(Math.abs(1+scaleContext.scaledElementEffect(.25)-1.375)>1e-9||Math.abs(1+scal
 scaleContext.player.slots=[{element:'火'},{element:'水'},{element:'草'},{element:'无'}];
 if(scaleContext.elementSetScale()!==1||Math.abs(scaleContext.scaledElementEffect(.20)-.20)>1e-9)throw new Error('Partial elemental sets must retain their base effect');
 
-const goldSource=runtime.match(/function getDifficultyGoldMultiplier\(level=save\.useBlood\)\{[\s\S]*?\n\}/)?.[0];
-if(!goldSource)throw new Error('Difficulty gold multiplier is not extractable');
-const gold=new Function('save',`${goldSource};return getDifficultyGoldMultiplier;`)({useBlood:0});
-if(gold(0)!==1||gold(10)!==2||Math.floor(17*gold(7))!==28)throw new Error('Difficulty gold must be level 0 ×1, level 10 ×2, and floor the payout');
+const goldStart=runtime.indexOf('function getDifficultyGoldMultiplier(');
+const goldEnd=runtime.indexOf('\nfunction renderDifficultyPanel(',goldStart);
+if(goldStart<0||goldEnd<0)throw new Error('Difficulty gold helpers are not extractable');
+const goldContext={save:{useBlood:0}};
+vm.createContext(goldContext);vm.runInContext(runtime.slice(goldStart,goldEnd),goldContext);
+if(goldContext.getDifficultyGoldMultiplier(0)!==1||goldContext.getDifficultyGoldMultiplier(10)!==2||goldContext.getDifficultyGoldReward(17,7)!==28)throw new Error('Difficulty gold must be level 0 ×1, level 10 ×2, and floor the payout');
 
 const attackStart=runtime.indexOf('function getPlayerDodgeAgainst(');
 const attackEnd=runtime.indexOf('\nfunction autoBattleDecide(',attackStart);
@@ -30,7 +32,7 @@ const combat={Math:deterministicMath,save:{useBlood:0},
   player:{hp:1000,maxHp:1000,atk:100,bj:0,crt:0,energy:0,slots:[{element:'火'},{element:'水'},{element:'草'},{element:'雷'}]},
   enemy:{name:'测试敌人',atk:100,hp:500,maxHp:500,tracking:0,hits:1,traits:[]},
   hasETrait:()=>false,hasTrait:()=>false,countTrait:()=>0,hasSet:()=>false,hasPrismaticResonance:()=>true,
-  scaledElementEffect(value){return value*1.5;},absorbDamage:(_unit,amount)=>({damage:amount,absorbed:0}),print:(line)=>logs.push(line),showBattleFeedback:()=>{},healPlayer:()=>0,getTraitProbMult:()=>1,rand:(a)=>a,pick:(items)=>items[0],
+  getPlayerDamageReductionFor:(_slots,{includeResonance}={})=>includeResonance===false?0:.12,absorbDamage:(_unit,amount)=>({damage:amount,absorbed:0}),print:(line)=>logs.push(line),showBattleFeedback:()=>{},healPlayer:()=>0,getTraitProbMult:()=>1,rand:(a)=>a,pick:(items)=>items[0],
   applyEquipStats:()=>{},refreshStatPanel:()=>{},showEquip:()=>{},clearChoices:()=>{},addChoice:()=>{},autoSaveRun:()=>{},normalizeCombatant:()=>{},restoreTemporaryShield:()=>0};
 vm.createContext(combat);vm.runInContext(runtime.slice(attackStart,attackEnd),combat);
 combat.resolveEnemyAttackSegment(1,1);
