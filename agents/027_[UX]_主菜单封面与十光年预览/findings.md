@@ -40,3 +40,8 @@
 - 传说 390×844：菜单收敛为单列，封面 188×188，面板 366×657，最后一个退出按钮底部为 718px；全部内容在视口内且无横向溢出。
 - 窄屏主站 390×844：两张 358px 宽卡片均加载预览，无横向溢出，标题、说明、署名与入口仍清楚可读。
 - 十光年入口验证：`#stage` 存在，`og:image` 为 `./assets/preview.png`，窄屏无横向溢出；本地服务器记录预览、WebGL 脚本和星图数据均成功响应。
+
+## Git 交付
+
+- 远端为 `https://github.com/wuyilingwei/minigames.git`；GitHub main protection API 返回 `Branch not protected (HTTP 404)`。
+- 按全局规则将统一任务分支以本地 merge commit 合入 `main` 并推送，不创建 PR。
