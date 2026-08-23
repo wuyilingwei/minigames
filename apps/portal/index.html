@@ -6,47 +6,25 @@
     <meta name="theme-color" content="#181818" />
     <meta
       name="description"
-      content="一个收录可直接游玩的小游戏与互动作品的静态小站。"
+      content="可直接游玩的迷你游戏。"
     />
-    <title>小游戏站</title>
+    <title>迷你游戏</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <header class="site-header shell">
-      <a class="wordmark" href="./" aria-label="返回小游戏站首页">小游戏站</a>
-      <a class="quiet-link" href="#collection">作品列表 <span aria-hidden="true">↓</span></a>
+      <a class="wordmark" href="./" aria-label="返回迷你游戏首页">迷你游戏</a>
     </header>
 
     <main>
-      <section class="hero shell" aria-labelledby="page-title">
-        <p class="section-label">MINI GAMES</p>
-        <h1 id="page-title">可以直接游玩的<br />小游戏与互动作品。</h1>
-        <p class="hero-copy">这是一个收录小游戏与互动作品的小站。点击卡片即可进入，所有内容都在浏览器中运行。</p>
-        <a class="primary-link" href="#collection">查看作品 <span aria-hidden="true">↓</span></a>
-      </section>
-
       <section class="collection shell" id="collection" aria-labelledby="collection-title">
         <div class="section-heading">
-          <div>
-            <p class="section-label">作品</p>
-            <h2 id="collection-title">游戏与互动作品</h2>
-          </div>
+          <h1 id="collection-title">游戏列表</h1>
           <p id="collection-count" class="collection-count" aria-live="polite"></p>
         </div>
         <div id="game-grid" class="game-grid" aria-live="polite"></div>
       </section>
-
-      <section class="about shell" aria-labelledby="about-title">
-        <p class="section-label">关于本站</p>
-        <h2 id="about-title">小而完整，<br />打开就能玩。</h2>
-        <p>每一项内容都保持独立运行。新的小游戏和互动作品会在这里持续收录。</p>
-      </section>
     </main>
-
-    <footer class="site-footer shell">
-      <span>小游戏站</span>
-      <span>静态发布 · 持续收录</span>
-    </footer>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

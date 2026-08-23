@@ -43,7 +43,7 @@ async function renderCollection() {
 
     const games = await response.json();
     games.forEach((game, index) => grid.append(createCard(game, index)));
-    count.textContent = `${String(games.length).padStart(2, '0')} 项已收录`;
+    count.textContent = `${String(games.length).padStart(2, '0')} 款游戏`;
   } catch {
     count.textContent = '目录暂不可用';
   }
