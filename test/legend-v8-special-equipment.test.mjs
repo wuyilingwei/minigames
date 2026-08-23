@@ -19,8 +19,9 @@ const trigger = new Function('player', 'normalizeCombatant', 'grantShield', 'pri
 return triggerEmergencyShield;`)(player, normalizeCombatant, grantShield, print, refreshStatPanel, applyEquipStats);
 
 for (const expected of [100, 75, 50, 25]) {
+  player.shields.temp = 0;
   trigger();
-  if (player.shields.temp !== expected + [100, 75, 50, 25].slice(0, [100, 75, 50, 25].indexOf(expected)).reduce((a, b) => a + b, 0)) throw new Error(`Emergency shield did not grant ${expected} in order.`);
+  if (player.shields.temp !== expected) throw new Error(`Emergency shield did not grant ${expected} on its battle entry.`);
 }
 if (player.slots.some(item => item?.id === 'emergencyShield')) throw new Error('Emergency shield must be removed after the fourth trigger.');
 if (!logs.some(line => line.includes('剩余3次') && line.includes('下次75'))) throw new Error('Remaining durability and next shield amount must be logged.');

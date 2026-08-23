@@ -724,7 +724,7 @@ function calcBaseStats(){
 function getPurchaseEquipment(){
     return save.purchaseEquipment&&save.purchaseEquipment.part==="purchase"?save.purchaseEquipment:null;
 }
-function hasPurchaseEquipment(id){return getPurchaseEquipment()?.id===id||player.slots.some(slot=>slot?.id===id);}
+function hasPurchaseEquipment(id){return player.slots.some(slot=>slot?.id===id);}
 function hasJobAmulet(){return hasPurchaseEquipment("jobAmulet");}
 function jobEffectMultiplier(){return hasJobAmulet()?1.25:1;}
 
@@ -1027,9 +1027,9 @@ function renderShop(notice=""){
     document.getElementById("shopNotice").textContent=notice||(cheatMode?"作弊模式：道具可免费增减。":`当前金币：${save.gold||0}`);
     let productHtml=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>${cheatMode?`已购 ${p[key]}/10（免费）`:`价格：${price} 金币 · 已购 ${p[key]}/10`}</div>${cheatMode?`<div class="cheat-shop-controls"><button class="choice-btn" onclick="adjustCheatItem('${key}',-1)" ${p[key]<=0?"disabled":""}>−</button><span class="cheat-count">${p[key]}</span><button class="choice-btn" onclick="adjustCheatItem('${key}',1)" ${p[key]>=10?"disabled":""}>+</button></div>`:`<button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button>`}</article>`).join("");
     let purchaseEquipment=save.purchaseEquipment;
-    let purchaseHtml=`<article class="modal-card"><h3>购买槽</h3><div>独立于高难附加槽的第六装备槽，只接受商城专用装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
+    let purchaseHtml=`<article class="modal-card"><h3>购买槽</h3><div>独立于高难附加槽的专用装备槽，只接受商城装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
     if(save.purchaseSlotUnlocked){
-        purchaseHtml+=`<article class="modal-card"><h3>职业护符</h3><div>无基础属性；当前职业所有数值效果 +25%，不放大祝福。切换职业后自动按当前职业生效。</div><div>${purchaseEquipment?.id==="jobAmulet"?"已装备":"价格：1200 金币"}</div><button class="choice-btn" onclick="buyPurchaseEquipment('jobAmulet',1200)" ${purchaseEquipment?.id==="jobAmulet"?"disabled":""}>${purchaseEquipment?.id==="jobAmulet"?"已装备":"购买并装备"}</button></article>`;
+        purchaseHtml+=`<article class="modal-card"><h3>职业护符</h3><div>无基础属性；当前职业所有数值效果 +25%，不放大祝福。切换职业后自动按当前职业生效。</div><div>${purchaseEquipment?.id==="jobAmulet"?"已装备":cheatMode?"作弊模式：免费":"价格：1200 金币"}</div><button class="choice-btn" onclick="buyPurchaseEquipment('jobAmulet',1200)" ${purchaseEquipment?.id==="jobAmulet"?"disabled":""}>${purchaseEquipment?.id==="jobAmulet"?"已装备":"购买并装备"}</button></article>`;
     }
     let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难第五槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难附加槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
     document.getElementById("shopContent").innerHTML=productHtml+extraHtml;
@@ -1055,10 +1055,11 @@ function buyPurchaseSlot(){
 function buyPurchaseEquipment(id,price){
     if(!save.purchaseSlotUnlocked){renderShop("请先解锁独立购买槽。");return;}
     if(save.purchaseEquipment?.id===id){renderShop("该装备已装备。");return;}
-    if((save.gold||0)<price){renderShop("金币不足，无法购买该装备。");return;}
+    let cost=cheatMode?0:price;
+    if((save.gold||0)<cost){renderShop("金币不足，无法购买该装备。");return;}
     let items={jobAmulet:{id:"jobAmulet",name:"职业护符",element:"无",part:"purchase",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]}};
     if(!items[id]){renderShop("该购买装备当前不可用。");return;}
-    save.gold-=price;save.purchaseEquipment=items[id];writeSave();
+    save.gold-=cost;save.purchaseEquipment=items[id];writeSave();
     if(player.job){syncSlotCapacity();applyEquipStats();refreshStatPanel();}
     autoSaveRun();renderShop(`已购买并装备【${items[id].name}】。`);
 }
@@ -1085,14 +1086,21 @@ function cancelReset(){
     resetConfirmationPending=false;
     renderShop("已取消大记忆消失术。");
 }
+function resetShopPurchases(){
+    save.purchased={...defaultPurchased};
+    save.slot5Unlocked=false;
+    save.purchaseSlotUnlocked=false;
+    save.legacyAddonSlotUnlocked=false;
+    save.purchaseEquipment=null;
+    if(player.job){syncSlotCapacity();applyEquipStats();refreshStatPanel();}
+}
 function confirmReset(){
     if(!resetConfirmationPending)return;
     resetConfirmationPending=false;
     if((save.gold||0)<10){renderShop("金币不足，无法施放大记忆消失术。");return;}
     save.gold-=10;
-    save.purchased={egg:0,potion:0,boots:0,hat:0,doll:0};
+    resetShopPurchases();
     writeSave();
-    if(player.job){applyEquipStats();refreshStatPanel();}
     autoSaveRun();
     renderShop("大记忆消失术生效！所有商城购买效果已清除，限购已返还。");
 }
@@ -1120,7 +1128,7 @@ function buyPandora(){
             result=`潘多拉之盒：本应获得【${names[idx]}】，但已达限购，返还${prices[idx]}金币！`;
         }
     }else{
-        save.purchased={egg:0,potion:0,boots:0,hat:0,doll:0};
+        resetShopPurchases();
         result="潘多拉之盒：触发大记忆消失术！所有商城购买效果已清除！";
     }
     writeSave();
