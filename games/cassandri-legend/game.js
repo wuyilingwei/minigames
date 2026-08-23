@@ -785,10 +785,13 @@ function oneSlotHtml(idx){
 /* The battle engine can keep its legacy singletons while
    callers may expose `player.allies` / `enemy.enemies` (or roster) arrays. */
 function unitKind(unit,side){
-    let text=String(unit&&((unit.kind||unit.type||unit.job||unit.name)||"")).toLowerCase();
+    let text=String(unit&&[unit.kind,unit.type,unit.job,unit.name].filter(Boolean).join(" ")||"").toLowerCase();
     if(side==="ally"){
+        if(text.includes("天使")||text.includes("angel"))return "angel";
+        if(text.includes("隐士")||text.includes("hermit")||text.includes("修道"))return "hermit";
+        if(text.includes("战士")||text.includes("warrior")||text.includes("盾")||text.includes("骑"))return "warrior";
+        if(text.includes("勇者")||text.includes("hero"))return "hero";
         if(text.includes("法")||text.includes("巫")||text.includes("术"))return "caster";
-        if(text.includes("盾")||text.includes("骑")||text.includes("战士"))return "guardian";
         return "hero";
     }
     if(text.includes("史莱姆")||text.includes("泥浆")||text.includes("植物"))return "slime";
@@ -798,11 +801,14 @@ function unitKind(unit,side){
     return "enemy";
 }
 function pixelSpriteMarkup(kind){
-    const palettes={hero:["#39ff8f","#ffcf9a","#4169e1"],guardian:["#88b8ff","#ffd2a6","#6f7f9f"],caster:["#d78cff","#ffd2a6","#4b2f82"],enemy:["#ff4d4d","#d48a6a","#641f32"],beast:["#ff9d5c","#c56a43","#723c29"],undead:["#b5c3cc","#d7e2e8","#596875"],slime:["#64e6c0","#b6ffe9","#218f79"]};
+    const palettes={hero:["#39ff8f","#ffcf9a","#4169e1"],warrior:["#88b8ff","#ffd2a6","#6f7f9f"],guardian:["#88b8ff","#ffd2a6","#6f7f9f"],angel:["#fff1a8","#ffe8ca","#c99735"],hermit:["#d78cff","#ffd2a6","#4b2f82"],caster:["#d78cff","#ffd2a6","#4b2f82"],enemy:["#ff4d4d","#d48a6a","#641f32"],beast:["#ff9d5c","#c56a43","#723c29"],undead:["#b5c3cc","#d7e2e8","#596875"],slime:["#64e6c0","#b6ffe9","#218f79"]};
     const [body,skin,shade]=palettes[kind]||palettes.enemy;
-    const ears=(kind==="beast"||kind==="enemy")?`<rect x="2" y="3" width="3" height="4" fill="${shade}"/><rect x="11" y="3" width="3" height="4" fill="${shade}"/>`:"";
-    const weapon=(kind==="hero"||kind==="guardian")?`<rect x="13" y="9" width="2" height="6" fill="#e9e3c2"/><rect x="14" y="8" width="1" height="1" fill="#fff6c4"/>`:kind==="caster"?`<rect x="13" y="8" width="2" height="7" fill="#8b6b43"/><rect x="13" y="7" width="3" height="2" fill="#d78cff"/>`:"";
-    return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位"><rect x="5" y="2" width="6" height="2" fill="${skin}"/>${ears}<rect x="4" y="4" width="8" height="5" fill="${skin}"/><rect x="5" y="5" width="2" height="2" fill="#10140f"/><rect x="9" y="5" width="2" height="2" fill="#10140f"/><rect x="6" y="7" width="4" height="1" fill="${shade}"/><rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>${weapon}</svg>`;
+    const face=`<rect x="4" y="4" width="8" height="5" fill="${skin}"/><rect x="5" y="5" width="2" height="2" fill="#10140f"/><rect x="9" y="5" width="2" height="2" fill="#10140f"/>`;
+    const legs=`<rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>`;
+    if(kind==="warrior"||kind==="guardian")return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位：战士"><rect x="3" y="2" width="10" height="3" fill="${shade}"/><rect x="5" y="1" width="6" height="2" fill="${body}"/>${face}<rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="4" y="10" width="8" height="2" fill="${shade}"/><rect x="13" y="7" width="1" height="8" fill="#e9e3c2"/><rect x="14" y="6" width="1" height="2" fill="#fff6c4"/>${legs}</svg>`;
+    if(kind==="angel")return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位：天使"><rect x="4" y="1" width="8" height="1" fill="#ffe16b"/><rect x="3" y="2" width="10" height="1" fill="#ffe16b"/><polygon points="1,7 4,5 5,12 1,10" fill="#fff8dc"/><polygon points="15,7 12,5 11,12 15,10" fill="#fff8dc"/>${face}<rect x="4" y="9" width="8" height="5" fill="${body}"/><rect x="6" y="10" width="4" height="4" fill="#fff8dc"/><rect x="13" y="8" width="1" height="7" fill="#c99735"/><rect x="12" y="7" width="3" height="1" fill="#ffe16b"/>${legs}</svg>`;
+    if(kind==="hermit"||kind==="caster")return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位：隐士"><polygon points="3,6 5,1 11,1 13,6 12,10 4,10" fill="${shade}"/>${face}<rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="3" y="10" width="3" height="3" fill="${shade}"/><rect x="13" y="7" width="1" height="9" fill="#8b6b43"/><rect x="12" y="6" width="3" height="2" fill="#d78cff"/><rect x="2" y="12" width="2" height="2" fill="#8b6b43"/>${legs}</svg>`;
+    return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位：勇者"><rect x="5" y="2" width="6" height="2" fill="${skin}"/>${face}<polygon points="3,9 6,10 5,15 2,13" fill="${shade}"/><rect x="6" y="9" width="5" height="5" fill="${body}"/><rect x="11" y="10" width="3" height="4" fill="#d7e2e8"/><rect x="12" y="11" width="1" height="2" fill="#4169e1"/><rect x="14" y="8" width="1" height="7" fill="#e9e3c2"/><rect x="14" y="7" width="1" height="1" fill="#fff6c4"/>${legs}</svg>`;
 }
 function enemyAvatarSeed(name){
     let text=String(name||"敌人");
