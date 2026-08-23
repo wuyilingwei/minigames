@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>卡桑德里传说6.5</title>
+<title>卡桑德里传说 v7.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#1a1a2e;color:#e0e0e0;font-family:"Microsoft YaHei",sans-serif;display:flex;justify-content:center;padding:20px;min-height:100vh;}
@@ -130,7 +130,7 @@ header h1{font-size:14px;}#terminal-wrap #battleArena{grid-template-columns:1fr;
 <div id="app" class="crt-on">
   <svg class="svg-sprite" aria-hidden="true"><symbol id="svg-settings" viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="3.5"/></symbol><symbol id="svg-save" viewBox="0 0 24 24"><path d="M4 3h13l3 3v15H4z"/><path d="M7 3v6h8V3M7 20v-7h10v7"/></symbol><symbol id="svg-shop" viewBox="0 0 24 24"><path d="M4 10h16v10H4zM3 6h18l-2 4H5zM9 20v-6h6v6"/></symbol><symbol id="svg-resume" viewBox="0 0 24 24"><path d="M7 4v16l12-8z"/></symbol><symbol id="svg-sets" viewBox="0 0 24 24"><path d="m12 3 8 5-8 5-8-5zM4 12l8 5 8-5M4 16l8 5 8-5"/></symbol><symbol id="svg-hero" viewBox="0 0 24 24"><path d="m14 3 7 7-9 9-4-4 9-9M5 16l3 3m-5 2 3-3"/><path d="m11 6 3 3"/></symbol><symbol id="svg-enemy" viewBox="0 0 24 24"><path d="M5 9V5l3 2 4-3 4 3 3-2v4c1 2 1 8-1 10H6C4 17 4 11 5 9z"/><path d="M8 12h2m4 0h2M9 16h6"/></symbol></svg>
   <header>
-    <div><h1>卡桑德里传说</h1><span class="sub">静态网页版 · 6.5</span></div>
+    <div><h1>卡桑德里传说</h1><span class="sub">静态网页版 · 7.0</span></div>
     <button id="settingsBtn" class="svg-btn" title="设置" aria-label="设置"><svg class="ui-svg" aria-hidden="true"><use href="#svg-settings"></use></svg></button>
   </header>
   <div id="layout">
@@ -155,12 +155,12 @@ header h1{font-size:14px;}#terminal-wrap #battleArena{grid-template-columns:1fr;
       <section class="hero-panel"><h2>勇者面板</h2><div id="statContent"></div></section>
     </aside>
   </div>
-  <div id="welcomeOverlay" class="overlay"><div class="overlay-panel"><div class="title-title">卡桑德里传说</div><div class="title-ver">6.5 · 像素终端版</div><div class="title-menu"><button class="choice-btn" id="btnContinue">继续自动存档</button><button class="choice-btn" id="btnNewGame">新的征途</button><button class="choice-btn" id="btnHomeSave">存档 / 读取</button><button class="choice-btn" id="btnChangelog">更新内容</button><button class="choice-btn" id="btnHomeShop">流动商城</button><a class="choice-btn portal-exit" id="btnHomeExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a></div></div></div>
+  <div id="welcomeOverlay" class="overlay"><div class="overlay-panel"><div class="title-title">卡桑德里传说</div><div class="title-ver">7.0 · 像素终端版</div><div class="title-menu"><button class="choice-btn" id="btnContinue">继续自动存档</button><button class="choice-btn" id="btnNewGame">新的征途</button><button class="choice-btn" id="btnHomeSave">存档 / 读取</button><button class="choice-btn" id="btnChangelog">更新内容</button><button class="choice-btn" id="btnHomeShop">流动商城</button><a class="choice-btn portal-exit" id="btnHomeExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a></div></div></div>
   <div id="settingsOverlay" class="overlay" hidden><div class="overlay-panel"><h2>设置</h2><div class="settings-field"><label class="toggle"><input type="checkbox" id="crtToggle"> CRT 扫描线</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="reduceMotionToggle"> 战斗反馈动画</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="collapseEventsToggle"> 完成事件后收起终端记录</label></div><div class="title-menu"><button class="choice-btn" id="btnOpenSaveFromSettings">存档与继续</button><a class="choice-btn settings-exit" id="btnExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a><button class="choice-btn" id="btnSettingsClose">关闭</button></div></div></div>
-  <div id="changelogOverlay" class="overlay" hidden><div class="overlay-panel"><h2>更新内容 · 6.5</h2><ol class="changelog-list"><li>完整接入职业、祝福、元素套装、敌人特性、商城和难度机制。</li><li>恢复像素终端 UI，并新增左右对阵血条场景。</li><li>战利品提供按伤害与生存拆分的装备对比和替换建议。</li></ol><div class="title-menu"><button class="choice-btn" id="btnChangelogClose">关闭</button></div></div></div>
+  <div id="changelogOverlay" class="overlay" hidden><div class="overlay-panel"><h2>更新内容 · 7.0</h2><ol class="changelog-list"><li>装备特性可叠加，掉落概率会随波次和难度提升。</li><li>防御可蓄力两层，自动战斗会在危险时防御、满能量时释放必杀。</li><li>高难度失装、偷窃和魔王震落装备均增加确认节点，可安全恢复存档。</li><li>职业、祝福、敌人和特性数值已按 7.0 平衡调整。</li></ol><div class="title-menu"><button class="choice-btn" id="btnChangelogClose">关闭</button></div></div></div>
   <div id="shopOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>流动商城</h2><p class="modal-note">购买永久生效；战斗中的行动选项会在关闭商城后保留。</p><div id="shopNotice" class="modal-notice" aria-live="polite"></div><div id="shopContent" class="modal-grid"></div><div class="modal-actions"><button class="choice-btn" id="btnShopClose">关闭商城</button></div></div></div>
   <div id="saveOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>存档与继续</h2><p class="modal-note">自动存档会在可续玩的战斗和装备选择阶段刷新；三个手动槽可自由覆盖。存档同时保存本局状态和永久成长。</p><div id="saveContent" class="save-slots"></div><div class="modal-actions"><button class="choice-btn" id="btnSaveClose">关闭</button></div></div></div>
-  <div id="lootOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>战利品选择</h2><div id="lootContent"></div></div></div>
+  <div id="lootOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2 id="lootTitle">战利品选择</h2><div id="lootContent"></div></div></div>
   <div id="setOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>元素套装</h2><p class="modal-note">四件套优先于二件套生效；每张卡会显示当前件数与激活状态。</p><div id="setContent" class="set-grid"></div><div class="modal-actions"><button class="choice-btn" id="btnSetClose">关闭</button></div></div></div>
   <div id="difficultyOverlay" class="overlay" hidden><div class="overlay-panel"><h2>难度设定</h2><p class="modal-note">它之血珠不会消耗；在开局准备阶段选择难度，进入冒险后锁定。</p><div id="difficultyContent" class="difficulty-panel"><div class="difficulty-selector"><button class="difficulty-nav prev" id="btnDifficultyPrev" type="button" aria-label="降低难度"></button><div class="difficulty-focus"><span class="difficulty-focus-label">当前焦点</span><div class="difficulty-focus-value"><strong id="difficultySelected">0</strong><span>/10</span></div><span class="difficulty-focus-caption" id="difficultyFocusCaption">难度 0</span></div><button class="difficulty-nav next" id="btnDifficultyNext" type="button" aria-label="提高难度"></button></div><section class="difficulty-summary" aria-live="polite"><div class="difficulty-summary-row"><strong>基础倍率</strong><span id="difficultyMultiplier"></span></div><div class="difficulty-summary-row"><strong>敌人词条</strong><span id="difficultyTraits"></span></div><div class="difficulty-summary-row effects"><strong>本级附加规则</strong><span id="difficultyEffects"></span></div></section><p class="difficulty-lock-note" id="difficultyLockNote"></p></div><div class="modal-actions"><button class="choice-btn" id="btnDifficultyApply">确认难度</button><button class="choice-btn" id="btnDifficultyClose">关闭</button></div></div></div>
 </div>
@@ -183,6 +183,8 @@ function normalizeSave(stored){
         let value=Number(normalized[key]);
         normalized[key]=Number.isFinite(value)&&value>=0?Math.floor(value):defaultSave[key];
     }
+    normalized.blood=Math.min(10,normalized.blood);
+    normalized.useBlood=Math.min(10,normalized.useBlood);
     for(let key of Object.keys(defaultPurchased)){
         let value=Number(normalized.purchased[key]);
         normalized.purchased[key]=Number.isFinite(value)&&value>=0?Math.floor(value):defaultPurchased[key];
@@ -211,7 +213,7 @@ function applyPreferences(){
 }
 loadPreferences();
 
-let player={name:"",job:"",atk:0,hp:0,maxHp:0,bj:0,bs:0,crt:0,ZDYHP:0,slots:[null,null,null,null],Q3:0,Q4:0,ZBSPECIALUSED1:0,ZBSPECIALUSED2:false,ZBSPECIALUSED3:false,nextDodgeBoost:false,canAdjustPoint:true,wave:0,blessAtkAdd:0,blessHpAdd:0,blessBjAdd:0,blessBsAdd:0,blessCrtAdd:0,energy:0,nextDefendBoost:false,permAtkAdd:0,permHpAdd:0};
+let player={name:"",job:"",atk:0,hp:0,maxHp:0,bj:0,bs:0,crt:0,ZDYHP:0,slots:[null,null,null,null],Q3:0,Q4:0,ZBSPECIALUSED1:0,ZBSPECIALUSED2:false,ZBSPECIALUSED3:false,nextDodgeBoost:false,canAdjustPoint:true,wave:0,blessAtkAdd:0,blessHpAdd:0,blessBjAdd:0,blessBsAdd:0,blessCrtAdd:0,energy:0,defendStack:0,permAtkAdd:0,permHpAdd:0,revengeActive:false,energySurgeBoost:false};
 function getSlotCount(){return save.slot5Unlocked?5:4;}
 function initSlots(){player.slots=[];for(let i=0;i<getSlotCount();i++)player.slots.push(null);}
 let enemy={name:"",atk:0,hp:0,maxHp:0,trait:null,dots:[],firstStrikeUsed:false};
@@ -227,15 +229,22 @@ let defeatAnimating=false;
 const runSaveSlots=["auto","1","2","3"];
 function runSaveKey(slot){return `kasandri6_run_${slot}`;}
 function cloneForStorage(value){return JSON.parse(JSON.stringify(value));}
-function isSupportedRunState(state){return ["battle","bossBattle","loot","bossLoot"].includes(state);}
+function isSupportedRunState(state){return ["battle","bossBattle","loot","bossLoot","equipLostConfirm","bossKnockoff"].includes(state);}
 function snapshotRun(){
     if(!isSupportedRunState(gameState)||!player.job||!player.blessing)return null;
-    return {version:1,savedAt:Date.now(),state:gameState,save:cloneForStorage(save),player:cloneForStorage(player),enemy:cloneForStorage(enemy),pendingLoot:cloneForStorage(pendingLoot),lootDeferred,bannedJob,bannedBless};
+    return {version:2,savedAt:Date.now(),state:gameState,save:cloneForStorage(save),player:cloneForStorage(player),enemy:cloneForStorage(enemy),pendingLoot:cloneForStorage(pendingLoot),lootDeferred,bannedJob,bannedBless};
 }
 function validateRunSnapshot(snapshot){
-    if(!isRecord(snapshot)||snapshot.version!==1||!isSupportedRunState(snapshot.state)||!isRecord(snapshot.player)||!isRecord(snapshot.enemy)||!snapshot.player.job||!snapshot.player.blessing)return null;
+    if(!isRecord(snapshot)||![1,2].includes(snapshot.version)||!isSupportedRunState(snapshot.state)||!isRecord(snapshot.player)||!isRecord(snapshot.enemy)||!snapshot.player.job||!snapshot.player.blessing)return null;
     if((snapshot.state==="loot"||snapshot.state==="bossLoot")&&(!isRecord(snapshot.pendingLoot)||!isRecord(snapshot.pendingLoot.e1)||!isRecord(snapshot.pendingLoot.e2)))return null;
-    return snapshot;
+    let normalized=cloneForStorage(snapshot);
+    normalized.version=2;
+    normalized.player.defendStack=Math.min(2,Math.max(0,Number(normalized.player.defendStack)||(normalized.player.nextDefendBoost?1:0)));
+    normalized.player.revengeActive=Boolean(normalized.player.revengeActive);
+    normalized.player.energySurgeBoost=Boolean(normalized.player.energySurgeBoost);
+    for(let item of normalized.player.slots||[]){if(item&&item.trait&&!item.traits)item.traits=[item.trait];if(item&&item.traits)delete item.trait;}
+    if(normalized.pendingLoot){for(let key of ["e1","e2"]){let item=normalized.pendingLoot[key];if(item&&item.trait&&!item.traits)item.traits=[item.trait];if(item&&item.traits)delete item.trait;}}
+    return normalized;
 }
 function readRunSave(slot){
     try{let raw=localStorage.getItem(runSaveKey(slot));return raw?validateRunSnapshot(JSON.parse(raw)):null;}
@@ -269,22 +278,24 @@ function restoreRunSnapshot(snapshot){
     print(`已恢复 ${gameState==="loot"||gameState==="bossLoot"?"战利品选择":"战斗进度"}。`);
     refreshStatPanel();
     if((gameState==="loot"||gameState==="bossLoot")&&!lootDeferred)showLootChoice(pendingLoot.e1,pendingLoot.e2,pendingLoot.source);
+    else if(gameState==="equipLostConfirm")resumeEquipLossConfirmation();
+    else if(gameState==="bossKnockoff")resumeBossKnockoffConfirmation();
     else battleLoop();
     return true;
 }
 
 const jobData={
-"战士":{atk:240,hp:900,bj:0.08,bs:1.5,crt:0.03,desc:"高攻击，攻击吸血20%，战胜加攻击"},
-"天使":{atk:130,hp:1600,bj:0.08,bs:1.5,crt:0.05,desc:"高血量，血量增伤，战胜加血量"},
-"勇者":{atk:180,hp:950,bj:0.28,bs:2.2,crt:0.05,desc:"高暴击，受击反伤10%"},
-"隐士":{atk:170,hp:800,bj:0.10,bs:1.6,crt:0.30,desc:"高闪避，溢出闪避增伤，战胜加闪避"}
+"战士":{atk:220,hp:900,bj:0.08,bs:1.5,crt:0.03,desc:"高攻击，攻击吸血20%，战胜加攻击"},
+"天使":{atk:130,hp:1450,bj:0.08,bs:1.5,crt:0.05,desc:"高血量，血量增伤，战胜加血量"},
+"勇者":{atk:180,hp:1100,bj:0.28,bs:2.2,crt:0.05,desc:"高暴击，受击反伤15%"},
+"隐士":{atk:190,hp:900,bj:0.10,bs:1.6,crt:0.30,desc:"高闪避，溢出闪避增伤，战胜加闪避"}
 };
 
 const blessingData={
 "战士的祝福":{atk:60,hp:100,bj:0,bs:0,crt:0,desc:"攻击+60血量+100，战胜攻击+5%，攻击回血3%"},
-"天使的祝福":{atk:20,hp:400,bj:0,bs:0,crt:0,desc:"血量+400攻击+20，满血增伤30%，战胜血量+5%"},
+"天使的祝福":{atk:20,hp:400,bj:0,bs:0,crt:0,desc:"血量+400攻击+20，满血增伤25%，战胜血量+5%"},
 "勇者的祝福":{atk:-30,hp:0,bj:0.20,bs:0.4,crt:0,desc:"暴击+20%爆伤+40%攻击-30，溢出暴击转护盾，战胜暴击+3%爆伤+5%"},
-"隐士的祝福":{atk:0,hp:0,bj:-0.10,bs:-0.3,crt:0.20,desc:"闪避+20%暴击-10%爆伤-30%，溢出闪避转增伤，战胜闪避+3%"}
+"隐士的祝福":{atk:0,hp:0,bj:-0.05,bs:-0.2,crt:0.25,desc:"闪避+25%暴击-5%爆伤-20%，溢出闪避转增伤，战胜闪避+3%"}
 };
 
 const monsterAdj=["凶猛的","狡猾的","嗜血的","狂暴的","阴暗的","腐朽的","狰狞的","咆哮的","巨型的","毒液的","烈焰的","寒冰的","暗影的","亡灵的","恶魔的","蛮荒的","深渊的","噩梦的","绝望的","快乐的","无语的","痴呆的","游荡的","成群的","路过的","帅气的","喝水的","发光的","癫狂的","丑陋的","散发香味的","散发臭气的","刻薄的","自大的","年老的","年幼的","会飞的","长翅膀的","胆小的","自卑的","写歌的","画画的","听虚拟歌姬的","试图逃跑的","讲笑话的","唱歌的","跳舞的","咬打火机的","玩游戏的","死翘翘的","尖叫的","状况外的","不想活了的","玩手指的","咬指甲的","打电动的","打音游的","悲鸣的","蠕动的","患有精神病的","好胜的","因为怕死就全点血量的","寂寞的","参悟人生的","立地成佛的","学猫叫的","愚蠢的","无聊的","只是来打着玩玩的","尿急的","正在吃饭的","多愁善感的","锈蚀的","冒烟的","覆满苔藓的","骨甲包裹的","吐毒沫的","浑身溃烂的","被诅咒的","星光笼罩的","暴怒的","昏昏欲睡的","幻视的","狂躁的","流亡的","洞穴栖息的","沼泽潜伏的","熔岩蛰伏的","雾中徘徊的"];
@@ -402,21 +413,23 @@ function hasSet(tag){return getSetBonus().indexOf(tag)>=0;}
 function getTraitMult(){
     let atkMult=1;
     for(let s of player.slots){
-        if(s&&s.trait){
-            if(s.trait.id==="deadlyStrike")atkMult*=0.5;
-            if(s.trait.id==="crit20x")atkMult*=0.7;
+        if(s&&s.traits){
+            for(let trait of s.traits){
+                if(trait.id==="deadlyStrike")atkMult*=0.5;
+                if(trait.id==="crit20x")atkMult*=0.7;
+            }
         }
     }
     return atkMult;
 }
 
 function hasTrait(id){
-    for(let s of player.slots){if(s&&s.trait&&s.trait.id===id)return true;}
+    for(let s of player.slots){if(s&&s.traits&&s.traits.some(trait=>trait.id===id))return true;}
     return false;
 }
 function countTrait(id){
     let c=0;
-    for(let s of player.slots){if(s&&s.trait&&s.trait.id===id)c++;}
+    for(let s of player.slots){if(s&&s.traits){for(let trait of s.traits){if(trait.id===id)c++;}}}
     return c;
 }
 
@@ -431,7 +444,7 @@ function getSetBonusFor(slots){
     for(let slot of slots){if(slot)count[slot.element]++;}
     return elements.flatMap(element=>count[element]>=4?[element+"4"]:count[element]>=2?[element+"2"]:[]);
 }
-function countTraitFor(slots,id){return slots.filter(slot=>slot&&slot.trait&&slot.trait.id===id).length;}
+function countTraitFor(slots,id){let count=0;for(let slot of slots){if(slot&&slot.traits){for(let trait of slot.traits){if(trait.id===id)count++;}}}return count;}
 function getTraitMultFor(slots){return Math.pow(0.5,countTraitFor(slots,"deadlyStrike"))*Math.pow(0.7,countTraitFor(slots,"crit20x"));}
 function getTraitProbMultFor(slots){
     let sets=getSetBonusFor(slots);
@@ -472,7 +485,7 @@ function deriveBuild(slots){
     let thunderRate=sets.includes("雷4")?0.06:sets.includes("雷2")?0.03:0;
     let waterMult=sets.includes("水4")?0.80:sets.includes("水2")?0.92:1;
     let ironMult=Math.max(0.1,1-0.15*countTraitFor(slots,"ironWall"));
-    let shield=slots.reduce((total,slot)=>total+(slot&&slot.trait&&slot.trait.id==="shieldGain"?(slot.trait.value||0):0),0);
+    let shield=slots.reduce((total,slot)=>total+(slot&&slot.traits?slot.traits.filter(trait=>trait.id==="shieldGain").reduce((sum,trait)=>sum+(trait.value||0),0):0),0);
     let target=getComparisonTarget();
     let targetHp=target.maxHp;
     let targetDodge=targetHasTrait(target,"dodge")?0.20:0;
@@ -539,7 +552,7 @@ function getEquipmentComparisons(item){
     let indexes=empty>=0?[empty]:player.slots.map((_,index)=>index);
     return indexes.map(index=>({...compareCandidate(item,index),oldEquip:player.slots[index]})).sort((a,b)=>b.score-a.score);
 }
-function hasSpecialTrait(item){return Boolean(item&&item.trait&&item.trait.id);}
+function hasSpecialTrait(item){return Boolean(item&&item.traits&&item.traits.length);}
 function isBaseStatDominated(item,alternative){
     if(hasSpecialTrait(item))return false;
     let keys=["atk","hp","bj","bs","crt"];
@@ -553,8 +566,8 @@ function getDropAdvice(items){
 function equipmentRecommendationHtml(item){
     let comparisons=getEquipmentComparisons(item),best=comparisons[0],decision=classifyRecommendation(best);
     let before=best.current,after=best.next;
-    let beforeTrait=best.oldEquip&&best.oldEquip.trait?best.oldEquip.trait.name:"无";
-    let afterTrait=item.trait?item.trait.name:"无";
+    let beforeTrait=best.oldEquip&&best.oldEquip.traits&&best.oldEquip.traits.length?best.oldEquip.traits.map(trait=>trait.name).join("·"):"无";
+    let afterTrait=item.traits&&item.traits.length?item.traits.map(trait=>trait.name).join("·"):"无";
     let target=before.target;
     return `<div class="recommendation ${decision.tone==="avoid"?"avoid":""}"><div class="recommend-title">${decision.text}</div>${comparisonSummaryHtml(best)}<div>${statDeltaHtml("ATK",after.atk,before.atk)} · ${statDeltaHtml("HP",after.hp,before.hp)} · ${statDeltaHtml("BJ",after.bj,before.bj,true)} · ${statDeltaHtml("BS",after.bs,before.bs,true)} · ${statDeltaHtml("闪避",after.crt,before.crt,true)}</div><div class="trait-note">预测：${target.label}（ATK ${target.atk} · HP ${target.maxHp}） · 套装：${describeSets(before.sets)} → ${describeSets(after.sets)} · 特性：${beforeTrait} → ${afterTrait}</div></div>`;
 }
@@ -563,8 +576,9 @@ function calcBaseStats(){
     let j=jobData[player.job];
     let b=blessingData[player.blessing];
     let p=save.purchased||{egg:0,potion:0,boots:0,hat:0,doll:0};
-    let atk=j.atk+b.atk+save.pointAtk*8+p.egg*10;
-    let hp=j.hp+b.hp+save.pointHp*5+p.potion*100;
+    let difficultyScale=Math.pow(1.18,save.useBlood);
+    let atk=Math.floor(j.atk*difficultyScale)+b.atk+save.pointAtk*8+p.egg*10;
+    let hp=Math.floor(j.hp*difficultyScale)+b.hp+save.pointHp*5+p.potion*100;
     let bj=j.bj+b.bj+save.pointBj*0.03+p.boots*0.05;
     let bs=j.bs+b.bs+save.pointBs*0.06+p.hat*0.10;
     let crt=j.crt+b.crt+save.pointCrt*0.025+p.doll*0.05;
@@ -591,7 +605,7 @@ function applyEquipStats(){
 function oneSlotHtml(idx){
     let s=player.slots[idx];
     if(!s)return `<div class="slot">槽位${idx+1}：空</div>`;
-    let traitHtml=s.trait?`<div class="trait">【${s.trait.name}】${s.trait.desc}</div>`:"";
+    let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${trait.id==="shieldGain"?`装备时获得${trait.value}点护盾`:trait.desc}</div>`).join("");
     return `<div class="slot filled"><span class="ename">${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span>
     <div class="estats">
     <span class="estat-item stat-atk">ATK+${s.atk}</span>
@@ -894,20 +908,22 @@ function genEquip(wave){
     let scale=1+Math.min(1,wave/20)*1.0;
     let atk=Math.floor(rand(5,25)*scale),hp=Math.floor(rand(10,80)*scale),bj=rand(0,8)/100,bs=rand(0,10)/100,crt=rand(0,6)/100;
     bj=Math.floor(bj*scale*100)/100;bs=Math.floor(bs*scale*100)/100;crt=Math.floor(crt*scale*100)/100;
-    let trait=null;
+    let traits=[];
     let traitProb=0.15+Math.min(1,wave/20)*0.15;
-    if(Math.random()<traitProb){
-        trait=pick(traitList);
-        if(trait.id==="shieldGain"){trait={...trait,value:pick([1000,800,500])};}
+    if(save.useBlood>=3)traitProb+=0.08;
+    let maxTraits=save.useBlood>=6?2:1;
+    let used={};
+    for(let index=0;index<maxTraits;index++)if(Math.random()<traitProb){
+        let candidates=traitList.filter(trait=>!used[trait.id]);
+        if(candidates.length){let trait=pick(candidates);used[trait.id]=true;if(trait.id==="shieldGain")trait={...trait,value:pick([1000,800,500])};traits.push(trait);}
     }
-    return {name,element,atk,hp,bj,bs,crt,trait};
+    return {name,element,atk,hp,bj,bs,crt,traits};
 }
 
 function equipmentCardHtml(e,includeRecommendation=false){
     let traitHtml="";
-    if(e.trait){
-        let tdesc=e.trait.id==="shieldGain"?`装备时获得${e.trait.value}点护盾`:e.trait.desc;
-        traitHtml=`<div class="trait">【${e.trait.name}】${tdesc}</div>`;
+    if(e.traits){
+        traitHtml=e.traits.map(trait=>`<div class="trait">【${trait.name}】${trait.id==="shieldGain"?`装备时获得${trait.value}点护盾`:trait.desc}</div>`).join("");
     }
     let recommendation=includeRecommendation?equipmentRecommendationHtml(e):"";
     return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
@@ -923,7 +939,7 @@ function equipToSlot(e,chosenIdx){
         player.slots[empty]=e;
     }else{
         renderReplacementChoices(e,chosenIdx);
-        return;
+        return true;
     }
     applyEquipStats();
     refreshStatPanel();
@@ -977,6 +993,7 @@ function showLootChoice(e1,e2,source){
 }
 function renderLootChoice(){
     if(!pendingLoot)return;
+    document.getElementById("lootTitle").textContent=pendingLoot.source==="bossLoot"?"角落遗落装备":"战利品选择";
     let drops=[pendingLoot.e1,pendingLoot.e2];
     let advice=getDropAdvice(drops),hasInferior=advice.inferiorIndexes.length>0;
     let adviceText=hasInferior?"无特殊词条且基础属性全面不占优的装备已标红；其余装备请按当前构筑与词条自行选择。":"两件装备各有取舍，请按输出、生存与特殊词条自行选择。";
@@ -1014,7 +1031,7 @@ function afterEquip(settledMessage=""){
     let sg=countTrait("shieldGain");
     if(sg>0){
         let totalShield=0;
-        for(let s of player.slots){if(s&&s.trait&&s.trait.id==="shieldGain")totalShield+=s.trait.value;}
+        for(let s of player.slots){if(s&&s.traits){for(let trait of s.traits){if(trait.id==="shieldGain")totalShield+=trait.value||0;}}}
         player.ZDYHP=Math.max(player.ZDYHP,totalShield);
         print(`【护盾之核】获得${totalShield}点生命护盾！`);
     }
@@ -1026,12 +1043,16 @@ function afterEquip(settledMessage=""){
 function genEnemy(isBoss,bossType){
     let diffMult=Math.pow(1.4,save.useBlood);
     if(isBoss){
+        let bossTraits=[];
+        if(save.useBlood>=10){for(let index=0,count=Math.random()<0.5?1:2;index<count;index++){let candidates=enemyTraitList.filter(trait=>!bossTraits.some(existing=>existing.id===trait.id));if(candidates.length)bossTraits.push(pick(candidates));}}
         if(bossType==="魔王"){
-            enemy={name:"魔王",atk:Math.floor(2000*diffMult),hp:Math.floor(200000*diffMult),maxHp:Math.floor(200000*diffMult),traits:[],shield:0,dots:[],firstStrikeUsed:false};
+            enemy={name:"魔王",atk:Math.floor(2000*diffMult),hp:Math.floor(200000*diffMult),maxHp:Math.floor(200000*diffMult),traits:bossTraits,shield:0,dots:[],firstStrikeUsed:false};
         }else{
-            enemy={name:"它",atk:Math.floor(3000*diffMult),hp:Math.floor(300000*diffMult),maxHp:Math.floor(300000*diffMult),traits:[],shield:0,dots:[],firstStrikeUsed:false};
+            let hp=Math.floor(300000*diffMult*(1+save.useBlood*0.4));
+            enemy={name:"它",atk:Math.floor(3000*diffMult),hp,maxHp:hp,traits:bossTraits,shield:0,dots:[],firstStrikeUsed:false};
         }
-        return;
+        for(let trait of bossTraits)print(`【BOSS特性】${bossType}拥有【${trait.name}】：${trait.desc}`);
+        return true;
     }
     let wave=player.wave;
     let baseAtk=Math.floor((50+wave*15)*(0.5+Math.random()*1.0));
@@ -1062,10 +1083,10 @@ function genEnemy(isBoss,bossType){
     let eShield=0;
     if(eTraits.some(t=>t.id==="shield")){eShield=Math.floor((300+wave*80)*0.20*diffMult);}
     let eAtk=Math.floor(baseAtk*diffMult);
-    if(eTraits.some(t=>t.id==="trueSight")){eAtk=Math.floor(eAtk*0.70);}
+    if(eTraits.some(t=>t.id==="trueSight")){eAtk=Math.min(600,Math.floor(eAtk*0.50));}
     enemy={name:pick(monsterAdj)+pick(monsterNoun),atk:eAtk,hp:Math.floor(baseHp*diffMult),maxHp:Math.floor(baseHp*diffMult),traits:eTraits,shield:eShield,dots:[],firstStrikeUsed:false};
     if(eTraits.length>0){for(let et of eTraits){print(`【敌人特性】这只敌人拥有【${et.name}】：${et.desc}`);}}
-    if(save.useBlood>=9&&Math.random()<0.30){
+    if(save.useBlood>=9&&Math.random()<0.08){
         let filled=[];
         for(let i=0;i<player.slots.length;i++){if(player.slots[i])filled.push(i);}
         if(filled.length>0){
@@ -1073,10 +1094,17 @@ function genEnemy(isBoss,bossType){
             let lost=player.slots[ridx];
             player.slots[ridx]=null;
             applyEquipStats();
+            refreshStatPanel();
+            gameState="equipLostConfirm";
             print(`【难度${save.useBlood}】黑暗的力量侵蚀了你，你失去了一件装备：`);
             showEquip(lost);
+            clearChoices();
+            addChoice("确认",()=>{gameState="battle";battleLoop();});
+            autoSaveRun();
+            return false;
         }
     }
+    return true;
 }
 
 function applyDots(){
@@ -1112,7 +1140,7 @@ function playerAttack(){
     let dmg=Math.floor(player.atk*(0.85+Math.random()*0.30));
     let isCrit=false;
     let pmult=getTraitProbMult();
-    if(player.nextDefendBoost){dmg=Math.floor(dmg*1.5);player.nextDefendBoost=false;print("【蓄力一击】伤害提升50%！");}
+    if(player.defendStack>0){dmg=Math.floor(dmg*(1+0.5*player.defendStack));print(`【蓄力一击】伤害提升${50*player.defendStack}%！`);player.defendStack=0;}
     if(countTrait("firstStrike")>0&&!enemy.firstStrikeUsed){dmg=Math.floor(dmg*2);enemy.firstStrikeUsed=true;print("【先发制人】首次攻击伤害翻倍！");}
     let hh=countTrait("highHpBoost");
     if(hh>0&&player.hp/player.maxHp>0.8){dmg=Math.floor(dmg*(1+0.30*hh));print(`【全盛之势】血量高于80%，攻击+${30*hh}%！`);}
@@ -1139,9 +1167,9 @@ function playerAttack(){
     if(ds>0&&Math.random()<0.05*ds*pmult){
         dmg=enemy.hp;
         print("【致命一击】你直接秒杀了敌人！");
-    }else if(c20>0&&Math.random()<0.20*c20*pmult){
-        dmg=Math.floor(player.atk*20);
-        print("【会心一击】造成20倍伤害！");
+    }else if(c20>0&&Math.random()<0.15*c20*pmult){
+        dmg=Math.floor(player.atk*15);
+        print("【会心一击】造成15倍伤害！");
     }else{
         if(Math.random()<player.bj){isCrit=true;dmg=Math.floor(dmg*player.bs);}
         if(player.nextDodgeBoost){dmg=Math.floor(dmg*10);player.nextDodgeBoost=false;print("【闪避反击】伤害变为10倍！");}
@@ -1327,7 +1355,7 @@ function enemyAttack(){
             }
             if(dotDmg>0){player.hp-=dotDmg;print(`【剧毒之体】你受到${dotDmg}点无法闪避的持续伤害！`);}
         }
-        return;
+        return true;
     }
     let dmg=Math.floor(enemy.atk*(0.8+Math.random()*0.40));
     if(hasETrait("rage")&&enemy.hp/enemy.maxHp<0.5){
@@ -1425,16 +1453,22 @@ function enemyAttack(){
             let stolen=player.slots[ridx];
             player.slots[ridx]=null;
             applyEquipStats();
+            refreshStatPanel();
+            gameState="equipLostConfirm";
             print(`【小偷】敌人偷走了你的装备：`);
             showEquip(stolen);
+            clearChoices();
+            addChoice("确认",()=>{gameState="battle";battleLoop();});
+            autoSaveRun();
+            return false;
         }
     }
     if(player.hp<=0){
         let pmult=getTraitProbMult();
         let ro=countTrait("reviveOnce");
         if(ro>0&&player.ZBSPECIALUSED1<ro){
-            player.hp=player.maxHp;player.ZBSPECIALUSED1++;
-            print(`【不死意志】你满血复活了！（剩余${ro-player.ZBSPECIALUSED1}次）`);
+            player.hp=Math.floor(player.maxHp*0.5);player.ZBSPECIALUSED1++;
+            print(`【不死意志】你回复了50%生命值！（剩余${ro-player.ZBSPECIALUSED1}次）`);
         }else{
             let r30=countTrait("revive30");
             if(r30>0&&Math.random()<0.30*r30*pmult){
@@ -1444,19 +1478,43 @@ function enemyAttack(){
         }
     }
     refreshStatPanel();
+    return true;
+}
+
+function autoBattleDecide(){
+    let chargedAttack=player.atk*(1+0.5*(player.defendStack||0));
+    if(enemy.hp<=chargedAttack)return "attack";
+    if(player.energy>=100)return "burst";
+    if((player.defendStack||0)>=2)return "attack";
+    let dodgeRate=hasETrait("trueSight")?0:Math.min(0.95,player.crt);
+    let incoming=enemy.atk*(1-dodgeRate);
+    let effectiveHp=player.hp+(player.ZDYHP||0);
+    let turnsToDie=Math.ceil(effectiveHp/Math.max(1,incoming));
+    let turnsToKill=Math.ceil(enemy.hp/Math.max(1,chargedAttack));
+    return turnsToDie<=turnsToKill+1?"defend":"attack";
+}
+function doDefend(){
+    if((player.defendStack||0)>=2){print("蓄力已达上限（2层），请攻击释放蓄力。");battleLoop();return;}
+    player.defendStack=(player.defendStack||0)+1;
+    print(`你选择防御，伤害减少90%，积蓄能量，蓄力层数+1（当前${player.defendStack}/2层）。`);
+    player.energy=Math.min(100,player.energy+25);
+    let originalAtk=enemy.atk;
+    enemy.atk=Math.floor(originalAtk*0.1);
+    let continued=enemyAttack();
+    enemy.atk=originalAtk;
+    if(!continued||player.hp<=0){if(player.hp<=0)onPlayerDefeat();return;}
+    battleLoop();
 }
 
 function doAttackRound(){
     if(gamePaused)return;
-    if(autoBattle&&player.energy>=100){
-        burstAttack();
-    }else{
-        playerAttack();
-    }
+    if(autoBattle){let decision=autoBattleDecide();if(decision==="defend"){doDefend();return;}if(decision==="burst")burstAttack();else playerAttack();}
+    else if(player.energy>=100)burstAttack();
+    else playerAttack();
     if(enemy.hp<=0){onEnemyDefeat();return;}
     applyDots();
     if(enemy.hp<=0){onEnemyDefeat();return;}
-    enemyAttack();
+    if(!enemyAttack())return;
     if(player.hp<=0){onPlayerDefeat();return;}
     if(autoBattle){setTimeout(battleLoop,300);}
     else{battleLoop();}
@@ -1524,15 +1582,15 @@ function battleLoop(){
         return;
     }
     addChoice("攻击",()=>doAttackRound());
-    addChoice("防御",()=>{print("你选择防御，伤害减少90%，积蓄能量，下次攻击伤害+50%");player.energy=Math.min(100,player.energy+25);player.nextDefendBoost=true;let origAtk=enemy.atk;enemy.atk=Math.floor(origAtk*0.1);enemyAttack();enemy.atk=origAtk;if(player.hp<=0){onPlayerDefeat();return;}battleLoop();});
+    addChoice("防御",()=>doDefend());
     if(player.energy>=100){
-        addChoice("必杀技",()=>{burstAttack();if(enemy.hp<=0){onEnemyDefeat();return;}applyDots();if(enemy.hp<=0){onEnemyDefeat();return;}enemyAttack();if(player.hp<=0){onPlayerDefeat();return;}battleLoop();});
+        addChoice("必杀技",()=>{burstAttack();if(enemy.hp<=0){onEnemyDefeat();return;}applyDots();if(enemy.hp<=0){onEnemyDefeat();return;}if(!enemyAttack())return;if(player.hp<=0){onPlayerDefeat();return;}battleLoop();});
     }
     addChoice("自动战斗",()=>{autoBattle=true;print("自动战斗开启，将持续攻击直到战斗结束。");battleLoop();});
     if(gameState==="bossBattle"){
         addChoice("一键跳过最终决战",()=>{simulateBossSkip();},"btn-danger");
     }
-    addChoice("逃跑",()=>{if(Math.random()<0.3){print("你成功逃跑了！");gameState="badEnd";badEnd(1);}else{print("逃跑失败！");enemyAttack();if(player.hp<=0){onPlayerDefeat();return;}battleLoop();}});
+    addChoice("逃跑",()=>{if(Math.random()<0.3){print("你成功逃跑了！");gameState="badEnd";badEnd(1);}else{print("逃跑失败！");if(!enemyAttack())return;if(player.hp<=0){onPlayerDefeat();return;}battleLoop();}});
 }
 
 function playEnemyDefeatAnimation(onComplete){
@@ -1657,32 +1715,44 @@ function onPlayerDefeat(){
     badEnd(2);
 }
 
+function resumeEquipLossConfirmation(){
+    clearChoices();
+    print("已恢复装备变更确认，请确认后继续战斗。");
+    addChoice("确认",()=>{gameState=enemy.name==="魔王"||enemy.name==="它"?"bossBattle":"battle";battleLoop();});
+}
+function resumeBossKnockoffConfirmation(){
+    clearChoices();
+    print("已恢复魔王震落装备确认，请确认后选择临时装备。");
+    addChoice("确认",()=>{gameState="bossLoot";showLootChoice(genEquip(),genEquip(),"bossLoot");});
+}
+
 function nextWave(){
     player.wave++;
     if(player.wave>20){
-        gameState="bossLoot";
+        gameState="bossKnockoff";
         let lose=1;
         print(`\n魔王出现了！它的威压震落了你的1件装备！`);
         let filled=[];
         for(let i=0;i<player.slots.length;i++){if(player.slots[i])filled.push(i);}
         for(let i=filled.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[filled[i],filled[j]]=[filled[j],filled[i]];}
         let dropCount=Math.min(lose,filled.length);
+        let droppedItems=[];
         for(let i=0;i<dropCount;i++){
             let ridx=filled[i];
-            let dropped=player.slots[ridx];
-            print(`你的装备被震落了：`);
-            showEquip(dropped);
+            droppedItems.push(player.slots[ridx]);
             player.slots[ridx]=null;
         }
         applyEquipStats();
         refreshStatPanel();
-        let e1=genEquip();
-        let e2=genEquip();
-        showLootChoice(e1,e2,"bossLoot");
+        clearChoices();
+        for(let dropped of droppedItems){print(`你的装备被震落了：`);showEquip(dropped);}
+        if(!droppedItems.length)print("你没有装备可被震落。");
+        addChoice("确认",()=>{gameState="bossLoot";showLootChoice(genEquip(),genEquip(),"bossLoot");});
+        autoSaveRun();
         return;
     }
     print(`\n=== 第 ${player.wave} 波 ===`);
-    genEnemy(false);
+    if(!genEnemy(false))return;
     print(`遭遇了 【${enemy.name}】！ATK:${enemy.atk} HP:${enemy.hp}`);
     gameState="battle";
     battleLoop();
