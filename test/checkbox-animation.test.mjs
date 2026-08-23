@@ -11,6 +11,7 @@ function requireText(text, message) {
 
 requireText('.toggle input[type="checkbox"]{appearance:none;', 'Toggle checkboxes must use the shared custom control');
 requireText('.toggle input[type="checkbox"]:checked::after', 'Checked toggles must animate their pixel check mark');
+requireText('content:"";position:absolute;left:4px', 'The check mark must remain decorative and absent from accessibility text');
 requireText('.toggle input[type="checkbox"]:focus-visible', 'Toggle checkboxes must expose keyboard focus');
 requireText('.reduce-motion .toggle input[type="checkbox"]', 'The in-game reduced-motion setting must disable checkbox animation');
 requireText('@media (prefers-reduced-motion:reduce)', 'The system reduced-motion preference must disable checkbox animation');

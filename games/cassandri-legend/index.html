@@ -133,9 +133,9 @@ header h1{font-size:18px;}header .sub{font-size:14px;}#term-titlebar{font-size:1
 </style>
 <style>
 .toggle input[type="checkbox"]{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 18px;width:18px;height:18px;margin:0;border:2px solid var(--border-lit);border-radius:0;background:var(--bg-deep);box-shadow:2px 2px 0 var(--bg-deep);cursor:pointer;transition:background-color .14s steps(2),border-color .14s steps(2),box-shadow .14s steps(2),transform .14s steps(2);}
-.toggle input[type="checkbox"]::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:#07140c;font:inherit;font-size:13px;line-height:1;opacity:0;transform:scale(.4);transition:opacity .14s steps(2),transform .14s steps(2);}
+.toggle input[type="checkbox"]::after{content:"";position:absolute;left:4px;top:0;width:5px;height:10px;border:solid #07140c;border-width:0 3px 3px 0;opacity:0;transform:rotate(45deg) scale(.4);transform-origin:center;transition:opacity .14s steps(2),transform .14s steps(2);}
 .toggle input[type="checkbox"]:checked{border-color:var(--accent2);background:var(--accent2);box-shadow:2px 2px 0 #07140c;}
-.toggle input[type="checkbox"]:checked::after{opacity:1;transform:scale(1);}
+.toggle input[type="checkbox"]:checked::after{opacity:1;transform:rotate(45deg) scale(1);}
 .toggle input[type="checkbox"]:hover{border-color:var(--accent2);}
 .toggle input[type="checkbox"]:focus-visible{outline:2px solid var(--accent2);outline-offset:3px;}
 .toggle input[type="checkbox"]:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--bg-deep);}
