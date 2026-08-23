@@ -62,6 +62,7 @@ function getSlotCount(){return save.slot5Unlocked||save.useBlood>=6?5:4;}
 function getSlotLabel(index){return equipmentSlots[index]?equipmentSlots[index].name:`槽位${index+1}`;}
 function inferEquipmentPart(item,index=0){
     let name=String(item&&item.name||"");
+    if(item&&item.id==="emergencyShield")return "outerwear";
     // Older versions classified wearable add-ons as body or oneHand. Name-based
     // migration must run before trusting the persisted part so they can reach slot 5.
     if(/斗篷|披风|靴子|鞋子|手套|翅膀|背包|臂甲|胫甲|护腿|护肩|披肩|围巾/.test(name))return "outerwear";
@@ -81,6 +82,9 @@ function normalizeEquipment(item,index=0){
     for(let key of ["atk","hp","bj","bs","crt"]){let value=Number(normalized[key]);normalized[key]=Number.isFinite(value)?value:0;}
     if(normalized.trait&&!normalized.traits)normalized.traits=[normalized.trait];
     normalized.traits=Array.isArray(normalized.traits)?normalized.traits.filter(isRecord):[];
+    if(normalized.id==="emergencyShield"){
+        normalized.emergencyCharges=Math.max(0,Math.min(4,Math.floor(Number(normalized.emergencyCharges??4)||0)));
+    }
     delete normalized.trait;
     return normalized;
 }
@@ -105,7 +109,13 @@ function makeStarterEquipment(){return [
     {name:"训练短剑",element:"无",part:"oneHand",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
     {name:"空白护臂",element:"无",part:"offHand",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]}
 ];}
-function initSlots(){player.slots=normalizeEquipmentSlots(makeStarterEquipment());}
+function makeEmergencyShield(){return {id:"emergencyShield",name:"高难应急护盾",element:"无",part:"outerwear",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],emergencyCharges:4};}
+function initSlots(){
+    player.slots=normalizeEquipmentSlots(makeStarterEquipment());
+    if(save.useBlood>=6){
+        player.slots=normalizeEquipmentSlots([...player.slots,makeEmergencyShield()]);
+    }
+}
 let enemy={name:"",atk:0,hp:0,maxHp:0,tracking:0,dodge:0,armor:0,hits:1,shields:null,traits:[],shield:0,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0};
 function normalizeCombatant(unit){
     if(!unit||typeof unit!=="object")return unit;
@@ -137,6 +147,27 @@ function healPlayer(amount,source="恢复"){
     let healed=Math.max(0,Math.min(Math.floor(requested*bonus),perHealCap,player.maxHp-player.hp));player.hp+=healed;
     print(`【${source}】回复${healed}/${requested}点生命${save.useBlood>=3?`（本次上限${perHealCap}）`:""}。`);return healed;
 }
+function getEmergencyShield(){
+    return player.slots.find(item=>item&&item.id==="emergencyShield")||null;
+}
+function triggerEmergencyShield(){
+    let item=getEmergencyShield();
+    if(!item)return;
+    let charges=Math.max(0,Math.floor(Number(item.emergencyCharges)||0));
+    if(charges<=0)return;
+    let value=[25,50,75,100][Math.min(3,charges-1)];
+    item.emergencyCharges=charges-1;
+    grantShield(player,"temp",value);
+    if(item.emergencyCharges>0){
+        print(`【高难应急护盾】进战触发，获得${value}点临时盾；剩余${item.emergencyCharges}次，下次${[25,50,75,100][item.emergencyCharges-1]}点。`);
+    }else{
+        let index=player.slots.indexOf(item);
+        if(index>=0)player.slots[index]=null;
+        print(`【高难应急护盾】进战触发，获得${value}点临时盾；第4次触发，装备已损坏并移除。`);
+        applyEquipStats();
+    }
+    refreshStatPanel();
+}
 function hasPrismaticResonance(){let c=getElemCount();return ["火","水","草","雷"].every(element=>c[element]>=1);}
 function prepareBattleShields(){
     normalizeCombatant(player);
@@ -146,6 +177,7 @@ function prepareBattleShields(){
         setTemporaryShield(player,shield);
         print(`【四色共鸣】进战获得${shield}点自然临时盾。`);
     }
+    triggerEmergencyShield();
 }
 let gameState="start";
 let pendingLoot=null;
@@ -535,6 +567,11 @@ function getNextEnemyForecast(){
 }
 function getComparisonTarget(){return getNextEnemyForecast();}
 function targetHasTrait(target,id){return target&&Array.isArray(target.traits)&&target.traits.some(trait=>trait.id===id);}
+function emergencyShieldValue(item){
+    if(!item||item.id!=="emergencyShield")return 0;
+    let charges=Math.max(0,Math.min(4,Math.floor(Number(item.emergencyCharges)||0)));
+    return [100,75,50,25].slice(0,charges).reduce((sum,value)=>sum+value,0);
+}
 function deriveBuild(slots){
     let base=calcBaseStats();
     let atk=base.atk,hp=base.hp,bj=base.bj,bs=base.bs,crt=base.crt;
@@ -545,7 +582,7 @@ function deriveBuild(slots){
     let sets=getSetBonusFor(slots);
     let fireMult=sets.includes("火4")?1+scaledElementEffect(0.25,slots):sets.includes("火2")?1+scaledElementEffect(0.10,slots):1;
     let thunderRate=sets.includes("雷4")?scaledElementEffect(0.06,slots):sets.includes("雷2")?scaledElementEffect(0.03,slots):0;
-    let shield=slots.reduce((total,slot)=>total+(slot&&slot.traits?slot.traits.filter(trait=>trait.id==="shieldGain").reduce((sum,trait)=>sum+(trait.value||0),0):0),0);
+    let shield=slots.reduce((total,slot)=>total+(slot&&slot.traits?slot.traits.filter(trait=>trait.id==="shieldGain").reduce((sum,trait)=>sum+(trait.value||0),0):0)+emergencyShieldValue(slot),0);
     let target=getComparisonTarget();
     let targetHp=target.maxHp;
     let targetDodge=Math.max(0,Number(target.dodge)||(targetHasTrait(target,"dodge")?0.20:0));
@@ -682,7 +719,8 @@ function oneSlotHtml(idx){
     let s=player.slots[idx];
     if(!s)return `<div class="slot">${getSlotLabel(idx)}：空</div>`;
     let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
-    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note">【${equipmentPartNames[s.part]}】</span>
+    let specialNote=s.id==="emergencyShield"?` · 剩余${s.emergencyCharges}次${s.emergencyCharges>0?` · 下次${[25,50,75,100][s.emergencyCharges-1]}临时盾`:" · 已损坏"}`:"";
+    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note">【${equipmentPartNames[s.part]}】${specialNote}</span>
     <div class="estats">
     <span class="estat-item stat-atk">ATK+${s.atk}</span>
     <span class="estat-item stat-hp">HP+${s.hp}</span>
@@ -888,7 +926,7 @@ function getDifficultyEffects(level){
     if(level>=7)effects.push("玩家造成的伤害 -20%");
     if(level>=9)effects.push("遭遇普通敌人时有 30% 概率随机失去一件装备");
     if(level>=3)effects.push("装备掉落开放额外效果与 1 条词条");
-    if(level>=6)effects.push("装备掉落至多 2 条词条，并开放附加第五槽");
+    if(level>=6)effects.push("装备掉落至多 2 条词条，并在新征途开局获得高难应急护盾（100/75/50/25临时盾，4次后损坏）");
     if(level>=9)effects.push("装备掉落至多 3 条强化词条");
     return effects.length?effects.join("；"):"暂无额外规则。";
 }
@@ -913,7 +951,7 @@ function renderDifficultyPanel(){
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
     document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
     document.getElementById("btnDifficultyApply").disabled=!adjustable||level===save.useBlood;
-    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备词条，6 级起第五槽由难度或商城任一来源开放。`:"本局已经开始，难度已锁定。";
+    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备词条，6 级起开放高难附加槽。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
     cancelLootAutoSelect();
