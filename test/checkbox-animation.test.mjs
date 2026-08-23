@@ -10,10 +10,10 @@ function requireText(text, message) {
 }
 
 requireText('.toggle input[type="checkbox"]{appearance:none;', 'Toggle checkboxes must use the shared custom control');
-requireText('.loot-auto-toggle input[type="checkbox"]{appearance:none;', 'Auto-select must use the shared pixel switch control');
-requireText('.loot-auto-toggle input[type="checkbox"]::before', 'Pixel switches must expose a decorative sliding block');
-requireText('.loot-auto-toggle input[type="checkbox"]:checked::before', 'Checked pixel switches must move the sliding block');
-requireText('.loot-auto-toggle input[type="checkbox"]:active', 'Pixel switches must expose an active state');
+requireText('.pixel-switch input[type="checkbox"]{appearance:none;', 'Auto-select and auto-battle must use the shared pixel switch control');
+requireText('.pixel-switch input[type="checkbox"]::before', 'Pixel switches must expose a decorative sliding block');
+requireText('.pixel-switch input[type="checkbox"]:checked::before', 'Checked pixel switches must move the sliding block');
+requireText('.pixel-switch input[type="checkbox"]:active', 'Pixel switches must expose an active state');
 requireText('.toggle input[type="checkbox"]:checked::after', 'Checked toggles must animate their pixel check mark');
 requireText('content:"";position:absolute;left:4px', 'The check mark must remain decorative and absent from accessibility text');
 requireText('.toggle input[type="checkbox"]:focus-visible', 'Toggle checkboxes must expose keyboard focus');
