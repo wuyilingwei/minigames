@@ -156,7 +156,7 @@ header h1{font-size:14px;}#terminal-wrap #battleArena{grid-template-columns:1fr;
     </aside>
   </div>
   <div id="welcomeOverlay" class="overlay"><div class="overlay-panel"><div class="title-title">卡桑德里传说</div><div class="title-ver">7.0 · 像素终端版</div><div class="title-menu"><button class="choice-btn" id="btnContinue">继续自动存档</button><button class="choice-btn" id="btnNewGame">新的征途</button><button class="choice-btn" id="btnHomeSave">存档 / 读取</button><button class="choice-btn" id="btnChangelog">更新内容</button><button class="choice-btn" id="btnHomeShop">流动商城</button><a class="choice-btn portal-exit" id="btnHomeExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a></div></div></div>
-  <div id="settingsOverlay" class="overlay" hidden><div class="overlay-panel"><h2>设置</h2><div class="settings-field"><label class="toggle"><input type="checkbox" id="crtToggle"> CRT 扫描线</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="reduceMotionToggle"> 战斗反馈动画</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="collapseEventsToggle"> 完成事件后收起终端记录</label></div><div class="title-menu"><button class="choice-btn" id="btnOpenSaveFromSettings">存档与继续</button><a class="choice-btn settings-exit" id="btnExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a><button class="choice-btn" id="btnSettingsClose">关闭</button></div></div></div>
+  <div id="settingsOverlay" class="overlay" hidden><div class="overlay-panel"><h2>设置</h2><div class="settings-field"><label class="toggle"><input type="checkbox" id="crtToggle"> CRT 扫描线</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="reduceMotionToggle"> 战斗反馈动画</label></div><div class="settings-field"><label class="toggle"><input type="checkbox" id="collapseEventsToggle"> 完成事件后收起终端记录</label></div><div class="settings-field"><label class="toggle">秘钥 <input id="cheatCodeInput" type="text" autocomplete="off"></label><button class="choice-btn" onclick="tryCheatCode()">确认秘钥</button><p id="cheatCodeNotice" class="modal-notice"></p></div><div class="title-menu"><button class="choice-btn" id="btnOpenSaveFromSettings">存档与继续</button><a class="choice-btn settings-exit" id="btnExitToPortal" href="../../" aria-label="退出游戏并返回迷你游戏">退出游戏</a><button class="choice-btn" id="btnSettingsClose">关闭</button></div></div></div>
   <div id="changelogOverlay" class="overlay" hidden><div class="overlay-panel"><h2>更新内容 · 7.0</h2><ol class="changelog-list"><li>装备特性可叠加，掉落概率会随波次和难度提升。</li><li>防御可蓄力两层，自动战斗会在危险时防御、满能量时释放必杀。</li><li>高难度失装、偷窃和魔王震落装备均增加确认节点，可安全恢复存档。</li><li>职业、祝福、敌人和特性数值已按 7.0 平衡调整。</li></ol><div class="title-menu"><button class="choice-btn" id="btnChangelogClose">关闭</button></div></div></div>
   <div id="shopOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>流动商城</h2><p class="modal-note">购买永久生效；战斗中的行动选项会在关闭商城后保留。</p><div id="shopNotice" class="modal-notice" aria-live="polite"></div><div id="shopContent" class="modal-grid"></div><div class="modal-actions"><button class="choice-btn" id="btnShopClose">关闭商城</button></div></div></div>
   <div id="saveOverlay" class="overlay" hidden><div class="overlay-panel wide-modal"><h2>存档与继续</h2><p class="modal-note">自动存档会在可续玩的战斗和装备选择阶段刷新；三个手动槽可自由覆盖。存档同时保存本局状态和永久成长。</p><div id="saveContent" class="save-slots"></div><div class="modal-actions"><button class="choice-btn" id="btnSaveClose">关闭</button></div></div></div>
@@ -173,6 +173,8 @@ const defaultPurchased={egg:0,potion:0,boots:0,hat:0,doll:0};
 const defaultSave={eyeTotal:0,blood:0,pointAtk:0,pointHp:0,pointBj:0,pointBs:0,pointCrt:0,useBlood:0,gold:0,purchased:defaultPurchased,slot5Unlocked:false};
 let save={...defaultSave,purchased:{...defaultPurchased}};
 let resetConfirmationPending=false;
+let cheatMode=false,cheatBackup=null;
+const CHEAT_SECRET="pqp是我们的皇";
 let difficultyDraft=0;
 function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}
 function normalizeSave(stored){
@@ -198,6 +200,7 @@ function loadSave(){
 }
 function writeSave(){localStorage.setItem("kasandri6_save",JSON.stringify(save));}
 loadSave();
+try{let backup=localStorage.getItem("kasandri6_cheat_backup");if(backup){cheatBackup=normalizeSave(JSON.parse(backup));cheatMode=true;}}catch(e){cheatBackup=null;cheatMode=false;}
 
 const defaultPreferences={crt:true,reduceMotion:false,collapseEvents:true,tutorialSeen:false};
 let preferences={...defaultPreferences};
@@ -224,6 +227,7 @@ let autoBattle=false;
 let gamePaused=false;
 let lootDeferred=false;
 let bannedJob=null,bannedBless=null;
+let lastBattleSnapshot=null;
 let defeatAnimating=false;
 
 const runSaveSlots=["auto","1","2","3"];
@@ -232,7 +236,7 @@ function cloneForStorage(value){return JSON.parse(JSON.stringify(value));}
 function isSupportedRunState(state){return ["battle","bossBattle","loot","bossLoot","equipLostConfirm","bossKnockoff"].includes(state);}
 function snapshotRun(){
     if(!isSupportedRunState(gameState)||!player.job||!player.blessing)return null;
-    return {version:2,savedAt:Date.now(),state:gameState,save:cloneForStorage(save),player:cloneForStorage(player),enemy:cloneForStorage(enemy),pendingLoot:cloneForStorage(pendingLoot),lootDeferred,bannedJob,bannedBless};
+    return {version:2,savedAt:Date.now(),state:gameState,save:cloneForStorage(save),player:cloneForStorage(player),enemy:cloneForStorage(enemy),pendingLoot:cloneForStorage(pendingLoot),lootDeferred,bannedJob,bannedBless,lastBattleSnapshot:cloneForStorage(lastBattleSnapshot)};
 }
 function validateRunSnapshot(snapshot){
     if(!isRecord(snapshot)||![1,2].includes(snapshot.version)||!isSupportedRunState(snapshot.state)||!isRecord(snapshot.player)||!isRecord(snapshot.enemy)||!snapshot.player.job||!snapshot.player.blessing)return null;
@@ -269,6 +273,7 @@ function restoreRunSnapshot(snapshot){
     lootDeferred=Boolean(valid.lootDeferred);
     bannedJob=valid.bannedJob||null;
     bannedBless=valid.bannedBless||null;
+    lastBattleSnapshot=valid.lastBattleSnapshot||null;
     lastEquipAction=null;
     autoBattle=false;
     gamePaused=false;
@@ -768,10 +773,10 @@ function renderShop(notice=""){
         ["很凉的帽子","永久 +10% 暴击伤害","hat",800],
         ["可爱的替身娃娃","永久 +5% 闪避率","doll",800]
     ];
-    document.getElementById("shopNotice").textContent=notice||`当前金币：${save.gold||0}`;
-    document.getElementById("shopContent").innerHTML=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>价格：${price} 金币 · 已购 ${p[key]}/10</div><button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button></article>`).join("")+`
+    document.getElementById("shopNotice").textContent=notice||(cheatMode?"作弊模式：道具可免费增减。":`当前金币：${save.gold||0}`);
+    document.getElementById("shopContent").innerHTML=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>${cheatMode?`已购 ${p[key]}/10（免费）`:`价格：${price} 金币 · 已购 ${p[key]}/10`}</div>${cheatMode?`<button class="choice-btn" onclick="adjustCheatItem('${key}',-1)">−</button><button class="choice-btn" onclick="adjustCheatItem('${key}',1)">+</button>`:`<button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button>`}</article>`).join("")+`
     <article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article>
-    <article class="modal-card"><h3>额外装备槽位</h3><div>永久解锁第五个装备槽位。</div><div>${save.slot5Unlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buySlot5()" ${save.slot5Unlocked?"disabled":""}>${save.slot5Unlocked?"已解锁":"购买"}</button></article>
+    <article class="modal-card"><h3>额外装备槽位</h3><div>${cheatMode?"作弊模式下可自由切换。":"永久解锁第五个装备槽位。"}</div><div>${save.slot5Unlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="${cheatMode?"toggleCheatSlot5()":"buySlot5()"}">${cheatMode?(save.slot5Unlocked?"关闭":"开启"):(save.slot5Unlocked?"已解锁":"购买")}</button></article>
     <article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
 }
 function closeShop(){
@@ -780,6 +785,10 @@ function closeShop(){
     collapseTerminalEvents();
     refreshStatPanel();
 }
+function tryCheatCode(){let input=document.getElementById("cheatCodeInput"),notice=document.getElementById("cheatCodeNotice");if((input.value||"").trim()!==CHEAT_SECRET){notice.textContent="秘钥错误。";return;}if(!cheatMode){cheatBackup=cloneForStorage(save);cheatMode=true;localStorage.setItem("kasandri6_cheat_backup",JSON.stringify(cheatBackup));save.eyeTotal=24;save.blood=10;save.useBlood=10;writeSave();}input.value="";notice.textContent="作弊模式已激活。";}
+function exitCheatMode(){if(!cheatMode||!cheatBackup)return;save=normalizeSave(cheatBackup);cheatMode=false;cheatBackup=null;localStorage.removeItem("kasandri6_cheat_backup");if(player.job){player.slots=player.slots.slice(0,getSlotCount());while(player.slots.length<getSlotCount())player.slots.push(null);applyEquipStats();}writeSave();renderShop("已退出作弊模式，数据已回退。");}
+function adjustCheatItem(key,delta){if(!cheatMode)return;save.purchased[key]=Math.max(0,Math.min(10,(save.purchased[key]||0)+delta));writeSave();if(player.job)applyEquipStats();renderShop();}
+function toggleCheatSlot5(){if(!cheatMode)return;save.slot5Unlocked=!save.slot5Unlocked;if(player.job){player.slots=player.slots.slice(0,getSlotCount());while(player.slots.length<getSlotCount())player.slots.push(null);applyEquipStats();}writeSave();renderShop();}
 function buySlot5(){
     if(save.slot5Unlocked){renderShop("第五个装备槽位已经解锁。");return;}
     if((save.gold||0)<5000){renderShop("金币不足，无法购买第五个装备槽位。");return;}
@@ -1609,6 +1618,7 @@ function onEnemyDefeat(){
     playEnemyDefeatAnimation(finishEnemyDefeat);
 }
 function finishEnemyDefeat(){
+    lastBattleSnapshot=cloneForStorage({...enemy,hp:enemy.maxHp});
     if(hasETrait("explode")){
         let explodeDmg=Math.floor(player.maxHp*0.10);
         if(player.ZDYHP>0){
