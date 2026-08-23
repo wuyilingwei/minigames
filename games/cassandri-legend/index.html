@@ -208,7 +208,7 @@ function writeSave(){localStorage.setItem("kasandri6_save",JSON.stringify(save))
 loadSave();
 try{let backup=localStorage.getItem("kasandri6_cheat_backup");if(backup){cheatBackup=normalizeSave(JSON.parse(backup));cheatMode=true;}}catch(e){cheatBackup=null;cheatMode=false;}
 
-const defaultPreferences={crt:true,reduceMotion:false,collapseEvents:true,tutorialSeen:false};
+const defaultPreferences={crt:true,reduceMotion:false,collapseEvents:true,tutorialSeen:false,autoLootSelect:false};
 let preferences={...defaultPreferences};
 function loadPreferences(){
     try{let raw=localStorage.getItem("kasandri6_preferences");let stored=raw?JSON.parse(raw):{};preferences={...defaultPreferences,...(isRecord(stored)?stored:{})};}
@@ -232,6 +232,9 @@ let lastEquipAction=null;
 let autoBattle=false;
 let gamePaused=false;
 let lootDeferred=false;
+let lootAutoSelectTimer=null;
+let lootAutoSelectToken=0;
+let lootAutoSelectRemaining=0;
 let bannedJob=null,bannedBless=null;
 let lastBattleSnapshot=null;
 let defeatAnimating=false;
@@ -398,6 +401,7 @@ function collapseTerminalEvents(){
     for(let event of document.querySelectorAll("#terminal .terminal-event[open]"))event.open=false;
 }
 function hideGameOverlays(){
+    cancelLootAutoSelect();
     for(let id of ["welcomeOverlay","settingsOverlay","changelogOverlay","shopOverlay","saveOverlay","lootOverlay","setOverlay"]){
         let overlay=document.getElementById(id);
         if(overlay)overlay.hidden=true;
@@ -567,6 +571,7 @@ function classifyRecommendation(result){
     if(damage>=0.05&&survival>=0.05)return {tone:"strong",text:"强烈推荐"};
     if((damage>=0.03&&survival>=-0.02)||(survival>=0.03&&damage>=-0.02))return {tone:"recommended",text:"推荐"};
     if(damage<=-0.03&&survival<=-0.03)return {tone:"avoid",text:"不推荐"};
+    if(Math.abs(damage)<0.005&&Math.abs(survival)<0.005)return {tone:"neutral",text:"普通"};
     if(damage>0||survival>0)return {tone:"tradeoff",text:damage>survival?"谨慎选择 · 偏伤害":"谨慎选择 · 偏生存"};
     return {tone:"avoid",text:"不推荐"};
 }
@@ -710,6 +715,7 @@ function refreshHpBar(){
     }
 }
 function showSetInfo(){
+    cancelLootAutoSelect();
     let c=getElemCount();
     let rules=[
         {element:"火",className:"elem-fire",two:"攻击伤害 +10%；战胜攻击 +4%",four:"攻击伤害 +25%；战胜攻击 +10%"},
@@ -755,6 +761,7 @@ function renderDifficultyPanel(){
     document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；确认后将以难度 ${level} 开始本局。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
+    cancelLootAutoSelect();
     difficultyDraft=Math.max(0,Math.min(10,Number(save.useBlood)||0));
     renderDifficultyPanel();
     document.getElementById("difficultyOverlay").hidden=false;
@@ -777,6 +784,7 @@ function closeDifficultyPanel(){
     document.getElementById("difficultyOverlay").hidden=true;
 }
 function openShop(){
+    cancelLootAutoSelect();
     resetConfirmationPending=false;
     document.getElementById("shopOverlay").hidden=false;
     renderShop();
@@ -971,6 +979,7 @@ function equipToSlot(e,chosenIdx){
     confirmEquip();
 }
 function renderReplacementChoices(e,chosenIdx){
+    cancelLootAutoSelect();
     let best=getEquipmentComparisons(e)[0];
     let choices=player.slots.map((oldEquip,index)=>{
         let recommended=index===best.slotIndex;
@@ -981,6 +990,7 @@ function renderReplacementChoices(e,chosenIdx){
 }
 function replaceEquip(slotIndex,chosenIdx){
     if(!pendingLoot)return;
+    cancelLootAutoSelect();
     let e=chosenIdx===1?pendingLoot.e1:pendingLoot.e2;
     lastEquipAction={slotIdx:slotIndex,oldEquip:player.slots[slotIndex],newEquip:e,chosenIdx};
     player.slots[slotIndex]=e;
@@ -990,6 +1000,7 @@ function replaceEquip(slotIndex,chosenIdx){
 }
 function confirmEquip(){
     if(!lastEquipAction)return;
+    cancelLootAutoSelect();
     let action=lastEquipAction;
     document.getElementById("lootContent").innerHTML=`<div class="drop-recommendation">已将【${action.newEquip.name}】${action.oldEquip?`替换【${action.oldEquip.name}】`:`装备至空槽位${action.slotIdx+1}`}。确认后进入下一阶段。</div><div class="loot-choice">${equipmentCardHtml(action.newEquip,true)}</div><div class="modal-actions"><button class="choice-btn" onclick="afterEquip()">确认选择，继续冒险</button><button class="choice-btn" onclick="undoEquip()">反悔，重新选择</button></div>`;
 }
@@ -1007,6 +1018,7 @@ function undoEquip(){
     }
 }
 function showLootChoice(e1,e2,source){
+    cancelLootAutoSelect();
     pendingLoot={e1,e2,source};
     lootDeferred=false;
     lastEquipAction=null;
@@ -1018,15 +1030,54 @@ function showLootChoice(e1,e2,source){
 }
 function renderLootChoice(){
     if(!pendingLoot)return;
+    cancelLootAutoSelect();
     document.getElementById("lootTitle").textContent=pendingLoot.source==="bossLoot"?"角落遗落装备":"战利品选择";
     let drops=[pendingLoot.e1,pendingLoot.e2];
     let advice=getDropAdvice(drops),hasInferior=advice.inferiorIndexes.length>0;
     let adviceText=hasInferior?"无特殊词条且基础属性全面不占优的装备已标红；其余装备请按当前构筑与词条自行选择。":"两件装备各有取舍，请按输出、生存与特殊词条自行选择。";
-    document.getElementById("lootContent").innerHTML=`<div class="drop-advice">${adviceText}</div><div class="loot-grid">${drops.map((item,index)=>{let inferior=advice.inferiorIndexes.includes(index);return `<article class="loot-choice ${inferior?"is-inferior":""}"><h3>装备${index+1}${inferior?` <span class="loot-status">· 不建议</span>`:""}</h3>${equipmentCardHtml(item,true)}<button class="choice-btn" onclick="chooseLoot(${index+1})">选择装备${index+1}</button></article>`;}).join("")}</div><div class="modal-actions"><button class="choice-btn" onclick="deferLootChoice()">暂时收起</button><button class="choice-btn danger" onclick="declineLoot()">都放弃</button></div>`;
+    document.getElementById("lootContent").innerHTML=`<div class="drop-advice">${adviceText}</div><label class="toggle loot-auto-toggle"><input id="lootAutoSelect" type="checkbox" ${preferences.autoLootSelect?"checked":""} onchange="toggleLootAutoSelect(this.checked)">自动选择装备 <span id="lootAutoStatus">${preferences.autoLootSelect?"3 秒后自动选择推荐装备":"勾选后 3 秒自动选择推荐装备"}</span></label><div class="loot-grid">${drops.map((item,index)=>{let inferior=advice.inferiorIndexes.includes(index);return `<article class="loot-choice ${inferior?"is-inferior":""}"><h3>装备${index+1}${inferior?` <span class="loot-status">· 不建议</span>`:""}</h3>${equipmentCardHtml(item,true)}<button class="choice-btn" onclick="chooseLoot(${index+1})">选择装备${index+1}</button></article>`;}).join("")}</div><div class="modal-actions"><button class="choice-btn" onclick="deferLootChoice()">暂时收起</button><button class="choice-btn danger" onclick="declineLoot()">都放弃</button></div>`;
+    if(preferences.autoLootSelect)startLootAutoSelect();
 }
-function chooseLoot(chosenIdx){if(pendingLoot)equipToSlot(chosenIdx===1?pendingLoot.e1:pendingLoot.e2,chosenIdx);}
+function cancelLootAutoSelect(){
+    if(lootAutoSelectTimer!==null){clearInterval(lootAutoSelectTimer);lootAutoSelectTimer=null;}
+    lootAutoSelectToken++;
+    lootAutoSelectRemaining=0;
+}
+function updateLootAutoStatus(){
+    let status=document.getElementById("lootAutoStatus");
+    if(status)status.textContent=lootAutoSelectRemaining>0?`${lootAutoSelectRemaining} 秒后自动选择推荐装备`:"勾选后 3 秒自动选择推荐装备";
+}
+function startLootAutoSelect(){
+    cancelLootAutoSelect();
+    if(!pendingLoot||lootDeferred||document.getElementById("lootOverlay").hidden)return;
+    let token=lootAutoSelectToken;
+    lootAutoSelectRemaining=3;
+    updateLootAutoStatus();
+    lootAutoSelectTimer=setInterval(()=>{
+        if(token!==lootAutoSelectToken||!pendingLoot||lootDeferred||document.getElementById("lootOverlay").hidden){cancelLootAutoSelect();return;}
+        lootAutoSelectRemaining--;
+        updateLootAutoStatus();
+        if(lootAutoSelectRemaining<=0){
+            cancelLootAutoSelect();
+            let drops=[pendingLoot.e1,pendingLoot.e2];
+            let scores=drops.map(item=>getEquipmentComparisons(item)[0].score);
+            chooseLoot(scores[1]>scores[0]?2:1);
+        }
+    },1000);
+}
+function toggleLootAutoSelect(enabled){
+    preferences.autoLootSelect=Boolean(enabled);
+    writePreferences();
+    if(enabled)startLootAutoSelect();
+    else{cancelLootAutoSelect();updateLootAutoStatus();}
+}
+function chooseLoot(chosenIdx){
+    cancelLootAutoSelect();
+    if(pendingLoot)equipToSlot(chosenIdx===1?pendingLoot.e1:pendingLoot.e2,chosenIdx);
+}
 function deferLootChoice(){
     if(!pendingLoot)return;
+    cancelLootAutoSelect();
     lootDeferred=true;
     document.getElementById("lootOverlay").hidden=true;
     printEventSummary("战利品已暂存","可从右侧勇者面板继续选择装备。");
@@ -1035,16 +1086,19 @@ function deferLootChoice(){
 }
 function resumeLootChoice(){
     if(!pendingLoot)return;
+    cancelLootAutoSelect();
     lootDeferred=false;
     document.getElementById("lootOverlay").hidden=false;
     renderLootChoice();
     autoSaveRun();
 }
 function declineLoot(){
+    cancelLootAutoSelect();
     afterEquip("已放弃本次掉落，继续冒险。");
 }
 
 function afterEquip(settledMessage=""){
+    cancelLootAutoSelect();
     let settled=settledMessage||(lastEquipAction?`已确认装备【${lastEquipAction.newEquip.name}】，继续冒险。`:"战利品选择已完成，继续冒险。");
     pendingLoot=null;
     lastEquipAction=null;
@@ -1987,6 +2041,7 @@ function renderSaveManager(notice=""){
     if(notice){let summary=document.createElement("p");summary.className="modal-notice";summary.textContent=notice;document.getElementById("saveContent").prepend(summary);}
 }
 function openSaveManager(){
+    cancelLootAutoSelect();
     document.getElementById("saveOverlay").hidden=false;
     renderSaveManager();
 }
@@ -2009,6 +2064,7 @@ function syncPreferenceControls(){
     if(collapse)collapse.checked=preferences.collapseEvents;
 }
 function openSettings(){
+    cancelLootAutoSelect();
     gamePaused=true;
     syncPreferenceControls();
     document.getElementById("settingsOverlay").hidden=false;

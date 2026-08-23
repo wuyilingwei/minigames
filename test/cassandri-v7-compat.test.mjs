@@ -50,6 +50,7 @@ requireText('function getExpectedCrit20xMultFor(slots)', 'The existing critical-
 if (html.includes('<div class="trait-note">预测：')) {
   throw new Error('Loot cards must not display the next-enemy forecast');
 }
+requirePattern(/function classifyRecommendation\([\s\S]*Math\.abs\(damage\)<0\.005&&Math\.abs\(survival\)<0\.005[\s\S]*text:"普通"[\s\S]*谨慎选择/, 'Nearly unchanged loot must be labeled as ordinary before the cautious tradeoff fallback');
 for (const trait of ['armorBreak', 'purify', 'antiHeal', 'trueStrike', 'antiThorns', 'stealGuard', 'dotResist', 'critExecute', 'energyShield', 'revenge', 'shieldBash', 'secondWind']) {
   requireText(`id:"${trait}"`, `The 7.0 trait ${trait} must remain available`);
 }
