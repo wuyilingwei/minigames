@@ -357,6 +357,7 @@ function normalizeCombatant(unit){
     return unit;
 }
 function shieldTotal(unit){normalizeCombatant(unit);return unit.shields.hits.charges*unit.shields.hits.value+unit.shields.temp+unit.shields.persistent;}
+function shieldSummary(unit){normalizeCombatant(unit);return `次数${unit.shields.hits.charges} · 临时${unit.shields.temp} · 持续${unit.shields.persistent}`;}
 function grantShield(unit,type,value,charges=1){normalizeCombatant(unit);value=Math.max(0,Math.floor(value)||0);if(type==="hits"){unit.shields.hits.value=Math.max(unit.shields.hits.value,value);unit.shields.hits.charges+=Math.max(1,charges|0);}else unit.shields[type]=Math.max(0,unit.shields[type]+value);unit.ZDYHP=unit.shields.temp+unit.shields.persistent;unit.shield=unit.ZDYHP;}
 function setTemporaryShield(unit,value){normalizeCombatant(unit);unit.shields.temp=Math.max(0,Math.floor(value)||0);unit.ZDYHP=unit.shields.temp+unit.shields.persistent;unit.shield=unit.ZDYHP;}
 function restoreTemporaryShield(unit,value,cap){normalizeCombatant(unit);let before=unit.shields.temp,limit=Math.max(0,Math.floor(cap)||0);unit.shields.temp=Math.min(limit,before+Math.max(0,Math.floor(value)||0));unit.ZDYHP=unit.shields.temp+unit.shields.persistent;unit.shield=unit.ZDYHP;return unit.shields.temp-before;}
@@ -607,6 +608,12 @@ const traitList=[
 {id:"shieldBash",name:"护盾猛击",desc:"拥有护盾时攻击伤害提升25%",prob:1},
 {id:"secondWind",name:"背水一战",desc:"生命低于20%时闪避率提升30%",prob:1}
 ];
+const equipmentTraitIdsByTier={
+    1:["attackHeal","dodgeBoost","berserk","ironWall","execute","critShield","firstStrike","highHpBoost"],
+    2:["critHeal","critEnergy","dodgeHeal","thorns","shieldGain","burn","poison","bleed","killHeal","energySurge","lifesteal","doubleStrike","armorBreak","purify","antiHeal","trueStrike","antiThorns","dotResist"],
+    3:["reviveOnce","revive30","deadlyStrike","crit20x","critExecute","energyShield","revenge","shieldBash","secondWind","stealGuard"]
+};
+function getEquipmentTraitPool(tier){let ids=new Set();for(let level=1;level<=tier;level++)for(let id of equipmentTraitIdsByTier[level]||[])ids.add(id);return traitList.filter(trait=>ids.has(trait.id));}
 
 const elements=["火","水","草","雷"];
 function elemClass(e){return e==="火"?"elem-fire":e==="水"?"elem-water":e==="草"?"elem-grass":e==="雷"?"elem-thunder":"elem-none";}
@@ -1012,7 +1019,7 @@ function refreshHpBar(){
             shieldFill.style.width=spct+"%";
             shieldFill.className="fill";
             let shieldNums=document.getElementById("shieldNums");
-            if(shieldNums)shieldNums.textContent=`次数 ${player.shields.hits.charges} · 临时 ${player.shields.temp} · 持续 ${player.shields.persistent}`;
+            if(shieldNums)shieldNums.textContent=shieldSummary(player);
         }else{
             shieldWrap.style.display="none";
         }
@@ -1034,7 +1041,7 @@ function refreshHpBar(){
         let enemyAtk=document.getElementById("battleEnemyAtk");
         if(playerName)playerName.textContent=player.job||"勇者";
         if(playerAtk)playerAtk.textContent=`ATK ${player.atk} · 能量 ${player.energy}/100`;
-        if(enemyAtk)enemyAtk.textContent=`ATK ${enemy.atk} · ${enemy.hits}段 · 追踪${Math.floor(enemy.tracking*100)}% · 闪避${Math.floor(enemy.dodge*100)}% · 护甲${Math.floor(enemy.armor*100)}%`;
+        if(enemyAtk)enemyAtk.textContent=`ATK ${enemy.atk} · ${enemy.hits}段 · 追踪${Math.floor(enemy.tracking*100)}% · 闪避${Math.floor(enemy.dodge*100)}% · 护甲${Math.floor(enemy.armor*100)}%${shieldTotal(enemy)>0?` · 盾${shieldTotal(enemy)}`:""}`;
         if(enemyTraitDesc){
             if(enemy.traits&&enemy.traits.length>0){
                 enemyTraitDesc.textContent="";
@@ -1297,7 +1304,7 @@ function genEquip(wave){
     let maxTraits=tier;
     let used={};
     for(let index=0;index<maxTraits;index++)if(Math.random()<traitProb){
-        let candidates=traitList.filter(trait=>!used[trait.id]);
+        let candidates=getEquipmentTraitPool(tier).filter(trait=>!used[trait.id]);
         if(candidates.length){let trait=pick(candidates);used[trait.id]=true;if(trait.id==="shieldGain")trait={...trait,value:pick([500,800,1000].slice(0,tier))};if(trait.id==="armorBreak")trait={...trait,value:[0.10,0.15,0.20][Math.max(0,tier-1)]};traits.push(trait);}
     }
     return {name,element,part,atk,hp,bj,bs,crt,traits,affixTier:tier};
@@ -1679,7 +1686,7 @@ function playerAttack(){
     let armorBreak=getArmorBreakValue();
     if(dmg>0&&armorBreak>0){dmg=Math.floor(dmg*(1+armorBreak));print(`【破甲】削减敌方护甲${Math.floor(armorBreak*100)}%。`);}
     if(dmg>0&&hasTrait("antiHeal")){dmg=Math.floor(dmg*1.05);}
-    if(dmg>0&&hasTrait("shieldBash")&&player.ZDYHP>0){dmg=Math.floor(dmg*1.25);print("【护盾猛击】伤害提升25%。");}
+    if(dmg>0&&hasTrait("shieldBash")&&shieldTotal(player)>0){dmg=Math.floor(dmg*1.25);print("【护盾猛击】伤害提升25%。");}
     if(dmg>0&&player.revengeActive){dmg=Math.floor(dmg*1.30);player.revengeActive=false;print("【复仇】伤害提升30%。");}
     if(dmg>0&&enemy.armor>0){let reduction=Math.max(0,enemy.armor-armorBreak);dmg=Math.floor(dmg*(1-reduction));if(reduction>0)print(`【护甲】敌人的护甲减免了${Math.floor(reduction*100)}%伤害！`);}
     if(dmg>0&&save.useBlood>=7){dmg=Math.floor(dmg*0.80);}
@@ -1850,7 +1857,8 @@ function settleEnemyTurn(){
     if(hasETrait("heal")&&enemy.hp>0&&!(enemy.antiHealTurns>0)){let healed=Math.floor(enemy.maxHp*.05);enemy.hp=Math.min(enemy.maxHp,enemy.hp+healed);print(`【再生】敌人回复了${healed}点生命值！`);}
     if(enemy.antiHealTurns>0)enemy.antiHealTurns--;
     if(enemy.purifyTurns>0){enemy.purifyTurns--;if(enemy.purifyTurns===0&&enemy.purifyPenalty){enemy.atk+=enemy.purifyPenalty;enemy.purifyPenalty=0;print("【净化】敌人的攻击力已恢复。");}}
-    return player.hp<=0||tryEnemyTheft();
+    if(player.hp<=0||enemy.hp<=0)return true;
+    return tryEnemyTheft();
 }
 function resolveEnemyAttackSegment(part,hits){
     let effCrt=getPlayerDodgeAgainst(enemy);
