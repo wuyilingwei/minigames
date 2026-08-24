@@ -69,13 +69,15 @@ test("feedback and responsive roster contracts are executable in source", () => 
 });
 
 test("enemy units expose a capped, typed shield meter that hides at zero", () => {
-  assert.match(source, /id="enemyShieldBarWrap"[^>]*class="enemy-shield-wrap"/);
-  assert.match(source, /id="enemyShieldNums"/);
-  assert.match(source, /id="enemyShieldBarFill"/);
-  assert.match(runtime, /let enemyShield=shieldTotal\(enemy\)/);
-  assert.match(runtime, /enemyShieldWrap\.style\.display=enemyShield>0\?"block":"none"/);
-  assert.match(runtime, /Math\.min\(100,enemyShield\/enemy\.maxHp\*100\)/);
-  assert.match(runtime, /enemyShieldNums\)enemyShieldNums\.textContent=shieldSummary\(enemy\)/);
-  assert.match(runtime, /shieldNums\.textContent=shieldSummary\(unit\)/);
-  assert.match(styles, /#enemyShieldBarFill,.enemy-shield-fill\{background:linear-gradient\(90deg,#8e6bb8,#d8a7ff\)/);
+  assert.match(source, /id="enemyShieldBarWrap"[^>]*class="shield-wrap enemy-shield-wrap"/);
+  for (const type of ["hits", "temp", "persistent"]) assert.match(source, new RegExp(`data-shield-type="${type}"`));
+  assert.match(runtime, /function shieldMeterState\(unit,maxHp\)/);
+  assert.match(runtime, /function renderShieldMeter\(wrap,unit,maxHp\)/);
+  assert.match(runtime, /wrap\.style\.display=state\.total>0\?"block":"none"/);
+  assert.match(runtime, /renderShieldMeter\(enemyShieldWrap,enemy,enemy\.maxHp\)/);
+  assert.match(runtime, /shieldMeterMarkup\(side==="ally"\?"":"enemy-shield-wrap"\)/);
+  assert.match(styles, /\.battle-meter\.shield-meter\{display:flex;border-color:#ffd166/);
+  assert.match(styles, /\.shield-meter \.shield-hits\{background:#ffd166;\}/);
+  assert.match(styles, /\.shield-meter \.shield-temp\{background:#5bd6ff;\}/);
+  assert.match(styles, /\.shield-meter \.shield-persistent\{background:#b78cff;\}/);
 });

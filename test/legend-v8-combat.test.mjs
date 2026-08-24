@@ -15,6 +15,11 @@ vm.runInContext(runtime.slice(start,end),context);
 
 const legacy={ZDYHP:75};context.normalizeCombatant(legacy);
 if(legacy.shields.persistent!==75||context.shieldTotal(legacy)!==75)throw new Error('Legacy ZDYHP must normalize into persistent shield');
+const mixedShield={shields:{hits:{charges:2,value:50},temp:100,persistent:300}};
+const meter=context.shieldMeterState(mixedShield,1000);
+if(meter.total!==500||meter.visiblePercent!==50||meter.segments.hits!==10||meter.segments.temp!==10||meter.segments.persistent!==30)throw new Error('Segmented shield meter must preserve total-to-HP length and typed proportions');
+const cappedMeter=context.shieldMeterState(mixedShield,400);
+if(cappedMeter.visiblePercent!==100||cappedMeter.segments.hits!==20||cappedMeter.segments.temp!==20||cappedMeter.segments.persistent!==60)throw new Error('Segmented shield meter must cap at full width while preserving shield composition');
 context.grantShield(legacy,'hits',40,2);context.grantShield(legacy,'temp',30);
 let hit=context.absorbDamage(legacy,160);
 if(hit.damage!==15||legacy.shields.hits.charges!==1||legacy.shields.temp!==0||legacy.shields.persistent!==0)throw new Error('Shield order must be hits, then temporary, then persistent');
