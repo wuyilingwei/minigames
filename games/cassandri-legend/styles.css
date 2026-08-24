@@ -56,6 +56,9 @@ body{background:#1a1a2e;color:#e0e0e0;font-family:"Microsoft YaHei",sans-serif;d
 #enemyBarArea .hp-nums{font-size:16px;font-weight:bold;color:#ff6b6b;margin-bottom:6px;}
 #enemyBarTrack{width:100%;height:16px;background:#222;border-radius:8px;overflow:hidden;}
 #enemyBarFill{height:100%;background:linear-gradient(90deg,#c62828,#ef5350);transition:width .3s;border-radius:8px;}
+#enemyShieldBarWrap,.enemy-shield-wrap{display:none;margin-top:4px;}
+#enemyShieldBarWrap .shield-number,.enemy-shield-wrap .shield-number{color:#ffd166;}
+#enemyShieldBarFill,.enemy-shield-fill{background:linear-gradient(90deg,#8e6bb8,#d8a7ff);transition:width .3s;border-radius:6px;}
 .enemy-trait-desc{margin-top:8px;font-size:12px;color:#cc9999;line-height:1.6;}
 .enemy-trait-desc .trait-item{display:inline-block;background:#2a1a2a;border:1px solid #553355;border-radius:4px;padding:2px 8px;margin:2px 4px 2px 0;}
 .slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
@@ -165,6 +168,8 @@ header h1{font-size:18px;}header .sub{font-size:14px;}#term-titlebar{font-size:1
 @media (prefers-reduced-motion:reduce){.pixel-switch input[type="checkbox"],.pixel-switch input[type="checkbox"]::before,.loot-choice.auto-select-target{transition:none;animation:none;}.loot-choice.auto-select-target{border-color:var(--accent2);box-shadow:3px 3px 0 #07140c,0 0 0 2px rgba(57,255,143,.35);}}
 #terminal-wrap #battleArena .enemy .trait-note{font-size:10px;line-height:1.45;overflow-wrap:anywhere;}
 #terminal-wrap #battleArena .enemy .trait-note .trait-item{display:block;margin-top:2px;}
+#terminal-wrap #battleArena .enemy .enemy-shield-wrap{grid-column:2;grid-row:5;}
+#terminal-wrap #battleArena .enemy .trait-note{grid-row:6;}
 /* Battle roster cards stay readable at one unit and grow into groups. */
 #battleArena .unit-roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;min-width:0;z-index:1;}
 #battleArena .unit-roster .combatant{min-width:0;}

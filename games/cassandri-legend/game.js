@@ -893,13 +893,17 @@ function createRosterCard(unit,side,index){
     let card=document.createElement("article");
     card.className=`combatant ${side==="ally"?"player":"enemy"}`;
     card.dataset.rosterUnit=String(index);card.dataset.unitSide=side;
-    card.innerHTML=`<div class="pixel-avatar"></div><div class="combatant-name"></div><div class="combatant-atk"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-fill"}"></div></div><div class="battle-number"></div><div class="trait-note"></div>`;
+    card.innerHTML=`<div class="pixel-avatar"></div><div class="combatant-name"></div><div class="combatant-atk"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-fill"}"></div></div><div class="battle-number"></div><div class="shield-wrap ${side==="ally"?"":"enemy-shield-wrap"}"><div class="shield-number"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-shield-fill"}"></div></div></div><div class="trait-note"></div>`;
     setCombatantSprite(card,unit,side);
     card.querySelector(".combatant-name").textContent=unit.name||unit.job|| (side==="ally"?"友军":"敌人");
     card.querySelector(".combatant-atk").textContent=`ATK ${unit.atk??"—"}`;
     let hp=Number(unit.hp)||0,max=Number(unit.maxHp)||hp||1,pct=Math.max(0,Math.min(100,hp/max*100));
     card.querySelector(".fill").style.width=`${pct}%`;
     card.querySelector(".battle-number").textContent=`${hp} / ${max}`;
+    let shield=shieldTotal(unit),shieldWrap=card.querySelector(".shield-wrap"),shieldFill=shieldWrap.querySelector(".fill"),shieldNums=shieldWrap.querySelector(".shield-number");
+    shieldWrap.style.display=shield>0?"block":"none";
+    shieldFill.style.width=`${Math.min(100,shield/max*100)}%`;
+    shieldNums.textContent=shieldSummary(unit);
     let trait=card.querySelector(".trait-note");
     trait.textContent=(unit.traits||[]).map(t=>`【${t.name||t.id||"特性"}】${t.desc||""}`).join(" ");
     return card;
@@ -964,6 +968,9 @@ function refreshHpBar(){
     let enemyLabel=document.getElementById("enemyBarLabel");
     let enemyNums=document.getElementById("enemyHpNums");
     let enemyFill=document.getElementById("enemyBarFill");
+    let enemyShieldWrap=document.getElementById("enemyShieldBarWrap");
+    let enemyShieldFill=document.getElementById("enemyShieldBarFill");
+    let enemyShieldNums=document.getElementById("enemyShieldNums");
     let enemyTraitDesc=document.getElementById("enemyTraitDesc");
     if(enemyArea&&active){
         enemyArea.style.display="grid";
@@ -972,6 +979,13 @@ function refreshHpBar(){
         let epct=enemy.maxHp>0?Math.max(0,Math.min(100,enemy.hp/enemy.maxHp*100)):0;
         enemyFill.style.width=epct+"%";
         enemyFill.className="fill enemy-fill";
+        let enemyShield=shieldTotal(enemy);
+        if(enemyShieldWrap&&enemyShieldFill){
+            enemyShieldWrap.style.display=enemyShield>0?"block":"none";
+            enemyShieldFill.style.width=`${enemy.maxHp>0?Math.min(100,enemyShield/enemy.maxHp*100):0}%`;
+            enemyShieldFill.className="fill enemy-shield-fill";
+            if(enemyShieldNums)enemyShieldNums.textContent=shieldSummary(enemy);
+        }
         let playerName=document.getElementById("battlePlayerName");
         let playerAtk=document.getElementById("battlePlayerAtk");
         let enemyAtk=document.getElementById("battleEnemyAtk");
@@ -995,6 +1009,7 @@ function refreshHpBar(){
         }
     }else if(enemyArea){
         enemyArea.style.display="none";
+        if(enemyShieldWrap)enemyShieldWrap.style.display="none";
     }
 }
 function showSetInfo(){
