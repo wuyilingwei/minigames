@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 const root = resolve(new URL('..', import.meta.url).pathname);
 const html = await readFile(resolve(root, 'games/cassandri-legend/index.html'), 'utf8');
 const runtime = await readFile(resolve(root, 'games/cassandri-legend/game.js'), 'utf8');
-const model = runtime.match(/const baseEquipmentParts=\[[\s\S]*?function initSlots\(\)\{[\s\S]*?\n\}/)?.[0];
+const model = runtime.match(/const allEquipmentParts=\[[\s\S]*?function initSlots\(\)\{[\s\S]*?\n\}/)?.[0];
 const actionModel = runtime.match(/function buildEquipAction\(item,slotIndex,slots=player\.slots\)\{[\s\S]*?\n\}/)?.[0];
 const manualLootModel = runtime.match(/function equipToSlot\(e,chosenIdx\)\{[\s\S]*?\n\}/)?.[0];
 const replacementModel = runtime.match(/function renderReplacementChoices\(e,chosenIdx\)\{[\s\S]*?\n\}/)?.[0];
@@ -24,9 +24,13 @@ const hard = createModel({ slot5Unlocked: false, useBlood: 6 }, ['火', '水', '
 const shop = createModel({ slot5Unlocked: false, useBlood: 6, purchaseSlotUnlocked: true }, ['火', '水', '草', '雷']);
 const shopLow = createModel({ slot5Unlocked: false, useBlood: 5, purchaseSlotUnlocked: true }, ['火', '水', '草', '雷']);
 if (hard.getSlotCount() !== 5 || shop.getSlotCount() !== 6 || shopLow.getSlotCount() !== 5) throw new Error('Difficulty and purchase slots must be independent and continuous.');
-if (low.getEquipmentSlots().slice(0, 4).map(slot => slot.name).join('/') !== '装备 1/装备 2/装备 3/装备 4') throw new Error('The four base positions must be generic equipment slots rather than mandatory armor or weapon slots.');
+for (const current of [low, hard, shop, shopLow]) {
+  const definitions=current.getEquipmentSlots();
+  if (definitions.map(slot => slot.name).join('/') !== definitions.map((_, index) => `装备 ${index + 1}`).join('/')) throw new Error('Every unlocked position must use a continuous generic equipment label.');
+  if (definitions.some(slot => slot.accepts.join('/') !== 'head/body/oneHand/twoHand/offHand/accessory/outerwear')) throw new Error('Every unlocked position must accept the same universal equipment parts.');
+}
 const difficultyApply = runtime.match(/function applyDifficultySelection\(\)\{[\s\S]*?\n\}/)?.[0] || '';
-if (!/save\.useBlood=difficultyDraft;[\s\S]*syncSlotCapacity\(\);/.test(difficultyApply)) throw new Error('Raising difficulty to 6 must immediately synchronize the fifth accessory slot.');
+if (!/save\.useBlood=difficultyDraft;[\s\S]*syncSlotCapacity\(\);/.test(difficultyApply)) throw new Error('Raising difficulty to 6 must immediately synchronize the fifth universal slot.');
 
 const sword = { name: '短剑', part: 'oneHand', element: '火', atk: 1, hp: 0, bj: 0, bs: 0, crt: 0, traits: [] };
 const shield = { name: '盾牌', part: 'offHand', element: '水', atk: 0, hp: 1, bj: 0, bs: 0, crt: 0, traits: [] };
@@ -59,8 +63,8 @@ const cloak = { name: '披风', part: 'outerwear', element: '风', atk: 1, hp: 2
 const migratedHard = hard.normalizeEquipmentSlots([null, armor, null, null, { ...cloak, part: 'body' }]);
 if (migratedHard[1]?.part !== 'body' || migratedHard[4]?.part !== 'outerwear') throw new Error('Armor and a legacy body cloak must coexist in body and fifth slots.');
 const migratedLow = low.normalizeEquipmentSlots([null, armor, null, null, cloak]);
-if (migratedLow.some(item => item?.part === 'outerwear')) throw new Error('Low difficulty must not retain an add-on without the fifth slot.');
-if (hard.buildEquipAction(cloak, 1, [null, armor, null, null, null]) !== null) throw new Error('Outerwear must remain exclusive to the accessory slot rather than a generic base slot.');
+if (!migratedLow.some(item => item?.part === 'outerwear')) throw new Error('Outerwear must be retained in an available base slot because all positions are universal.');
+if (!hard.buildEquipAction(cloak, 1, [null, armor, null, null, null])) throw new Error('Outerwear must be replaceable into any universal equipment position.');
 if (!hard.buildEquipAction(cloak, 4, [null, armor, null, null, null])) throw new Error('Outerwear must be equipable in the unlocked fifth slot alongside armor.');
 const tierStart = runtime.indexOf('const equipmentTraitIdsByTier=');
 const tierEnd = runtime.indexOf('\n\nconst elements=', tierStart);
@@ -76,7 +80,7 @@ for (const [level, traits] of [[0, 0], [3, 1], [6, 2], [9, 3]]) {
   const expected = level === 0 ? 'let maxTraits=tier;' : 'let tier=save.useBlood>=9?3:save.useBlood>=6?2:save.useBlood>=3?1:0;';
   if (!runtime.includes(expected)) throw new Error(`Difficulty ${level} equipment trait tier is missing.`);
 }
-for (const text of ['id:"armorBreak"', 'trait.id==="armorBreak"', 'function buildEquipAction', 'function normalizeEquipmentSlots', 'accepts:["accessory","outerwear"]']) {
+for (const text of ['id:"armorBreak"', 'trait.id==="armorBreak"', 'function buildEquipAction', 'function normalizeEquipmentSlots', 'const allEquipmentParts=["head","body","oneHand","twoHand","offHand","accessory","outerwear"]']) {
   if (!runtime.includes(text)) throw new Error(`Missing 8.0 equipment contract: ${text}`);
 }
 if (low.getEquipmentSlots().length !== 4 || hard.getEquipmentSlots()[4]?.id !== 'accessory' || shopLow.getEquipmentSlots()[4]?.id !== 'purchase') {

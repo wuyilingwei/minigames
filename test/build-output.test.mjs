@@ -104,7 +104,7 @@ if (cassandriMenu.some((index) => index < 0) || !cassandriMenu.every((index, pos
 if (!cassandri.includes('id="btnHomeExitToPortal"') || !cassandri.includes('function requestReset()') || !cassandri.includes('function confirmReset()') || !cassandri.includes('确认施放') || !cassandri.includes('取消')) {
   throw new Error('Cassandri Legend is missing the home exit or explicit reset confirmation controls.');
 }
-if (!/<h3>潘多拉之盒<\/h3>[\s\S]*<h3>额外装备槽位<\/h3>[\s\S]*<h3>大记忆消失术<\/h3>/.test(cassandri)) {
+if (!/<h3>潘多拉之盒<\/h3>[\s\S]*<h3>难度装备位<\/h3>[\s\S]*<h3>大记忆消失术<\/h3>/.test(cassandri)) {
   throw new Error('The manually triggered reset must be the final shop item.');
 }
 
