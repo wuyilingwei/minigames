@@ -1964,7 +1964,6 @@ function enemyAttack(){
 function autoBattleDecide(){
     let chargedAttack=player.atk*(1+0.5*(player.defendStack||0));
     if(enemy.hp<=chargedAttack)return "attack";
-    if(player.energy>=100)return "burst";
     if((player.defendStack||0)>=2)return "attack";
     let dodgeRate=hasETrait("trueSight")?0:getPlayerDodgeAgainst(enemy);
     if(hasETrait("phase"))dodgeRate*=.5;
@@ -1996,9 +1995,8 @@ function doDefend(){
 
 function doAttackRound(){
     if(gamePaused)return;
-    if(autoBattle){let decision=autoBattleDecide();if(decision==="defend"){doDefend();return;}if(decision==="burst")burstAttack();else playerAttack();}
-    else if(player.energy>=100)burstAttack();
-    else playerAttack();
+    if(autoBattle&&autoBattleDecide()==="defend"){doDefend();return;}
+    playerAttack();
     if(enemy.hp<=0){onEnemyDefeat();return;}
     applyDots();
     if(enemy.hp<=0){onEnemyDefeat();return;}
