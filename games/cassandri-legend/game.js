@@ -62,11 +62,28 @@ const equipmentSlots=[
     {id:"mainHand",name:"主手",accepts:["oneHand","twoHand"]},{id:"offHand",name:"副手",accepts:["oneHand","offHand"]}
 ];
 const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品",outerwear:"附加",purchase:"购买"};
+const equipmentTierData=[
+    {id:0,name:"制式",description:"基础装备"},
+    {id:1,name:"精工",description:"解锁第一档词条"},
+    {id:2,name:"秘藏",description:"解锁第二档词条"},
+    {id:3,name:"神铸",description:"解锁第三档词条"}
+];
+function normalizeAffixTier(value){
+    let tier=Number(value);
+    return Number.isFinite(tier)?Math.max(0,Math.min(3,Math.floor(tier))):0;
+}
+function getEquipmentTier(tier){return equipmentTierData[normalizeAffixTier(tier)];}
+const starterEquipmentData={
+    "朴素头巾":{hp:25,crt:0.02},
+    "朴素布衣":{hp:80},
+    "训练短剑":{atk:15,bj:0.02},
+    "空白护臂":{hp:35,crt:0.02}
+};
 function hasAddonSlotFor(saveState=save){return saveState.useBlood>=6||saveState.legacyAddonSlotUnlocked||Boolean(saveState.slot5Unlocked&&!saveState.purchaseSlotUnlocked);}
 function hasPurchaseSlotFor(saveState=save){return Boolean(saveState.purchaseSlotUnlocked||saveState.slot5Unlocked);}
 function getEquipmentSlotsFor(saveState=save){
     let slots=equipmentSlots.slice();
-    if(hasAddonSlotFor(saveState))slots.push({id:"accessory",name:"附加",accepts:["accessory","outerwear"]});
+    if(hasAddonSlotFor(saveState))slots.push({id:"accessory",name:"高难",accepts:["accessory","outerwear"]});
     if(hasPurchaseSlotFor(saveState))slots.push({id:"purchase",name:"购买",accepts:["purchase"]});
     return slots;
 }
@@ -98,6 +115,9 @@ function normalizeEquipment(item,index=0){
     for(let key of ["atk","hp","bj","bs","crt"]){let value=Number(normalized[key]);normalized[key]=Number.isFinite(value)?value:0;}
     if(normalized.trait&&!normalized.traits)normalized.traits=[normalized.trait];
     normalized.traits=Array.isArray(normalized.traits)?normalized.traits.filter(isRecord):[];
+    normalized.affixTier=normalizeAffixTier(normalized.affixTier);
+    let starter=starterEquipmentData[normalized.name];
+    if(starter)for(let [key,value] of Object.entries(starter))normalized[key]=Math.max(normalized[key],value);
     if(normalized.id==="emergencyShield"){
         normalized.emergencyCharges=Math.max(0,Math.min(4,Math.floor(Number(normalized.emergencyCharges??4)||0)));
     }
@@ -127,10 +147,10 @@ function syncSlotCapacity(){
     }
 }
 function makeStarterEquipment(){return [
-    {name:"朴素头巾",element:"无",part:"head",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
-    {name:"朴素布衣",element:"无",part:"body",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
-    {name:"训练短剑",element:"无",part:"oneHand",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]},
-    {name:"空白护臂",element:"无",part:"offHand",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]}
+    {name:"朴素头巾",element:"无",part:"head",atk:0,hp:25,bj:0,bs:0,crt:0.02,traits:[],affixTier:0},
+    {name:"朴素布衣",element:"无",part:"body",atk:0,hp:80,bj:0,bs:0,crt:0,traits:[],affixTier:0},
+    {name:"训练短剑",element:"无",part:"oneHand",atk:15,hp:0,bj:0.02,bs:0,crt:0,traits:[],affixTier:0},
+    {name:"空白护臂",element:"无",part:"offHand",atk:0,hp:35,bj:0,bs:0,crt:0.02,traits:[],affixTier:0}
 ];}
 function makeEmergencyShield(){return {id:"emergencyShield",name:"高难应急护盾",element:"无",part:"outerwear",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],emergencyCharges:4};}
 function initSlots(){
@@ -166,24 +186,25 @@ function absorbDamage(unit,amount,{pierce=false,label="护盾"}={}){normalizeCom
 }
 function healPlayer(amount,source="恢复"){
     let requested=Math.max(0,Math.floor(amount)||0), bonus=hasPrismaticResonance()?1.20:1;
-    let perHealCap=player.maxHp;
-    if(save.useBlood>=3)perHealCap=Math.floor(player.maxHp*Math.max(.30,.60-(save.useBlood-3)*.02));
-    let healed=Math.max(0,Math.min(Math.floor(requested*bonus),perHealCap,player.maxHp-player.hp));player.hp+=healed;
-    print(`【${source}】回复${healed}/${requested}点生命${save.useBlood>=3?`（本次上限${perHealCap}）`:""}。`);return healed;
+    let missingHp=Math.max(0,Math.floor(player.maxHp-player.hp));
+    let recoveryRate=getHealingRecoveryRate(save.useBlood);
+    let perHealCap=getHealingCapForMissing(missingHp,save.useBlood);
+    let healed=Math.max(0,Math.min(Math.floor(requested*bonus),perHealCap,missingHp));player.hp+=healed;
+    print(`【${source}】回复${healed}/${requested}点生命${recoveryRate<1?`（当前损失生命可恢复${Math.floor(recoveryRate*100)}%，本次上限${perHealCap}）`:""}。`);return healed;
 }
 function getEmergencyShield(){
     return player.slots.find(item=>item&&item.id==="emergencyShield")||null;
 }
 function triggerEmergencyShield(){
     let item=getEmergencyShield();
-    if(!item)return;
+    if(!item||save.useBlood<6)return;
     let charges=Math.max(0,Math.floor(Number(item.emergencyCharges)||0));
     if(charges<=0)return;
-    let value=[25,50,75,100][Math.min(3,charges-1)];
+    let value=getEmergencyShieldValueForCharges(charges,save.useBlood);
     item.emergencyCharges=charges-1;
     grantShield(player,"temp",value);
     if(item.emergencyCharges>0){
-        print(`【高难应急护盾】进战触发，获得${value}点临时盾；剩余${item.emergencyCharges}次，下次${[25,50,75,100][item.emergencyCharges-1]}点。`);
+        print(`【高难应急护盾】进战触发，获得${value}点临时盾；剩余${item.emergencyCharges}次，下次${getEmergencyShieldValueForCharges(item.emergencyCharges,save.useBlood)}点。`);
     }else{
         let index=player.slots.indexOf(item);
         if(index>=0)player.slots[index]=null;
@@ -191,6 +212,22 @@ function triggerEmergencyShield(){
         applyEquipStats();
     }
     refreshStatPanel();
+}
+function getEmergencyShieldValueForCharges(charges,level=save.useBlood){
+    let remaining=Math.max(0,Math.min(4,Math.floor(Number(charges)||0)));
+    if(remaining<=0||Number(level)<6)return 0;
+    let base=[0,25,50,75,100][remaining];
+    return Math.floor(base*Math.pow(1.18,Math.max(0,Math.floor(Number(level)||0))));
+}
+function getEmergencyShieldValues(level=save.useBlood){
+    return [4,3,2,1].map(charges=>getEmergencyShieldValueForCharges(charges,level));
+}
+function getHealingRecoveryRate(level=save.useBlood){
+    let rates=[1,1,1,.95,.90,.85,.75,.70,.65,.55,.50];
+    return rates[Math.max(0,Math.min(10,Math.floor(Number(level)||0)))];
+}
+function getHealingCapForMissing(missingHp,level=save.useBlood){
+    return Math.floor(Math.max(0,Number(missingHp)||0)*getHealingRecoveryRate(level));
 }
 function hasPrismaticResonance(){let c=getElemCount();return ["火","水","草","雷"].every(element=>c[element]>=1);}
 function prepareBattleShields(){
@@ -373,10 +410,10 @@ function restoreRunSnapshot(snapshot){
 }
 
 const jobData={
-"战士":{atk:220,hp:900,bj:0.08,bs:1.5,crt:0.03,desc:"高攻击，攻击吸血20%，战胜加攻击"},
-"天使":{atk:130,hp:1450,bj:0.08,bs:1.5,crt:0.05,desc:"高血量，血量增伤，战胜加血量"},
-"勇者":{atk:180,hp:1100,bj:0.28,bs:2.2,crt:0.05,desc:"高暴击，受击反伤15%"},
-"隐士":{atk:190,hp:900,bj:0.10,bs:1.6,crt:0.35,desc:"高闪避，溢出闪避增伤，战胜加闪避"}
+"战士":{atk:220,hp:900,bj:0.08,bs:1.5,crt:0.12,desc:"高攻击，攻击吸血20%，战胜加攻击"},
+"天使":{atk:130,hp:1450,bj:0.08,bs:1.5,crt:0.14,desc:"高血量，血量增伤，战胜加血量"},
+"勇者":{atk:180,hp:1100,bj:0.28,bs:2.2,crt:0.16,desc:"高暴击，受击反伤15%"},
+"隐士":{atk:190,hp:900,bj:0.10,bs:1.6,crt:0.42,desc:"高闪避，溢出闪避增伤，战胜加闪避"}
 };
 
 const blessingData={
@@ -594,7 +631,7 @@ function targetHasTrait(target,id){return target&&Array.isArray(target.traits)&&
 function emergencyShieldValue(item){
     if(!item||item.id!=="emergencyShield")return 0;
     let charges=Math.max(0,Math.min(4,Math.floor(Number(item.emergencyCharges)||0)));
-    return [100,75,50,25].slice(0,charges).reduce((sum,value)=>sum+value,0);
+    return getEmergencyShieldValues(save.useBlood).slice(0,charges).reduce((sum,value)=>sum+value,0);
 }
 function deriveBuild(slots){
     let base=calcBaseStats();
@@ -700,7 +737,7 @@ function getDropAdvice(items){
 }
 function equipmentRecommendationHtml(item){
     let comparisons=getEquipmentComparisons(item),best=comparisons[0];
-    if(!best)return `<div class="recommendation avoid"><div class="recommend-title">当前没有可用部位</div><div>附加装备需要难度 6 的附加槽；商城专用装备需要单独解锁购买槽。</div></div>`;
+    if(!best)return `<div class="recommendation avoid"><div class="recommend-title">当前没有可用部位</div><div>附加装备需要难度 6 的高难槽；商城专用装备需要单独解锁购买槽。</div></div>`;
     let decision=classifyRecommendation(best);
     let before=best.current,after=best.next;
     let beforeTrait=best.oldEquip&&best.oldEquip.traits&&best.oldEquip.traits.length?best.oldEquip.traits.map(trait=>trait.name).join("·"):"无";
@@ -751,8 +788,11 @@ function oneSlotHtml(idx){
     let s=player.slots[idx];
     if(!s)return `<div class="slot">${getSlotLabel(idx)}：空</div>`;
     let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
-    let specialNote=s.id==="emergencyShield"?` · 剩余${s.emergencyCharges}次${s.emergencyCharges>0?` · 下次${[25,50,75,100][s.emergencyCharges-1]}临时盾`:" · 已损坏"}`:"";
-    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note">【${equipmentPartNames[s.part]}】${specialNote}</span>
+    let isEmergencyShield=s.id==="emergencyShield";
+    let specialNote=isEmergencyShield?` · 剩余${s.emergencyCharges}次${s.emergencyCharges>0?` · 下次${getEmergencyShieldValueForCharges(s.emergencyCharges,save.useBlood)}临时盾`:" · 已损坏"}`:"";
+    let tier=getEquipmentTier(s.affixTier);
+    let partNote=isEmergencyShield?"":`【${equipmentPartNames[s.part]} · ${tier.name}】`;
+    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note ${isEmergencyShield?"":`tier-${tier.id}`}">${partNote}${specialNote}</span>
     <div class="estats">
     <span class="estat-item stat-atk">ATK+${s.atk}</span>
     <span class="estat-item stat-hp">HP+${s.hp}</span>
@@ -765,10 +805,13 @@ function oneSlotHtml(idx){
 /* The battle engine can keep its legacy singletons while
    callers may expose `player.allies` / `enemy.enemies` (or roster) arrays. */
 function unitKind(unit,side){
-    let text=String(unit&&((unit.kind||unit.type||unit.job||unit.name)||"")).toLowerCase();
+    let text=String(unit&&[unit.kind,unit.type,unit.job,unit.name].filter(Boolean).join(" ")||"").toLowerCase();
     if(side==="ally"){
+        if(text.includes("天使")||text.includes("angel"))return "angel";
+        if(text.includes("隐士")||text.includes("hermit")||text.includes("修道"))return "hermit";
+        if(text.includes("战士")||text.includes("warrior")||text.includes("盾")||text.includes("骑"))return "warrior";
+        if(text.includes("勇者")||text.includes("hero"))return "hero";
         if(text.includes("法")||text.includes("巫")||text.includes("术"))return "caster";
-        if(text.includes("盾")||text.includes("骑")||text.includes("战士"))return "guardian";
         return "hero";
     }
     if(text.includes("史莱姆")||text.includes("泥浆")||text.includes("植物"))return "slime";
@@ -778,11 +821,14 @@ function unitKind(unit,side){
     return "enemy";
 }
 function pixelSpriteMarkup(kind){
-    const palettes={hero:["#39ff8f","#ffcf9a","#4169e1"],guardian:["#88b8ff","#ffd2a6","#6f7f9f"],caster:["#d78cff","#ffd2a6","#4b2f82"],enemy:["#ff4d4d","#d48a6a","#641f32"],beast:["#ff9d5c","#c56a43","#723c29"],undead:["#b5c3cc","#d7e2e8","#596875"],slime:["#64e6c0","#b6ffe9","#218f79"]};
+    const palettes={hero:["#39ff8f","#ffcf9a","#4169e1"],warrior:["#88b8ff","#ffd2a6","#6f7f9f"],guardian:["#88b8ff","#ffd2a6","#6f7f9f"],angel:["#fff1a8","#ffe8ca","#c99735"],hermit:["#d78cff","#ffd2a6","#4b2f82"],caster:["#d78cff","#ffd2a6","#4b2f82"],enemy:["#ff4d4d","#d48a6a","#641f32"],beast:["#ff9d5c","#c56a43","#723c29"],undead:["#b5c3cc","#d7e2e8","#596875"],slime:["#64e6c0","#b6ffe9","#218f79"]};
     const [body,skin,shade]=palettes[kind]||palettes.enemy;
-    const ears=(kind==="beast"||kind==="enemy")?`<rect x="2" y="3" width="3" height="4" fill="${shade}"/><rect x="11" y="3" width="3" height="4" fill="${shade}"/>`:"";
-    const weapon=(kind==="hero"||kind==="guardian")?`<rect x="13" y="9" width="2" height="6" fill="#e9e3c2"/><rect x="14" y="8" width="1" height="1" fill="#fff6c4"/>`:kind==="caster"?`<rect x="13" y="8" width="2" height="7" fill="#8b6b43"/><rect x="13" y="7" width="3" height="2" fill="#d78cff"/>`:"";
-    return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位"><rect x="5" y="2" width="6" height="2" fill="${skin}"/>${ears}<rect x="4" y="4" width="8" height="5" fill="${skin}"/><rect x="5" y="5" width="2" height="2" fill="#10140f"/><rect x="9" y="5" width="2" height="2" fill="#10140f"/><rect x="6" y="7" width="4" height="1" fill="${shade}"/><rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>${weapon}</svg>`;
+    const face=`<rect x="4" y="4" width="8" height="5" fill="${skin}"/><rect x="5" y="5" width="2" height="2" fill="#10140f"/><rect x="9" y="5" width="2" height="2" fill="#10140f"/>`;
+    const legs=`<rect x="5" y="14" width="2" height="2" fill="${shade}"/><rect x="9" y="14" width="2" height="2" fill="${shade}"/>`;
+    if(kind==="warrior"||kind==="guardian")return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位：战士"><rect x="3" y="2" width="10" height="3" fill="${shade}"/><rect x="5" y="1" width="6" height="2" fill="${body}"/>${face}<rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="4" y="10" width="8" height="2" fill="${shade}"/><rect x="13" y="7" width="1" height="8" fill="#e9e3c2"/><rect x="14" y="6" width="1" height="2" fill="#fff6c4"/>${legs}</svg>`;
+    if(kind==="angel")return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位：天使"><rect x="4" y="1" width="8" height="1" fill="#ffe16b"/><rect x="3" y="2" width="10" height="1" fill="#ffe16b"/><polygon points="1,7 4,5 5,12 1,10" fill="#fff8dc"/><polygon points="15,7 12,5 11,12 15,10" fill="#fff8dc"/>${face}<rect x="4" y="9" width="8" height="5" fill="${body}"/><rect x="6" y="10" width="4" height="4" fill="#fff8dc"/><rect x="13" y="8" width="1" height="7" fill="#c99735"/><rect x="12" y="7" width="3" height="1" fill="#ffe16b"/>${legs}</svg>`;
+    if(kind==="hermit"||kind==="caster")return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位：隐士"><polygon points="3,6 5,1 11,1 13,6 12,10 4,10" fill="${shade}"/>${face}<rect x="3" y="9" width="10" height="5" fill="${body}"/><rect x="3" y="10" width="3" height="3" fill="${shade}"/><rect x="13" y="7" width="1" height="9" fill="#8b6b43"/><rect x="12" y="6" width="3" height="2" fill="#d78cff"/><rect x="2" y="12" width="2" height="2" fill="#8b6b43"/>${legs}</svg>`;
+    return `<svg class="pixel-sprite" viewBox="0 0 16 16" role="img" aria-label="像素单位：勇者"><rect x="5" y="2" width="6" height="2" fill="${skin}"/>${face}<polygon points="3,9 6,10 5,15 2,13" fill="${shade}"/><rect x="6" y="9" width="5" height="5" fill="${body}"/><rect x="11" y="10" width="3" height="4" fill="#d7e2e8"/><rect x="12" y="11" width="1" height="2" fill="#4169e1"/><rect x="14" y="8" width="1" height="7" fill="#e9e3c2"/><rect x="14" y="7" width="1" height="1" fill="#fff6c4"/>${legs}</svg>`;
 }
 function enemyAvatarSeed(name){
     let text=String(name||"敌人");
@@ -951,16 +997,29 @@ function showSetInfo(){
     document.getElementById("setOverlay").hidden=false;
 }
 function getDifficultyEffects(level){
-    let effects=[];
-    if(level>=1)effects.push(`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(level)-1)*100)}%`);
-    if(level>=3)effects.push("开局随机禁用一个职业和一项祝福；回复上限从最大生命60%起继续衰减");
-    if(level>=5)effects.push("敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%");
-    if(level>=7)effects.push("玩家造成的伤害 -20%");
-    if(level>=9)effects.push("遭遇普通敌人时有 30% 概率随机失去一件装备");
-    if(level>=3)effects.push("装备掉落开放额外效果与 1 条词条");
-    if(level>=6)effects.push("装备掉落至多 2 条词条，并开放高难附加槽；新征途在该槽获得应急护盾（100/75/50/25临时盾，4次后损坏；购买槽需商城单独解锁）");
-    if(level>=9)effects.push("装备掉落至多 3 条强化词条");
-    return effects.length?effects.join("；"):"暂无额外规则。";
+    return getDifficultyRules(level).map(rule=>rule.detail).join("；")||"暂无额外规则。";
+}
+function getDifficultyRules(level){
+    let current=Math.max(0,Math.min(10,Math.floor(Number(level)||0))),rules=[];
+    if(current>=1)rules.push({level:1,tag:`金币 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`,detail:`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`});
+    if(current>=3)rules.push({level:3,tag:"禁用职业/祝福",detail:"开局随机禁用一个职业和一项祝福"});
+    if(current>=3)rules.push({level:3,tag:`回血 ${Math.floor(getHealingRecoveryRate(current)*100)}%`,detail:`单次治疗至多恢复当前损失生命的 ${Math.floor(getHealingRecoveryRate(current)*100)}%`});
+    if(current>=3)rules.push({level:3,tag:"精工装备",detail:"装备掉落开放额外效果与 1 条词条，等阶提升至精工"});
+    if(current>=5)rules.push({level:5,tag:"追踪成长",detail:"敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%"});
+    if(current>=6)rules.push({level:6,tag:"秘藏装备",detail:"装备掉落至多 2 条词条，等阶提升至秘藏"});
+    if(current>=6)rules.push({level:6,tag:`高难盾 ${getEmergencyShieldValues(current)[0]}`,detail:`开放高难槽；新征途在该槽获得应急盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏；购买槽需商城单独解锁）`});
+    if(current>=7)rules.push({level:7,tag:"伤害压制",detail:"玩家造成的伤害 -20%"});
+    if(current>=9)rules.push({level:9,tag:"装备损失",detail:"遭遇普通敌人时有 30% 概率随机失去一件装备"});
+    if(current>=9)rules.push({level:9,tag:"神铸装备",detail:"装备掉落至多 3 条强化词条，等阶提升至神铸"});
+    return rules;
+}
+function getDifficultyRuleTags(level){
+    let tags=getDifficultyRules(level).map(rule=>`难度${rule.level} · ${rule.tag}`);
+    return tags.length?tags:["基础规则"];
+}
+function getDifficultyRuleDetails(level){
+    let rules=getDifficultyRules(level);
+    return rules.length?rules.map(rule=>`<li><strong>难度 ${rule.level}</strong> ${rule.detail}</li>`).join(""):`<li>暂无额外规则。</li>`;
 }
 function getDifficultyTraits(level){
     if(level>=8)return "敌人保底拥有 1 种词条；最多 3 种，出现概率 ×1.5。";
@@ -979,15 +1038,17 @@ function renderDifficultyPanel(){
     document.getElementById("difficultyFocusCaption").textContent=`难度 ${level}`;
     document.getElementById("difficultyMultiplier").textContent=`敌人攻击力与生命值 ×${Math.pow(1.4,level).toFixed(2)}；胜利金币 ×${getDifficultyGoldMultiplier(level).toFixed(2)}（每级金币 +10%）。`;
     document.getElementById("difficultyTraits").textContent=getDifficultyTraits(level);
-    document.getElementById("difficultyEffects").textContent=getDifficultyEffects(level);
+    document.getElementById("difficultyRuleTags").replaceChildren(...getDifficultyRuleTags(level).map(tag=>{let node=document.createElement("span");node.className="difficulty-rule-tag";node.textContent=tag;return node;}));
+    document.getElementById("difficultyRuleDetails").innerHTML=getDifficultyRuleDetails(level);
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
     document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
     document.getElementById("btnDifficultyApply").disabled=!adjustable||level===save.useBlood;
-    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备词条，6 级起开放高难附加槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
+    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备词条，6 级起开放高难槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
     cancelLootAutoSelect();
     difficultyDraft=Math.max(0,Math.min(10,Number(save.useBlood)||0));
+    let rules=document.querySelector(".difficulty-rules");if(rules)rules.open=false;
     renderDifficultyPanel();
     document.getElementById("difficultyOverlay").hidden=false;
 }
@@ -1027,11 +1088,11 @@ function renderShop(notice=""){
     document.getElementById("shopNotice").textContent=notice||(cheatMode?"作弊模式：道具可免费增减。":`当前金币：${save.gold||0}`);
     let productHtml=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>${cheatMode?`已购 ${p[key]}/10（免费）`:`价格：${price} 金币 · 已购 ${p[key]}/10`}</div>${cheatMode?`<div class="cheat-shop-controls"><button class="choice-btn" onclick="adjustCheatItem('${key}',-1)" ${p[key]<=0?"disabled":""}>−</button><span class="cheat-count">${p[key]}</span><button class="choice-btn" onclick="adjustCheatItem('${key}',1)" ${p[key]>=10?"disabled":""}>+</button></div>`:`<button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button>`}</article>`).join("");
     let purchaseEquipment=save.purchaseEquipment;
-    let purchaseHtml=`<article class="modal-card"><h3>购买槽</h3><div>独立于高难附加槽的专用装备槽，只接受商城装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
+    let purchaseHtml=`<article class="modal-card"><h3>购买槽</h3><div>独立于高难槽的专用装备槽，只接受商城装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
     if(save.purchaseSlotUnlocked){
         purchaseHtml+=`<article class="modal-card"><h3>职业护符</h3><div>无基础属性；当前职业所有数值效果 +25%，不放大祝福。切换职业后自动按当前职业生效。</div><div>${purchaseEquipment?.id==="jobAmulet"?"已装备":cheatMode?"作弊模式：免费":"价格：1200 金币"}</div><button class="choice-btn" onclick="buyPurchaseEquipment('jobAmulet',1200)" ${purchaseEquipment?.id==="jobAmulet"?"disabled":""}>${purchaseEquipment?.id==="jobAmulet"?"已装备":"购买并装备"}</button></article>`;
     }
-    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难第五槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难附加槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
+    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
     document.getElementById("shopContent").innerHTML=productHtml+extraHtml;
 }
 function closeShop(){
@@ -1206,7 +1267,7 @@ function genEquip(wave){
     let name=pick(lootAdj)+pick(nounByPart[part]||lootNoun);
     let element=pick(elements);
     let scale=1+Math.min(1,wave/20)*1.0;
-    let atk=Math.floor(rand(5,25)*scale),hp=Math.floor(rand(10,80)*scale),bj=rand(0,8)/100,bs=rand(0,10)/100,crt=rand(0,8)/100;
+    let atk=Math.floor(rand(5,25)*scale),hp=Math.floor(rand(10,80)*scale),bj=rand(0,8)/100,bs=rand(0,10)/100,crt=rand(3,10)/100;
     bj=Math.floor(bj*scale*100)/100;bs=Math.floor(bs*scale*100)/100;crt=Math.floor(crt*scale*100)/100;
     let traits=[];
     let tier=save.useBlood>=9?3:save.useBlood>=6?2:save.useBlood>=3?1:0;
@@ -1226,7 +1287,9 @@ function equipmentCardHtml(e,includeRecommendation=false){
         traitHtml=e.traits.map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
     }
     let recommendation=includeRecommendation?equipmentRecommendationHtml(e):"";
-    return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note">【${equipmentPartNames[e.part]||"未知部位"}】${e.affixTier?` · 词条阶 ${e.affixTier}`:""}</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
+    let tier=getEquipmentTier(e.affixTier);
+    let equipmentMeta=e.id==="emergencyShield"?`【${tier.name}】`:`【${equipmentPartNames[e.part]||"未知部位"} · ${tier.name}】`;
+    return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note tier-${tier.id}">${equipmentMeta}</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
 }
 function showEquip(e,includeRecommendation=false){
     print(equipmentCardHtml(e,includeRecommendation),"",true);
@@ -1876,6 +1939,7 @@ function autoBattleDecide(){
     if(player.blessing==="战士的祝福")healing+=player.maxHp*0.03;
     healing+=countTrait("attackHeal")*player.maxHp*0.03;
     healing+=countTrait("lifesteal")*chargedAttack*0.10;
+    healing=Math.min(healing,getHealingCapForMissing(player.maxHp-player.hp,save.useBlood));
     let effectiveHp=player.hp+shieldTotal(player);
     let turnsToDie=Math.ceil(effectiveHp/Math.max(1,incoming-healing));
     let turnsToKill=Math.ceil(enemy.hp/Math.max(1,chargedAttack));
@@ -1935,6 +1999,7 @@ function simulateBossSkip(){
     if(ls>0)healPerTurn+=avgDmg*0.10*ls;
     let ch=countTrait("critHeal");
     if(ch>0)healPerTurn+=player.maxHp*0.10*ch*Math.min(1,player.bj);
+    healPerTurn=Math.min(healPerTurn,getHealingCapForMissing(bossDmg,save.useBlood));
     let totalHp=player.maxHp+shieldTotal(player);
     let turnsToKill=enemy.maxHp/avgDmg;
     let netLoss=Math.max(0,bossDmg-healPerTurn);

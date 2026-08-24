@@ -10,7 +10,9 @@ if (!model || !actionModel) throw new Error('Could not extract the equipment mod
 const createModel = new Function('save', 'elements', `function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}\n${model}\n${actionModel.replace('slots=player.slots', 'slots=[]')}\nreturn {equipmentSlots,getEquipmentSlots,normalizeEquipment,normalizeEquipmentSlots,buildEquipAction,getSlotCount,makeStarterEquipment};`);
 
 const low = createModel({ slot5Unlocked: false, useBlood: 0 }, ['火', '水', '草', '雷']);
-if (low.getSlotCount() !== 4 || low.makeStarterEquipment().some(item => item.atk || item.hp || item.traits.length)) throw new Error('A new low-difficulty game must start with four zero-stat, traitless items.');
+const starters = low.makeStarterEquipment();
+if (low.getSlotCount() !== 4 || starters.some(item => item.element !== '无' || item.affixTier !== 0 || item.traits.length)) throw new Error('A new low-difficulty game must start with four un-affixed standard items.');
+if (starters[0].hp !== 25 || starters[0].crt !== 0.02 || starters[1].hp !== 80 || starters[2].atk !== 15 || starters[2].bj !== 0.02 || starters[3].hp !== 35 || starters[3].crt !== 0.02) throw new Error('Starter equipment must provide the intended small combat stats.');
 const hard = createModel({ slot5Unlocked: false, useBlood: 6 }, ['火', '水', '草', '雷']);
 const shop = createModel({ slot5Unlocked: false, useBlood: 6, purchaseSlotUnlocked: true }, ['火', '水', '草', '雷']);
 const shopLow = createModel({ slot5Unlocked: false, useBlood: 5, purchaseSlotUnlocked: true }, ['火', '水', '草', '雷']);
@@ -30,6 +32,9 @@ if (hard.buildEquipAction({ ...shield, part: 'body' }, 2, slots) !== null) throw
 
 const legacy = hard.normalizeEquipment({ name: '古老的大剑', atk: 4, hp: 5, trait: { id: 'armorBreak' } }, 2);
 if (legacy.part !== 'twoHand' || !Array.isArray(legacy.traits) || legacy.traits.length !== 1) throw new Error('Legacy equipment must infer a part and migrate a single trait.');
+if (legacy.affixTier !== 0) throw new Error('Legacy equipment without affixTier must migrate to standard tier.');
+const migratedStarter = low.normalizeEquipment({ name: '朴素布衣', part: 'body', element: '无', hp: 0, crt: 0 }, 1);
+if (migratedStarter.hp !== 80 || migratedStarter.affixTier !== 0) throw new Error('Old saved starter equipment must receive the new standard stats during normalization.');
 const legacyCloak = hard.normalizeEquipment({ name: '旧披风', part: 'body', atk: 1 }, 1);
 const legacyBoot = hard.normalizeEquipment({ name: '旧靴子', part: 'oneHand', hp: 2 }, 2);
 if (legacyCloak.part !== 'outerwear' || legacyBoot.part !== 'outerwear') throw new Error('Legacy body/one-hand wearable items must migrate to the outerwear part by name.');
