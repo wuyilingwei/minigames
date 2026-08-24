@@ -41,9 +41,18 @@ if (highWave.reduce((sum, value) => sum + value, 0) <= lowWave.reduce((sum, valu
 
 const cardSource=runtime.match(/function equipmentCardHtml\(e,includeRecommendation=false\)\{[\s\S]*?\n\}/)?.[0];
 if(!cardSource)throw new Error('Equipment card renderer is not extractable.');
-const renderCard=new Function('getEquipmentTier','getEquipmentLevelLabel','elemClass','equipmentPartNames','equipmentRecommendationHtml',`${cardSource}\nreturn equipmentCardHtml;`)(tiers.getEquipmentTier,tiers.getEquipmentLevelLabel,()=>'',{body:'身体',accessory:'配件',outerwear:'附加'},()=> '');
+const renderCard=new Function('getEquipmentTier','getEquipmentLevelLabel','getEquipmentEnhancementMarker','elemClass','equipmentPartNames','equipmentRecommendationHtml',`${cardSource}\nreturn equipmentCardHtml;`)(tiers.getEquipmentTier,tiers.getEquipmentLevelLabel,tiers.getEquipmentEnhancementMarker,()=>'',{body:'身体',accessory:'配件',outerwear:'附加'},()=> '');
 const standardCard=renderCard({name:'朴素布衣',element:'无',part:'body',atk:0,hp:80,bj:0,bs:0,crt:0,traits:[],affixTier:0});
-if(!standardCard.includes('身体 · 制式'))throw new Error('Standard equipment cards must show the named tier.');
+if(standardCard.includes('身体 · 制式'))throw new Error('Equipment cards must not merge the body part and tier into one label.');
+if(!runtime.includes('class="equip-name tier-${tier.id}"'))throw new Error('Equipment names must expose their tier through the equip-name tier class.');
+if(!runtime.includes('class="equip-part"'))throw new Error('Equipment parts must render as independent labels.');
+const enhancedCard=renderCard({name:'神铸战衣',element:'无',part:'body',atk:0,hp:80,bj:0,bs:0,crt:0,traits:[],affixTier:3});
+if(!enhancedCard.includes('+++'))throw new Error('Equipment cards must retain the visible enhancement marker.');
+const styles=await readFile(resolve(root, 'games/cassandri-legend/styles.css'), 'utf8');
+for(const tier of [0,1,2,3]) if(!styles.includes(`.equip-name.tier-${tier}`))throw new Error(`Missing visual quality color for tier ${tier}.`);
+if(/(^|})\.tier-[0-3]\s*\{/.test(styles))throw new Error('Equipment quality colors must be scoped to equip-name.');
+if(styles.includes('.slot-grid .slot:nth-child(5)'))throw new Error('Equipment slots must share one layout without a fifth-slot exception.');
+if(!styles.includes('.equip-part{'))throw new Error('Equipment part labels must have an independent pixel frame.');
 const emergencyCard=renderCard({id:'emergencyShield',name:'战术护盾',element:'无',part:'accessory',atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],affixTier:0});
-if(emergencyCard.includes('附加')||!emergencyCard.includes('【制式】'))throw new Error('Emergency shield cards must omit the add-on label while retaining their equipment level.');
+if(emergencyCard.includes('附加 · 制式')||emergencyCard.includes('【制式】'))throw new Error('Equipment cards must keep part and tier visually separate.');
 console.log('Verified four equipment tier names, legacy defaults, class dodge balance, starter stats, and random dodge bounds/growth.');

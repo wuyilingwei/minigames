@@ -4,7 +4,7 @@ const choicesDom=document.getElementById("choices");
 const statContent=document.getElementById("statContent");
 
 const defaultPurchased={egg:0,potion:0,boots:0,hat:0,doll:0};
-const defaultSave={eyeTotal:0,blood:0,pointAtk:0,pointHp:0,pointBj:0,pointBs:0,pointCrt:0,useBlood:0,gold:0,purchased:defaultPurchased,slot5Unlocked:false,purchaseSlotUnlocked:false,legacyAddonSlotUnlocked:false,purchaseEquipment:null};
+const defaultSave={eyeTotal:0,blood:0,pointAtk:0,pointHp:0,pointBj:0,pointBs:0,pointCrt:0,useBlood:0,gold:0,purchased:defaultPurchased,slot5Unlocked:false,purchaseSlotUnlocked:false,legacyAddonSlotUnlocked:false};
 let save={...defaultSave,purchased:{...defaultPurchased}};
 let resetConfirmationPending=false;
 let cheatMode=false,cheatBackup=null;
@@ -31,7 +31,7 @@ function normalizeSave(stored){
     normalized.slot5Unlocked=Boolean(normalized.slot5Unlocked);
     normalized.purchaseSlotUnlocked=Boolean(normalized.purchaseSlotUnlocked||stored.purchaseSlotUnlocked||stored.slot5Unlocked);
     normalized.legacyAddonSlotUnlocked=Boolean(normalized.legacyAddonSlotUnlocked||stored.legacyAddonSlotUnlocked||stored.slot5Unlocked);
-    if(normalized.purchaseEquipment&&!isRecord(normalized.purchaseEquipment))normalized.purchaseEquipment=null;
+    delete normalized.purchaseEquipment;
     return normalized;
 }
 function loadSave(){
@@ -168,6 +168,7 @@ function makeStarterEquipment(){return [
     {name:"空白护臂",element:"无",part:"offHand",atk:0,hp:35,bj:0,bs:0,crt:0.02,traits:[],affixTier:0}
 ];}
 function makeEmergencyShield(){return {id:"emergencyShield",name:"战术护盾",element:"无",part:"accessory",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],emergencyCharges:4};}
+function makeJobAmulet(){return {id:"jobAmulet",name:"职业护符",element:"无",part:"accessory",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],affixTier:0};}
 function initSlots(){
     let slotDefinitions=getEquipmentSlots(),initialSlots=Array.from({length:slotDefinitions.length},()=>null);
     makeStarterEquipment().forEach((item,index)=>{initialSlots[index]=item;});
@@ -175,10 +176,8 @@ function initSlots(){
         let addonIndex=slotDefinitions.findIndex(slot=>slot.id==="accessory");
         if(addonIndex>=0)initialSlots[addonIndex]=makeEmergencyShield();
     }
-    if(save.purchaseEquipment){
-        let purchaseIndex=slotDefinitions.findIndex(slot=>slot.id==="purchase");
-        if(purchaseIndex>=0)initialSlots[purchaseIndex]=save.purchaseEquipment;
-    }
+    let purchaseIndex=slotDefinitions.findIndex(slot=>slot.id==="purchase");
+    if(purchaseIndex>=0)initialSlots[purchaseIndex]=makeJobAmulet();
     player.slots=normalizeEquipmentSlots(initialSlots);
 }
 let enemy={name:"",atk:0,hp:0,maxHp:0,tracking:0,dodge:0,armor:0,hits:1,shields:null,traits:[],shield:0,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0};
@@ -813,9 +812,9 @@ function oneSlotHtml(idx){
     let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
     let isEmergencyShield=s.id==="emergencyShield";
     let specialNote=isEmergencyShield?` · 剩余${s.emergencyCharges}次${s.emergencyCharges>0?` · 下次${getEmergencyShieldValueForCharges(s.emergencyCharges,save.useBlood)}临时盾`:" · 已损坏"}`:"";
-    let tier=getEquipmentTier(s.affixTier),levelLabel=getEquipmentLevelLabel(s.affixTier);
-    let partNote=isEmergencyShield?`【${levelLabel}】`:`【${equipmentPartNames[s.part]} · ${levelLabel}】`;
-    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note ${isEmergencyShield?"":`tier-${tier.id}`}">${partNote}${specialNote}</span>
+    let tier=getEquipmentTier(s.affixTier),levelLabel=getEquipmentLevelLabel(s.affixTier),marker=getEquipmentEnhancementMarker(s.affixTier);
+    let partName=equipmentPartNames[s.part]||"未知部位";
+    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · </span><span class="equip-name tier-${tier.id}" title="${levelLabel}">${s.name}${marker?` ${marker}`:""}</span> <span class="${elemClass(s.element)}">【${s.element}】</span> <span class="equip-part">${partName}</span><span class="trait-note">${specialNote}</span>
     <div class="estats">
     <span class="estat-item stat-atk">ATK+${s.atk}</span>
     <span class="estat-item stat-hp">HP+${s.hp}</span>
@@ -1127,11 +1126,7 @@ function renderShop(notice=""){
     ];
     document.getElementById("shopNotice").textContent=notice||(cheatMode?"作弊模式：道具可免费增减。":`当前金币：${save.gold||0}`);
     let productHtml=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>${cheatMode?`已购 ${p[key]}/10（免费）`:`价格：${price} 金币 · 已购 ${p[key]}/10`}</div>${cheatMode?`<div class="cheat-shop-controls"><button class="choice-btn" onclick="adjustCheatItem('${key}',-1)" ${p[key]<=0?"disabled":""}>−</button><span class="cheat-count">${p[key]}</span><button class="choice-btn" onclick="adjustCheatItem('${key}',1)" ${p[key]>=10?"disabled":""}>+</button></div>`:`<button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button>`}</article>`).join("");
-    let purchaseEquipment=save.purchaseEquipment;
-    let purchaseHtml=`<article class="modal-card"><h3>通用装备位</h3><div>永久增加 1 个通用装备位，可以放置任意不冲突的装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
-    if(save.purchaseSlotUnlocked){
-        purchaseHtml+=`<article class="modal-card"><h3>职业护符</h3><div>普通配件，无基础属性；装备时当前职业所有数值效果 +25%，不放大祝福。购买当下装备，新征途也会作为初始装备带入。</div><div>${purchaseEquipment?.id==="jobAmulet"?"已拥有":cheatMode?"作弊模式：免费":"价格：1200 金币"}</div><button class="choice-btn" onclick="buyPurchaseEquipment('jobAmulet',1200)" ${purchaseEquipment?.id==="jobAmulet"?"disabled":""}>${purchaseEquipment?.id==="jobAmulet"?"已拥有":"购买并装备"}</button></article>`;
-    }
+    let purchaseHtml=`<article class="modal-card"><h3>通用装备位</h3><div>永久增加 1 个与其他位置完全相同的通用装备位，并附赠职业护符。护符无基础属性，装备时当前职业所有数值效果 +25%。</div><div>${save.purchaseSlotUnlocked?"已解锁 · 职业护符已赠送":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买并领取"}</button></article>`;
     let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备位</h3><div>难度 6 与商城各可增加 1 个通用装备位；这里只控制商城解锁来源。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭商城装备位":"开启商城装备位"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>难度装备位</h3><div>难度 6 起新增 1 个通用装备位，新征途初始获得战术护盾。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
     document.getElementById("shopContent").innerHTML=productHtml+extraHtml;
 }
@@ -1145,29 +1140,17 @@ function closeShop(){
 function tryCheatCode(){let input=document.getElementById("cheatCodeInput"),notice=document.getElementById("cheatCodeNotice"),value=(input.value||"").trim();if(!value){notice.textContent="请输入秘钥。";return;}if(value!==CHEAT_SECRET){notice.textContent="秘钥错误。";return;}if(!cheatMode){cheatBackup=cloneForStorage(save);cheatMode=true;localStorage.setItem("kasandri6_cheat_backup",JSON.stringify(cheatBackup));save.eyeTotal=24;save.blood=10;save.useBlood=10;writeSave();if(player.job){applyEquipStats();refreshStatPanel();}autoSaveRun();}input.value="";notice.textContent="作弊模式已激活。";}
 function exitCheatMode(){if(!cheatMode||!cheatBackup)return;save=normalizeSave(cheatBackup);cheatMode=false;cheatBackup=null;localStorage.removeItem("kasandri6_cheat_backup");if(player.job){syncSlotCapacity();applyEquipStats();}writeSave();renderShop("已退出作弊模式，数据已回退。");}
 function adjustCheatItem(key,delta){if(!cheatMode)return;save.purchased[key]=Math.max(0,Math.min(10,(save.purchased[key]||0)+delta));writeSave();if(player.job)applyEquipStats();renderShop();}
-function toggleCheatPurchaseSlot(){if(!cheatMode)return;save.purchaseSlotUnlocked=!save.purchaseSlotUnlocked;if(player.job){syncSlotCapacity();applyEquipStats();}writeSave();renderShop();}
+function toggleCheatPurchaseSlot(){if(!cheatMode)return;save.purchaseSlotUnlocked=!save.purchaseSlotUnlocked;if(player.job){syncSlotCapacity();if(save.purchaseSlotUnlocked)equipGiftedJobAmulet();applyEquipStats();}writeSave();renderShop();}
+function equipGiftedJobAmulet(){
+    let purchaseIndex=getEquipmentSlots().findIndex(slot=>slot.id==="purchase");
+    if(purchaseIndex>=0)player.slots[purchaseIndex]=makeJobAmulet();
+}
 function buyPurchaseSlot(){
     if(save.purchaseSlotUnlocked){renderShop("商城通用装备位已经解锁。");return;}
     if((save.gold||0)<5000){renderShop("金币不足，无法购买通用装备位。");return;}
     save.gold-=5000;save.purchaseSlotUnlocked=true;writeSave();
-    if(player.job){syncSlotCapacity();applyEquipStats();refreshStatPanel();}
-    autoSaveRun();renderShop("商城通用装备位已永久解锁！");
-}
-function buyPurchaseEquipment(id,price){
-    if(!save.purchaseSlotUnlocked){renderShop("请先解锁商城通用装备位。");return;}
-    if(save.purchaseEquipment?.id===id){renderShop("该装备已拥有；新征途会作为初始装备带入。");return;}
-    let cost=cheatMode?0:price;
-    if((save.gold||0)<cost){renderShop("金币不足，无法购买该装备。");return;}
-    let items={jobAmulet:{id:"jobAmulet",name:"职业护符",element:"无",part:"accessory",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]}};
-    if(!items[id]){renderShop("该购买装备当前不可用。");return;}
-    save.gold-=cost;save.purchaseEquipment=items[id];writeSave();
-    if(player.job){
-        syncSlotCapacity();
-        let purchaseIndex=getEquipmentSlots().findIndex(slot=>slot.id==="purchase");
-        if(purchaseIndex>=0)player.slots[purchaseIndex]=normalizeEquipment(items[id],purchaseIndex);
-        applyEquipStats();refreshStatPanel();
-    }
-    autoSaveRun();renderShop(`已购买并装备【${items[id].name}】。`);
+    if(player.job){syncSlotCapacity();equipGiftedJobAmulet();applyEquipStats();refreshStatPanel();}
+    autoSaveRun();renderShop("商城通用装备位已永久解锁，并已赠送【职业护符】！");
 }
 function shopReturn(){
     closeShop();
@@ -1197,7 +1180,6 @@ function resetShopPurchases(){
     save.slot5Unlocked=false;
     save.purchaseSlotUnlocked=false;
     save.legacyAddonSlotUnlocked=false;
-    save.purchaseEquipment=null;
     if(player.job){syncSlotCapacity();applyEquipStats();refreshStatPanel();}
 }
 function confirmReset(){
@@ -1332,9 +1314,9 @@ function equipmentCardHtml(e,includeRecommendation=false){
         traitHtml=e.traits.map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
     }
     let recommendation=includeRecommendation?equipmentRecommendationHtml(e):"";
-    let tier=getEquipmentTier(e.affixTier),levelLabel=getEquipmentLevelLabel(e.affixTier);
-    let equipmentMeta=e.id==="emergencyShield"?`【${levelLabel}】`:`【${equipmentPartNames[e.part]||"未知部位"} · ${levelLabel}】`;
-    return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note tier-${tier.id}">${equipmentMeta}</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
+    let tier=getEquipmentTier(e.affixTier),levelLabel=getEquipmentLevelLabel(e.affixTier),marker=getEquipmentEnhancementMarker(e.affixTier);
+    let partName=equipmentPartNames[e.part]||"未知部位";
+    return `<div class="equipment-card"><div class="equip-title"><span class="equip-name tier-${tier.id}" title="${levelLabel}">${e.name}${marker?` ${marker}`:""}</span> <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="equip-part">${partName}</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
 }
 function showEquip(e,includeRecommendation=false){
     print(equipmentCardHtml(e,includeRecommendation),"",true);
@@ -2332,6 +2314,7 @@ function trueEnd2(){
 }
 
 function startGame(){
+    gamePaused=false;
     gameState="start";
     clearRunSave("auto");
     outputDom.innerHTML="";
@@ -2480,6 +2463,9 @@ function openSettings(){
     autoBattleBeforeSettings=autoBattle;
     gamePaused=true;
     syncPreferenceControls();
+    let inMainMenu=!document.getElementById("welcomeOverlay").hidden;
+    document.getElementById("btnReturnToMenu").hidden=inMainMenu;
+    document.getElementById("btnAbandonRun").hidden=inMainMenu;
     document.getElementById("settingsOverlay").hidden=false;
 }
 function closeSettings(){
@@ -2490,6 +2476,17 @@ function closeSettings(){
     gamePaused=false;
     resumeLootAutoSelectIfReady();
     if((autoBattle||autoBattle!==autoBattleBeforeSettings)&&(gameState==="battle"||gameState==="bossBattle"))battleLoop();
+}
+function returnToMainMenu(abandon=false){
+    cancelLootAutoSelect();
+    cancelAutoBattleStep();
+    if(abandon)clearRunSave("auto");else autoSaveRun();
+    hideGameOverlays();
+    document.getElementById("difficultyOverlay").hidden=true;
+    gamePaused=true;
+    document.getElementById("welcomeOverlay").hidden=false;
+    document.getElementById("btnContinue").disabled=!readRunSave("auto");
+    refreshStatPanel();
 }
 
 function initApp(){
@@ -2513,6 +2510,8 @@ function initApp(){
     document.getElementById("settingsBtn").onclick=()=>openSettings();
     document.getElementById("btnSettingsClose").onclick=()=>closeSettings();
     document.getElementById("btnOpenSaveFromSettings").onclick=()=>{closeSettings();openSaveManager();};
+    document.getElementById("btnReturnToMenu").onclick=()=>returnToMainMenu(false);
+    document.getElementById("btnAbandonRun").onclick=()=>returnToMainMenu(true);
     document.getElementById("btnShopClose").onclick=()=>closeShop();
     document.getElementById("btnSaveClose").onclick=()=>closeSaveManager();
     document.getElementById("btnExportSave").onclick=()=>exportSaveArchive();
@@ -2530,7 +2529,13 @@ function initApp(){
     collapseEventsToggle.onchange=()=>{preferences.collapseEvents=collapseEventsToggle.checked;writePreferences();};
     settingsAutoBattle.onchange=()=>setAutoBattle(settingsAutoBattle.checked);
     settingsLootAutoSelect.onchange=()=>toggleLootAutoSelect(settingsLootAutoSelect.checked);
-    document.addEventListener("keydown",event=>{if(event.key!=="Escape")return;closeSettings();changelog.hidden=true;closeShop();document.getElementById("setOverlay").hidden=true;closeDifficultyPanel();closeSaveManager();});
+    document.addEventListener("keydown",event=>{
+        if(event.key!=="Escape")return;
+        if(!settings.hidden){closeSettings();return;}
+        let closable=[changelog,document.getElementById("shopOverlay"),document.getElementById("setOverlay"),document.getElementById("difficultyOverlay"),document.getElementById("saveOverlay")];
+        if(closable.some(overlay=>!overlay.hidden)){changelog.hidden=true;closeShop();document.getElementById("setOverlay").hidden=true;closeDifficultyPanel();closeSaveManager();return;}
+        if(welcome.hidden)openSettings();
+    });
     applyPreferences();
     syncPreferenceControls();
     continueButton.disabled=!readRunSave("auto");
