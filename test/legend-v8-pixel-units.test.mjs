@@ -67,3 +67,15 @@ test("feedback and responsive roster contracts are executable in source", () => 
   assert.match(source, /for\(let i=1;i<allies\.length;i\+\+\)/);
   assert.match(source, /for\(let i=1;i<enemies\.length;i\+\+\)/);
 });
+
+test("enemy units expose a capped, typed shield meter that hides at zero", () => {
+  assert.match(source, /id="enemyShieldBarWrap"[^>]*class="enemy-shield-wrap"/);
+  assert.match(source, /id="enemyShieldNums"/);
+  assert.match(source, /id="enemyShieldBarFill"/);
+  assert.match(runtime, /let enemyShield=shieldTotal\(enemy\)/);
+  assert.match(runtime, /enemyShieldWrap\.style\.display=enemyShield>0\?"block":"none"/);
+  assert.match(runtime, /Math\.min\(100,enemyShield\/enemy\.maxHp\*100\)/);
+  assert.match(runtime, /enemyShieldNums\)enemyShieldNums\.textContent=shieldSummary\(enemy\)/);
+  assert.match(runtime, /shieldNums\.textContent=shieldSummary\(unit\)/);
+  assert.match(styles, /#enemyShieldBarFill,.enemy-shield-fill\{background:linear-gradient\(90deg,#8e6bb8,#d8a7ff\)/);
+});

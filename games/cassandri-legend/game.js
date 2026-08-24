@@ -237,7 +237,7 @@ function getEmergencyShieldValueForCharges(charges,level=save.useBlood){
     let remaining=Math.max(0,Math.min(4,Math.floor(Number(charges)||0)));
     if(remaining<=0||Number(level)<6)return 0;
     let base=[0,25,50,75,100][remaining];
-    return Math.floor(base*Math.pow(1.18,Math.max(0,Math.floor(Number(level)||0))));
+    return Math.floor(base*Math.pow(1.18,Math.max(0,Math.floor(Number(level)||0)))*1.25);
 }
 function getEmergencyShieldValues(level=save.useBlood){
     return [4,3,2,1].map(charges=>getEmergencyShieldValueForCharges(charges,level));
@@ -893,13 +893,17 @@ function createRosterCard(unit,side,index){
     let card=document.createElement("article");
     card.className=`combatant ${side==="ally"?"player":"enemy"}`;
     card.dataset.rosterUnit=String(index);card.dataset.unitSide=side;
-    card.innerHTML=`<div class="pixel-avatar"></div><div class="combatant-name"></div><div class="combatant-atk"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-fill"}"></div></div><div class="battle-number"></div><div class="trait-note"></div>`;
+    card.innerHTML=`<div class="pixel-avatar"></div><div class="combatant-name"></div><div class="combatant-atk"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-fill"}"></div></div><div class="battle-number"></div><div class="shield-wrap ${side==="ally"?"":"enemy-shield-wrap"}"><div class="shield-number"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-shield-fill"}"></div></div></div><div class="trait-note"></div>`;
     setCombatantSprite(card,unit,side);
     card.querySelector(".combatant-name").textContent=unit.name||unit.job|| (side==="ally"?"友军":"敌人");
     card.querySelector(".combatant-atk").textContent=`ATK ${unit.atk??"—"}`;
     let hp=Number(unit.hp)||0,max=Number(unit.maxHp)||hp||1,pct=Math.max(0,Math.min(100,hp/max*100));
     card.querySelector(".fill").style.width=`${pct}%`;
     card.querySelector(".battle-number").textContent=`${hp} / ${max}`;
+    let shield=shieldTotal(unit),shieldWrap=card.querySelector(".shield-wrap"),shieldFill=shieldWrap.querySelector(".fill"),shieldNums=shieldWrap.querySelector(".shield-number");
+    shieldWrap.style.display=shield>0?"block":"none";
+    shieldFill.style.width=`${Math.min(100,shield/max*100)}%`;
+    shieldNums.textContent=shieldSummary(unit);
     let trait=card.querySelector(".trait-note");
     trait.textContent=(unit.traits||[]).map(t=>`【${t.name||t.id||"特性"}】${t.desc||""}`).join(" ");
     return card;
@@ -964,6 +968,9 @@ function refreshHpBar(){
     let enemyLabel=document.getElementById("enemyBarLabel");
     let enemyNums=document.getElementById("enemyHpNums");
     let enemyFill=document.getElementById("enemyBarFill");
+    let enemyShieldWrap=document.getElementById("enemyShieldBarWrap");
+    let enemyShieldFill=document.getElementById("enemyShieldBarFill");
+    let enemyShieldNums=document.getElementById("enemyShieldNums");
     let enemyTraitDesc=document.getElementById("enemyTraitDesc");
     if(enemyArea&&active){
         enemyArea.style.display="grid";
@@ -972,6 +979,13 @@ function refreshHpBar(){
         let epct=enemy.maxHp>0?Math.max(0,Math.min(100,enemy.hp/enemy.maxHp*100)):0;
         enemyFill.style.width=epct+"%";
         enemyFill.className="fill enemy-fill";
+        let enemyShield=shieldTotal(enemy);
+        if(enemyShieldWrap&&enemyShieldFill){
+            enemyShieldWrap.style.display=enemyShield>0?"block":"none";
+            enemyShieldFill.style.width=`${enemy.maxHp>0?Math.min(100,enemyShield/enemy.maxHp*100):0}%`;
+            enemyShieldFill.className="fill enemy-shield-fill";
+            if(enemyShieldNums)enemyShieldNums.textContent=shieldSummary(enemy);
+        }
         let playerName=document.getElementById("battlePlayerName");
         let playerAtk=document.getElementById("battlePlayerAtk");
         let enemyAtk=document.getElementById("battleEnemyAtk");
@@ -995,6 +1009,7 @@ function refreshHpBar(){
         }
     }else if(enemyArea){
         enemyArea.style.display="none";
+        if(enemyShieldWrap)enemyShieldWrap.style.display="none";
     }
 }
 function showSetInfo(){
@@ -1127,7 +1142,7 @@ function renderShop(notice=""){
     document.getElementById("shopNotice").textContent=notice||(cheatMode?"作弊模式：道具可免费增减。":`当前金币：${save.gold||0}`);
     let productHtml=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>${cheatMode?`已购 ${p[key]}/10（免费）`:`价格：${price} 金币 · 已购 ${p[key]}/10`}</div>${cheatMode?`<div class="cheat-shop-controls"><button class="choice-btn" onclick="adjustCheatItem('${key}',-1)" ${p[key]<=0?"disabled":""}>−</button><span class="cheat-count">${p[key]}</span><button class="choice-btn" onclick="adjustCheatItem('${key}',1)" ${p[key]>=10?"disabled":""}>+</button></div>`:`<button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button>`}</article>`).join("");
     let purchaseHtml=`<article class="modal-card"><h3>通用装备位</h3><div>永久增加 1 个与其他位置完全相同的通用装备位，并附赠职业护符。护符无基础属性，装备时当前职业所有数值效果 +25%。</div><div>${save.purchaseSlotUnlocked?"已解锁 · 职业护符已赠送":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买并领取"}</button></article>`;
-    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备位</h3><div>难度 6 与商城各可增加 1 个通用装备位；这里只控制商城解锁来源。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭商城装备位":"开启商城装备位"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>难度装备位</h3><div>难度 6 起新增 1 个通用装备位，新征途初始获得战术护盾。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
+    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备位</h3><div>难度 6 与商城各可增加 1 个通用装备位；这里只控制商城解锁来源。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭商城装备位":"开启商城装备位"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
     document.getElementById("shopContent").innerHTML=productHtml+extraHtml;
 }
 function closeShop(){
