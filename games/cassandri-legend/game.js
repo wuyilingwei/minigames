@@ -10,6 +10,7 @@ let resetConfirmationPending=false;
 let cheatMode=false,cheatBackup=null;
 const CHEAT_SECRET="pqp是我们的皇";
 let difficultyDraft=0;
+let difficultySelectionMode="info";
 function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}
 function normalizeSave(stored){
     if(!isRecord(stored))return {...defaultSave,purchased:{...defaultPurchased}};
@@ -1039,7 +1040,8 @@ function renderDifficultyPanel(){
     let unlocked=Math.min(10,Math.max(0,Number(save.blood)||0));
     let level=Math.min(unlocked,Math.max(0,Math.floor(difficultyDraft)));
     difficultyDraft=level;
-    let adjustable=Boolean(player.canAdjustPoint);
+    let isNewGame=difficultySelectionMode==="new";
+    let adjustable=isNewGame||Boolean(player.canAdjustPoint);
     document.getElementById("difficultySelected").textContent=level;
     document.getElementById("difficultyFocusCaption").textContent=`难度 ${level}`;
     document.getElementById("difficultyMultiplier").textContent=`敌人攻击力与生命值 ×${Math.pow(1.4,level).toFixed(2)}；胜利金币 ×${getDifficultyGoldMultiplier(level).toFixed(2)}（每级金币 +10%）。`;
@@ -1048,11 +1050,19 @@ function renderDifficultyPanel(){
     document.getElementById("difficultyRuleDetails").innerHTML=getDifficultyRuleDetails(level);
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
     document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
-    document.getElementById("btnDifficultyApply").disabled=!adjustable||level===save.useBlood;
-    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备强化等级（+ / ++ / +++），6 级起开放高难槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
+    document.getElementById("btnDifficultyApply").disabled=!adjustable||(!isNewGame&&level===save.useBlood);
+    document.getElementById("difficultyLockNote").textContent=isNewGame?`已解锁 ${unlocked}/10 级；确认后开始冒险，难度 3/6/9 将在职业与祝福选择前生效。`:adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备强化等级（+ / ++ / +++），6 级起开放高难槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
     cancelLootAutoSelect();
+    difficultySelectionMode="info";
+    difficultyDraft=Math.max(0,Math.min(10,Number(save.useBlood)||0));
+    let rules=document.querySelector(".difficulty-rules");if(rules)rules.open=false;
+    renderDifficultyPanel();
+    document.getElementById("difficultyOverlay").hidden=false;
+}
+function openNewGameDifficulty(){
+    difficultySelectionMode="new";
     difficultyDraft=Math.max(0,Math.min(10,Number(save.useBlood)||0));
     let rules=document.querySelector(".difficulty-rules");if(rules)rules.open=false;
     renderDifficultyPanel();
@@ -1064,16 +1074,24 @@ function shiftDifficulty(delta){
     renderDifficultyPanel();
 }
 function applyDifficultySelection(){
-    if(!player.canAdjustPoint)return;
+    let isNewGame=difficultySelectionMode==="new";
+    if(!isNewGame&&!player.canAdjustPoint)return;
     save.useBlood=difficultyDraft;
     writeSave();
+    document.getElementById("difficultyOverlay").hidden=true;
+    difficultySelectionMode="info";
+    if(isNewGame){
+        document.getElementById("welcomeOverlay").hidden=true;
+        startGame();
+        return;
+    }
     if(player.job){syncSlotCapacity();applyEquipStats();}
     refreshStatPanel();
-    document.getElementById("difficultyOverlay").hidden=true;
 }
 function closeDifficultyPanel(){
     difficultyDraft=save.useBlood;
     document.getElementById("difficultyOverlay").hidden=true;
+    difficultySelectionMode="info";
     resumeLootAutoSelectIfReady();
 }
 function openShop(){
@@ -2468,7 +2486,7 @@ function initApp(){
     const settingsLootAutoSelect=document.getElementById("settingsLootAutoSelect");
     const continueButton=document.getElementById("btnContinue");
     const saveImportInput=document.getElementById("saveImportInput");
-    document.getElementById("btnNewGame").onclick=()=>{welcome.hidden=true;startGame();};
+    document.getElementById("btnNewGame").onclick=()=>openNewGameDifficulty();
     continueButton.onclick=()=>{let snapshot=readRunSave("auto");if(snapshot)restoreRunSnapshot(snapshot);};
     document.getElementById("btnHomeSave").onclick=()=>openHomeSaveManager();
     document.getElementById("btnHomeShop").onclick=()=>openHomeShop();
