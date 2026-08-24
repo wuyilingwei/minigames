@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 const root=resolve(new URL('..',import.meta.url).pathname);
 const runtime=await readFile(resolve(root,'games/cassandri-legend/game.js'),'utf8');
 
-if(!runtime.includes('purchaseSlotUnlocked')||!runtime.includes('part:"purchase"')||!runtime.includes('购买槽'))throw new Error('Purchase-slot contracts are missing');
+if(!runtime.includes('purchaseSlotUnlocked')||!runtime.includes('part:"accessory"')||!runtime.includes('商城通用装备位'))throw new Error('Purchased universal-slot contracts are missing');
 const saveStart=runtime.indexOf('function isRecord(');
 const saveEnd=runtime.indexOf('\nfunction loadSave(',saveStart);
 const saveContext={defaultPurchased:{egg:0,potion:0,boots:0,hat:0,doll:0},defaultSave:{eyeTotal:0,blood:0,pointAtk:0,pointHp:0,pointBj:0,pointBs:0,pointCrt:0,useBlood:0,gold:0,purchased:{egg:0,potion:0,boots:0,hat:0,doll:0},slot5Unlocked:false,purchaseSlotUnlocked:false,purchaseEquipment:null}};
@@ -15,29 +15,39 @@ if(!legacy.purchaseSlotUnlocked||!legacy.legacyAddonSlotUnlocked)throw new Error
 const difficulty=saveContext.normalizeSave({slot5Unlocked:true,useBlood:6});
 if(!difficulty.purchaseSlotUnlocked||!difficulty.legacyAddonSlotUnlocked)throw new Error('Every old slot5 save must migrate both purchase ownership and legacy add-on compatibility');
 
-const slotStart=runtime.indexOf('const baseEquipmentParts=');
+const slotStart=runtime.indexOf('const allEquipmentParts=');
 const slotEnd=runtime.indexOf('\nfunction normalizeCombatant(',slotStart);
 const slots={isRecord:value=>Boolean(value)&&typeof value==='object'&&!Array.isArray(value),elements:['火','水','草','雷','无'],equipmentPartNames:{head:'头部',body:'身体',oneHand:'单手武器',twoHand:'双手武器',offHand:'副手',accessory:'配件',outerwear:'附加',purchase:'购买'},save:{slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:0,purchaseSlotUnlocked:true},player:{slots:[null,null,null,null,null,null]}};
 vm.createContext(slots);vm.runInContext(runtime.slice(slotStart,slotEnd),slots);
-if(slots.inferEquipmentPart({name:'职业护符',part:'accessory'},5)!=='purchase')throw new Error('Career amulet must normalize to purchase part');
+if(slots.inferEquipmentPart({name:'职业护符',part:'purchase'},5)!=='accessory')throw new Error('Career amulet must migrate to the ordinary accessory part');
 if(slots.getSlotCount()!==5||slots.getEquipmentSlots()[4].id!=='purchase')throw new Error('Low difficulty purchase-only mode must expose purchase as visible slot 5');
+if(slots.getEquipmentSlots()[4].name!=='装备 5'||slots.getEquipmentSlots()[4].accepts.length!==7)throw new Error('The purchased slot must be displayed and behave as universal equipment 5');
 slots.save={slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:6,purchaseSlotUnlocked:false};
 if(slots.getSlotCount()!==5||slots.getEquipmentSlots()[4].id!=='accessory')throw new Error('High difficulty add-on-only mode must expose add-on as visible slot 5');
 slots.save={slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:6,purchaseSlotUnlocked:true};
 if(slots.getSlotCount()!==6||slots.getEquipmentSlots()[4].id!=='accessory'||slots.getEquipmentSlots()[5].id!=='purchase')throw new Error('High difficulty plus purchase must expose add-on slot 5 and purchase slot 6');
-slots.save.purchaseEquipment={id:'jobAmulet',name:'职业护符',element:'无',part:'purchase',atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]};
+if(slots.getEquipmentSlots().map(slot=>slot.name).join('/')!=='装备 1/装备 2/装备 3/装备 4/装备 5/装备 6'||slots.getEquipmentSlots().some(slot=>slot.accepts.length!==7))throw new Error('All six positions must be continuously named universal slots');
+const legacyAmulet={id:'jobAmulet',name:'职业护符',element:'无',part:'purchase',atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]};
+slots.save={slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:0,purchaseSlotUnlocked:true,purchaseEquipment:legacyAmulet};
 slots.player.slots=[];
 slots.initSlots();
-if(slots.player.slots.length!==6||slots.player.slots[4]?.id!=='emergencyShield'||slots.player.slots[5]?.id!=='jobAmulet')throw new Error('A high-difficulty new run must start with the emergency shield in the add-on slot and the amulet in the purchase slot');
+if(slots.player.slots.length!==5||slots.player.slots[4]?.id!=='jobAmulet'||slots.player.slots[4]?.part!=='accessory')throw new Error('A low-difficulty new run must put the owned amulet in universal equipment 5');
+slots.save={slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:6,purchaseSlotUnlocked:true,purchaseEquipment:legacyAmulet};
+slots.player.slots=[];
+slots.initSlots();
+if(slots.player.slots.length!==6||slots.player.slots[4]?.id!=='emergencyShield'||slots.player.slots[4]?.name!=='战术护盾'||slots.player.slots[5]?.id!=='jobAmulet'||slots.player.slots[5]?.part!=='accessory')throw new Error('A high-difficulty new run must start with the tactical shield and ordinary accessory amulet in their source positions');
+slots.player.slots[5]={name:'旅行斗篷',part:'outerwear',element:'无',atk:1,hp:2,bj:0,bs:0,crt:0,traits:[]};
+slots.syncSlotCapacity();
+if(slots.player.slots[5]?.name!=='旅行斗篷'||slots.player.slots.some(item=>item?.id==='jobAmulet'))throw new Error('Replacing the career amulet must persist during the run without forced reinsertion');
 slots.save=legacy;
 const migratedSlots=slots.normalizeEquipmentSlots([{name:'头盔',part:'head',element:'无'},{name:'铠甲',part:'body',element:'无'},{name:'长剑',part:'oneHand',element:'无'},{name:'盾牌',part:'offHand',element:'无'},{name:'披风',part:'outerwear',element:'无'}]);
 if(migratedSlots.length!==6||migratedSlots[4]?.part!=='outerwear'||migratedSlots[5]!==null)throw new Error('Legacy slot5 save must retain its old add-on and expose an empty purchase slot');
 const migratedShield=slots.normalizeEquipment({id:'emergencyShield',name:'高难应急护盾',part:'outerwear',element:'无'},4);
-if(migratedShield.name!=='应急护盾'||migratedShield.part!=='accessory')throw new Error('Legacy emergency shield must migrate to the ordinary accessory name and part.');
+if(migratedShield.name!=='战术护盾'||migratedShield.part!=='accessory')throw new Error('Legacy emergency shield names must migrate to tactical shield as an ordinary accessory.');
 
 const jobStart=runtime.indexOf('function calcBaseStats(');
 const jobEnd=runtime.indexOf('\nfunction applyEquipStats(',jobStart);
-const job={save:{purchaseEquipment:{id:'jobAmulet',part:'purchase'},useBlood:0,pointAtk:0,pointHp:0,pointBj:0,pointBs:0,pointCrt:0,purchased:{egg:0,potion:0,boots:0,hat:0,doll:0}},player:{job:'战士',blessing:'战士的祝福',slots:[{id:'jobAmulet',part:'purchase'}]},jobData:{战士:{atk:220,hp:900,bj:.08,bs:1.5,crt:.03}},blessingData:{战士的祝福:{atk:60,hp:100,bj:0,bs:0,crt:0}},hasJobAmulet:()=>true};
+const job={save:{purchaseEquipment:{id:'jobAmulet',part:'accessory'},useBlood:0,pointAtk:0,pointHp:0,pointBj:0,pointBs:0,pointCrt:0,purchased:{egg:0,potion:0,boots:0,hat:0,doll:0}},player:{job:'战士',blessing:'战士的祝福',slots:[{id:'jobAmulet',part:'accessory'}]},jobData:{战士:{atk:220,hp:900,bj:.08,bs:1.5,crt:.03}},blessingData:{战士的祝福:{atk:60,hp:100,bj:0,bs:0,crt:0}},hasJobAmulet:()=>true};
 vm.createContext(job);vm.runInContext(runtime.slice(jobStart,jobEnd),job);
 const base=job.calcBaseStats();
 if(base.atk!==280||base.hp!==1000||Math.abs(base.bj-.08)>1e-9)throw new Error('Career amulet must not multiply base job stats');
@@ -58,4 +68,4 @@ const cheatPurchase={save:{purchaseSlotUnlocked:true,purchaseEquipment:null,gold
 vm.createContext(cheatPurchase);vm.runInContext(buyModel,cheatPurchase);cheatPurchase.buyPurchaseEquipment('jobAmulet',1200);
 if(cheatPurchase.save.purchaseEquipment?.id!=='jobAmulet'||cheatPurchase.save.gold!==0)throw new Error('Cheat mode must allow free purchase-equipment verification without changing gold');
 
-console.log('Verified independent purchase slot, legacy slot migration, purchase-only equipment, and job-only amulet scope.');
+console.log('Verified purchased universal slot, initial gear sources, legacy migration, replaceable amulet, and job-only amulet scope.');

@@ -24,7 +24,7 @@ for(let level=0;level<=10;level++){
   const tags=model.getDifficultyRuleTags(level);
   const details=model.getDifficultyRuleDetails(level);
   if(!tags.length||!details.includes('<li>'))throw new Error(`Difficulty ${level} must expose cumulative tags and expandable detail rows`);
-  if(level>=6&&!tags.some(tag=>tag.includes('应急护盾')))throw new Error(`Difficulty ${level} must retain the emergency shield tag`);
+  if(level>=6&&!tags.some(tag=>tag.includes('战术护盾')))throw new Error(`Difficulty ${level} must retain the tactical shield tag`);
   if(level>=9&&!tags.some(tag=>tag.includes('难度9')))throw new Error(`Difficulty ${level} must retain prior and current level tags`);
 }
 const maxTags=model.getDifficultyRuleTags(10);

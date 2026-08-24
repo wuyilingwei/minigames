@@ -58,10 +58,10 @@ function applyPreferences(){
 loadPreferences();
 
 let player={name:"",job:"",atk:0,hp:0,maxHp:0,bj:0,bs:0,crt:0,ZDYHP:0,shields:null,slots:[null,null,null,null],Q3:0,Q4:0,ZBSPECIALUSED1:0,ZBSPECIALUSED2:false,ZBSPECIALUSED3:false,nextDodgeBoost:false,canAdjustPoint:true,wave:0,blessAtkAdd:0,blessHpAdd:0,blessBjAdd:0,blessBsAdd:0,blessCrtAdd:0,energy:0,defendStack:0,permAtkAdd:0,permHpAdd:0,revengeActive:false,energySurgeBoost:false};
-const baseEquipmentParts=["head","body","oneHand","twoHand","offHand"];
+const allEquipmentParts=["head","body","oneHand","twoHand","offHand","accessory","outerwear"];
 const equipmentSlots=[
-    {id:"gear1",name:"装备 1",accepts:baseEquipmentParts},{id:"gear2",name:"装备 2",accepts:baseEquipmentParts},
-    {id:"gear3",name:"装备 3",accepts:baseEquipmentParts},{id:"gear4",name:"装备 4",accepts:baseEquipmentParts}
+    {id:"gear1",name:"装备 1",accepts:allEquipmentParts},{id:"gear2",name:"装备 2",accepts:allEquipmentParts},
+    {id:"gear3",name:"装备 3",accepts:allEquipmentParts},{id:"gear4",name:"装备 4",accepts:allEquipmentParts}
 ];
 const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"配件",outerwear:"附加",purchase:"购买"};
 const equipmentTierData=[
@@ -91,8 +91,8 @@ function hasAddonSlotFor(saveState=save){return saveState.useBlood>=6||saveState
 function hasPurchaseSlotFor(saveState=save){return Boolean(saveState.purchaseSlotUnlocked||saveState.slot5Unlocked);}
 function getEquipmentSlotsFor(saveState=save){
     let slots=equipmentSlots.slice();
-    if(hasAddonSlotFor(saveState))slots.push({id:"accessory",name:"配件",accepts:["accessory","outerwear"]});
-    if(hasPurchaseSlotFor(saveState))slots.push({id:"purchase",name:"购买",accepts:["purchase"]});
+    if(hasAddonSlotFor(saveState))slots.push({id:"accessory",name:`装备 ${slots.length+1}`,accepts:allEquipmentParts});
+    if(hasPurchaseSlotFor(saveState))slots.push({id:"purchase",name:`装备 ${slots.length+1}`,accepts:allEquipmentParts});
     return slots;
 }
 function getEquipmentSlots(){return getEquipmentSlotsFor(save);}
@@ -106,7 +106,7 @@ function inferEquipmentPart(item,index=0){
     // Older versions classified wearable add-ons as body or oneHand. Name-based
     // migration must run before trusting the persisted part so they can reach slot 5.
     if(/斗篷|披风|靴子|鞋子|手套|翅膀|背包|臂甲|胫甲|护腿|护肩|披肩|围巾/.test(name))return "outerwear";
-    if(/职业护符/.test(name)||item?.id==="jobAmulet")return "purchase";
+    if(/职业护符/.test(name)||item?.id==="jobAmulet")return "accessory";
     if(item&&equipmentPartNames[item.part])return item.part;
     if(/头盔|假发|面纱|帽子/.test(name))return "head";
     if(/铠甲|胸甲|战甲|布衣|毛衣|连衣裙|裤子/.test(name))return "body";
@@ -119,7 +119,7 @@ function normalizeEquipment(item,index=0){
     if(!isRecord(item))return null;
     let normalized={...item};
     normalized.part=inferEquipmentPart(normalized,index);
-    if(normalized.id==="emergencyShield")normalized.name="应急护盾";
+    if(normalized.id==="emergencyShield")normalized.name="战术护盾";
     normalized.element=elements.includes(normalized.element)?normalized.element:"无";
     for(let key of ["atk","hp","bj","bs","crt"]){let value=Number(normalized[key]);normalized[key]=Number.isFinite(value)?value:0;}
     if(normalized.trait&&!normalized.traits)normalized.traits=[normalized.trait];
@@ -160,11 +160,6 @@ function normalizeEquipmentSlots(slots,slotCount=getSlotCount(),slotDefinitions=
 }
 function syncSlotCapacity(){
     player.slots=normalizeEquipmentSlots(player.slots);
-    let purchaseIndex=getEquipmentSlots().findIndex(slot=>slot.id==="purchase");
-    if(purchaseIndex>=0&&save.purchaseEquipment){
-        let item=normalizeEquipment(save.purchaseEquipment,purchaseIndex);
-        player.slots[purchaseIndex]=item;
-    }
 }
 function makeStarterEquipment(){return [
     {name:"朴素头巾",element:"无",part:"head",atk:0,hp:25,bj:0,bs:0,crt:0.02,traits:[],affixTier:0},
@@ -172,13 +167,19 @@ function makeStarterEquipment(){return [
     {name:"训练短剑",element:"无",part:"oneHand",atk:15,hp:0,bj:0.02,bs:0,crt:0,traits:[],affixTier:0},
     {name:"空白护臂",element:"无",part:"offHand",atk:0,hp:35,bj:0,bs:0,crt:0.02,traits:[],affixTier:0}
 ];}
-function makeEmergencyShield(){return {id:"emergencyShield",name:"应急护盾",element:"无",part:"accessory",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],emergencyCharges:4};}
+function makeEmergencyShield(){return {id:"emergencyShield",name:"战术护盾",element:"无",part:"accessory",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],emergencyCharges:4};}
 function initSlots(){
-    player.slots=normalizeEquipmentSlots(makeStarterEquipment());
+    let slotDefinitions=getEquipmentSlots(),initialSlots=Array.from({length:slotDefinitions.length},()=>null);
+    makeStarterEquipment().forEach((item,index)=>{initialSlots[index]=item;});
     if(save.useBlood>=6){
-        player.slots=normalizeEquipmentSlots([...player.slots,makeEmergencyShield()]);
+        let addonIndex=slotDefinitions.findIndex(slot=>slot.id==="accessory");
+        if(addonIndex>=0)initialSlots[addonIndex]=makeEmergencyShield();
     }
-    syncSlotCapacity();
+    if(save.purchaseEquipment){
+        let purchaseIndex=slotDefinitions.findIndex(slot=>slot.id==="purchase");
+        if(purchaseIndex>=0)initialSlots[purchaseIndex]=save.purchaseEquipment;
+    }
+    player.slots=normalizeEquipmentSlots(initialSlots);
 }
 let enemy={name:"",atk:0,hp:0,maxHp:0,tracking:0,dodge:0,armor:0,hits:1,shields:null,traits:[],shield:0,dots:[],firstStrikeUsed:false,antiHealTurns:0,purifyTurns:0,purifyPenalty:0};
 function normalizeCombatant(unit){
@@ -224,11 +225,11 @@ function triggerEmergencyShield(){
     item.emergencyCharges=charges-1;
     grantShield(player,"temp",value);
     if(item.emergencyCharges>0){
-        print(`【应急护盾】进战触发，获得${value}点临时盾；剩余${item.emergencyCharges}次，下次${getEmergencyShieldValueForCharges(item.emergencyCharges,save.useBlood)}点。`);
+        print(`【战术护盾】进战触发，获得${value}点临时盾；剩余${item.emergencyCharges}次，下次${getEmergencyShieldValueForCharges(item.emergencyCharges,save.useBlood)}点。`);
     }else{
         let index=player.slots.indexOf(item);
         if(index>=0)player.slots[index]=null;
-        print(`【应急护盾】进战触发，获得${value}点临时盾；第4次触发，装备已损坏并移除。`);
+        print(`【战术护盾】进战触发，获得${value}点临时盾；第4次触发，装备已损坏并移除。`);
         applyEquipStats();
     }
     refreshStatPanel();
@@ -762,7 +763,7 @@ function getDropAdvice(items){
 }
 function equipmentRecommendationHtml(item){
     let comparisons=getEquipmentComparisons(item),best=comparisons[0];
-    if(!best)return `<div class="recommendation avoid"><div class="recommend-title">当前没有可用部位</div><div>配件或附加装备需要难度 6 的配件槽；商城专用装备需要单独解锁购买槽。</div></div>`;
+    if(!best)return `<div class="recommendation avoid"><div class="recommend-title">当前没有可用位置</div><div>该装备与当前构筑冲突；解锁额外通用装备位可以增加搭配空间。</div></div>`;
     let decision=classifyRecommendation(best);
     let before=best.current,after=best.next;
     let beforeTrait=best.oldEquip&&best.oldEquip.traits&&best.oldEquip.traits.length?best.oldEquip.traits.map(trait=>trait.name).join("·"):"无";
@@ -783,9 +784,6 @@ function calcBaseStats(){
     return {atk,hp,bj,bs,crt};
 }
 
-function getPurchaseEquipment(){
-    return save.purchaseEquipment&&save.purchaseEquipment.part==="purchase"?save.purchaseEquipment:null;
-}
 function hasPurchaseEquipment(id){return player.slots.some(slot=>slot?.id===id);}
 function hasJobAmulet(){return hasPurchaseEquipment("jobAmulet");}
 function jobEffectMultiplier(){return hasJobAmulet()?1.25:1;}
@@ -1032,7 +1030,7 @@ function getDifficultyRules(level){
     if(current>=3)rules.push({level:3,tag:"装备等级 +",detail:"装备掉落开放额外效果与 1 条词条，装备等级提升为精工 +"});
     if(current>=5)rules.push({level:5,tag:"追踪成长",detail:"敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%"});
     if(current>=6)rules.push({level:6,tag:"装备等级 ++",detail:"装备掉落至多 2 条词条，装备等级提升为秘藏 ++"});
-    if(current>=6)rules.push({level:6,tag:`应急护盾 ${getEmergencyShieldValues(current)[0]}`,detail:`开放配件槽；新征途在该槽获得应急护盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏；购买槽需商城单独解锁）`});
+    if(current>=6)rules.push({level:6,tag:`战术护盾 ${getEmergencyShieldValues(current)[0]}`,detail:`新增 1 个通用装备位；新征途初始获得战术护盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏）`});
     if(current>=7)rules.push({level:7,tag:"伤害压制",detail:"玩家造成的伤害 -20%"});
     if(current>=9)rules.push({level:9,tag:"装备损失",detail:"遭遇普通敌人时有 30% 概率随机失去一件装备"});
     if(current>=9)rules.push({level:9,tag:"装备等级 +++",detail:"装备掉落至多 3 条强化词条，装备等级提升为神铸 +++"});
@@ -1069,7 +1067,7 @@ function renderDifficultyPanel(){
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
     document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
     document.getElementById("btnDifficultyApply").disabled=!adjustable||(!isNewGame&&level===save.useBlood);
-    document.getElementById("difficultyLockNote").textContent=isNewGame?`已解锁 ${unlocked}/10 级；确认后开始冒险，难度 3/6/9 将在职业与祝福选择前生效。`:adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备等级（+ / ++ / +++），6 级起开放配件槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
+    document.getElementById("difficultyLockNote").textContent=isNewGame?`已解锁 ${unlocked}/10 级；确认后开始冒险，难度 3/6/9 将在职业与祝福选择前生效。`:adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备等级（+ / ++ / +++），6 级起新增 1 个通用装备位；商城还可永久解锁 1 个。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
     cancelLootAutoSelect();
@@ -1130,11 +1128,11 @@ function renderShop(notice=""){
     document.getElementById("shopNotice").textContent=notice||(cheatMode?"作弊模式：道具可免费增减。":`当前金币：${save.gold||0}`);
     let productHtml=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>${cheatMode?`已购 ${p[key]}/10（免费）`:`价格：${price} 金币 · 已购 ${p[key]}/10`}</div>${cheatMode?`<div class="cheat-shop-controls"><button class="choice-btn" onclick="adjustCheatItem('${key}',-1)" ${p[key]<=0?"disabled":""}>−</button><span class="cheat-count">${p[key]}</span><button class="choice-btn" onclick="adjustCheatItem('${key}',1)" ${p[key]>=10?"disabled":""}>+</button></div>`:`<button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button>`}</article>`).join("");
     let purchaseEquipment=save.purchaseEquipment;
-    let purchaseHtml=`<article class="modal-card"><h3>购买槽</h3><div>独立于配件槽的专用装备槽，只接受商城装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
+    let purchaseHtml=`<article class="modal-card"><h3>通用装备位</h3><div>永久增加 1 个通用装备位，可以放置任意不冲突的装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
     if(save.purchaseSlotUnlocked){
-        purchaseHtml+=`<article class="modal-card"><h3>职业护符</h3><div>无基础属性；当前职业所有数值效果 +25%，不放大祝福。切换职业后自动按当前职业生效。</div><div>${purchaseEquipment?.id==="jobAmulet"?"已装备":cheatMode?"作弊模式：免费":"价格：1200 金币"}</div><button class="choice-btn" onclick="buyPurchaseEquipment('jobAmulet',1200)" ${purchaseEquipment?.id==="jobAmulet"?"disabled":""}>${purchaseEquipment?.id==="jobAmulet"?"已装备":"购买并装备"}</button></article>`;
+        purchaseHtml+=`<article class="modal-card"><h3>职业护符</h3><div>普通配件，无基础属性；装备时当前职业所有数值效果 +25%，不放大祝福。购买当下装备，新征途也会作为初始装备带入。</div><div>${purchaseEquipment?.id==="jobAmulet"?"已拥有":cheatMode?"作弊模式：免费":"价格：1200 金币"}</div><button class="choice-btn" onclick="buyPurchaseEquipment('jobAmulet',1200)" ${purchaseEquipment?.id==="jobAmulet"?"disabled":""}>${purchaseEquipment?.id==="jobAmulet"?"已拥有":"购买并装备"}</button></article>`;
     }
-    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放配件槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放配件槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
+    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备位</h3><div>难度 6 与商城各可增加 1 个通用装备位；这里只控制商城解锁来源。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭商城装备位":"开启商城装备位"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>难度装备位</h3><div>难度 6 起新增 1 个通用装备位，新征途初始获得战术护盾。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
     document.getElementById("shopContent").innerHTML=productHtml+extraHtml;
 }
 function closeShop(){
@@ -1149,21 +1147,26 @@ function exitCheatMode(){if(!cheatMode||!cheatBackup)return;save=normalizeSave(c
 function adjustCheatItem(key,delta){if(!cheatMode)return;save.purchased[key]=Math.max(0,Math.min(10,(save.purchased[key]||0)+delta));writeSave();if(player.job)applyEquipStats();renderShop();}
 function toggleCheatPurchaseSlot(){if(!cheatMode)return;save.purchaseSlotUnlocked=!save.purchaseSlotUnlocked;if(player.job){syncSlotCapacity();applyEquipStats();}writeSave();renderShop();}
 function buyPurchaseSlot(){
-    if(save.purchaseSlotUnlocked){renderShop("购买槽已经解锁。");return;}
-    if((save.gold||0)<5000){renderShop("金币不足，无法购买独立购买槽。");return;}
+    if(save.purchaseSlotUnlocked){renderShop("商城通用装备位已经解锁。");return;}
+    if((save.gold||0)<5000){renderShop("金币不足，无法购买通用装备位。");return;}
     save.gold-=5000;save.purchaseSlotUnlocked=true;writeSave();
     if(player.job){syncSlotCapacity();applyEquipStats();refreshStatPanel();}
-    autoSaveRun();renderShop("独立购买槽已永久解锁！");
+    autoSaveRun();renderShop("商城通用装备位已永久解锁！");
 }
 function buyPurchaseEquipment(id,price){
-    if(!save.purchaseSlotUnlocked){renderShop("请先解锁独立购买槽。");return;}
-    if(save.purchaseEquipment?.id===id){renderShop("该装备已装备。");return;}
+    if(!save.purchaseSlotUnlocked){renderShop("请先解锁商城通用装备位。");return;}
+    if(save.purchaseEquipment?.id===id){renderShop("该装备已拥有；新征途会作为初始装备带入。");return;}
     let cost=cheatMode?0:price;
     if((save.gold||0)<cost){renderShop("金币不足，无法购买该装备。");return;}
-    let items={jobAmulet:{id:"jobAmulet",name:"职业护符",element:"无",part:"purchase",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]}};
+    let items={jobAmulet:{id:"jobAmulet",name:"职业护符",element:"无",part:"accessory",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[]}};
     if(!items[id]){renderShop("该购买装备当前不可用。");return;}
     save.gold-=cost;save.purchaseEquipment=items[id];writeSave();
-    if(player.job){syncSlotCapacity();applyEquipStats();refreshStatPanel();}
+    if(player.job){
+        syncSlotCapacity();
+        let purchaseIndex=getEquipmentSlots().findIndex(slot=>slot.id==="purchase");
+        if(purchaseIndex>=0)player.slots[purchaseIndex]=normalizeEquipment(items[id],purchaseIndex);
+        applyEquipStats();refreshStatPanel();
+    }
     autoSaveRun();renderShop(`已购买并装备【${items[id].name}】。`);
 }
 function shopReturn(){
@@ -1353,7 +1356,7 @@ function renderReplacementChoices(e,chosenIdx){
         let index=comparison.slotIndex,recommended=index===best.slotIndex,removed=comparison.action.removed.map(entry=>`【${entry.equip.name}】`).join("、")||"无";
         return `<article class="modal-card ${recommended?"is-recommended":""}"><h3>${getSlotLabel(index)}</h3>${player.slots[index]?equipmentCardHtml(player.slots[index]):"<p>空位</p>"}<div class="replace-delta">更换后：${comparisonSummaryHtml(comparison)}<br>将卸下：${removed}</div><button class="choice-btn" onclick="replaceEquip(${index},${chosenIdx})">装备到${getSlotLabel(index)}</button></article>`;
     }).join("");
-    document.getElementById("lootContent").innerHTML=`<p class="modal-note">前四个装备位不要求固定部位；请选择替换或空位。双手武器会卸下其他手持装备，单手武器或盾牌会卸下冲突的双手武器。</p><div class="modal-grid">${choices}</div><div class="modal-actions"><button class="choice-btn" onclick="renderLootChoice()">返回掉落选择</button><button class="choice-btn danger" onclick="declineLoot()">放弃这件装备</button></div>`;
+    document.getElementById("lootContent").innerHTML=`<p class="modal-note">所有装备位都是通用位置；请选择替换或空位。双手武器会卸下其他手持装备，单手武器或盾牌会卸下冲突的双手武器。</p><div class="modal-grid">${choices}</div><div class="modal-actions"><button class="choice-btn" onclick="renderLootChoice()">返回掉落选择</button><button class="choice-btn danger" onclick="declineLoot()">放弃这件装备</button></div>`;
 }
 function replaceEquip(slotIndex,chosenIdx){
     if(!pendingLoot)return;
