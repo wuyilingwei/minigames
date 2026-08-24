@@ -23,14 +23,14 @@
         <div id="allyRoster" class="unit-roster ally-roster" aria-label="我方单位">
         <div class="combatant player" id="playerCombatant" data-unit-kind="hero" aria-label="我方勇者">
           <div class="pixel-avatar"><svg class="battle-svg" aria-hidden="true"><use href="#svg-hero"></use></svg></div><div class="combatant-name" id="battlePlayerName">勇者</div><div class="combatant-atk" id="battlePlayerAtk">ATK —</div>
-          <div id="hpBarArea"><div class="battle-meter"><div class="fill" id="hpBarFill"></div></div><div class="battle-number" id="hpNums">0 / 0</div><div id="shieldBarWrap"><div class="shield-number" id="shieldNums">护盾 0</div><div class="battle-meter"><div class="fill" id="shieldBarFill"></div></div></div></div>
+          <div id="hpBarArea"><div class="battle-meter"><div class="fill" id="hpBarFill"></div></div><div class="battle-number" id="hpNums">0 / 0</div><div id="shieldBarWrap" class="shield-wrap"><div class="shield-number"><span class="shield-label-hits" data-shield-label="hits">次数0</span> · <span class="shield-label-temp" data-shield-label="temp">临时0</span> · <span class="shield-label-persistent" data-shield-label="persistent">持续0</span></div><div class="battle-meter shield-meter" aria-hidden="true"><div class="shield-segment shield-hits" data-shield-type="hits"></div><div class="shield-segment shield-temp" data-shield-type="temp"></div><div class="shield-segment shield-persistent" data-shield-type="persistent"></div></div></div></div>
         </div>
         </div>
         <div class="versus">VS</div>
         <div id="enemyRoster" class="unit-roster enemy-roster" aria-label="敌方单位">
         <div class="combatant enemy" id="enemyBarArea" data-unit-kind="enemy" aria-label="敌方单位">
           <div class="pixel-avatar"><svg class="battle-svg" aria-hidden="true"><use href="#svg-enemy"></use></svg></div><div class="combatant-name" id="enemyBarLabel">敌人</div><div class="combatant-atk" id="battleEnemyAtk">ATK —</div>
-          <div class="battle-meter"><div class="fill enemy-fill" id="enemyBarFill"></div></div><div class="battle-number" id="enemyHpNums">0 / 0</div><div id="enemyShieldBarWrap" class="enemy-shield-wrap"><div class="shield-number" id="enemyShieldNums">次数0 · 临时0 · 持续0</div><div class="battle-meter"><div class="fill enemy-shield-fill" id="enemyShieldBarFill"></div></div></div><div id="enemyTraitDesc" class="trait-note"></div>
+          <div class="battle-meter"><div class="fill enemy-fill" id="enemyBarFill"></div></div><div class="battle-number" id="enemyHpNums">0 / 0</div><div id="enemyShieldBarWrap" class="shield-wrap enemy-shield-wrap"><div class="shield-number"><span class="shield-label-hits" data-shield-label="hits">次数0</span> · <span class="shield-label-temp" data-shield-label="temp">临时0</span> · <span class="shield-label-persistent" data-shield-label="persistent">持续0</span></div><div class="battle-meter shield-meter" aria-hidden="true"><div class="shield-segment shield-hits" data-shield-type="hits"></div><div class="shield-segment shield-temp" data-shield-type="temp"></div><div class="shield-segment shield-persistent" data-shield-type="persistent"></div></div></div><div id="enemyTraitDesc" class="trait-note"></div>
         </div>
         </div>
         <div id="battleEvent">等待交战</div>

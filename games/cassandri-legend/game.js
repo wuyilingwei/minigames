@@ -194,8 +194,30 @@ function normalizeCombatant(unit){
     unit.hits=Math.max(1,Math.floor(Number(unit.hits)||1));
     return unit;
 }
-function shieldTotal(unit){normalizeCombatant(unit);return unit.shields.hits.charges*unit.shields.hits.value+unit.shields.temp+unit.shields.persistent;}
+function shieldBreakdown(unit){normalizeCombatant(unit);return {hits:unit.shields.hits.charges*unit.shields.hits.value,temp:unit.shields.temp,persistent:unit.shields.persistent};}
+function shieldTotal(unit){let values=shieldBreakdown(unit);return values.hits+values.temp+values.persistent;}
 function shieldSummary(unit){normalizeCombatant(unit);return `次数${unit.shields.hits.charges} · 临时${unit.shields.temp} · 持续${unit.shields.persistent}`;}
+function shieldMeterState(unit,maxHp){
+    let amounts=shieldBreakdown(unit),total=amounts.hits+amounts.temp+amounts.persistent;
+    let visiblePercent=maxHp>0?Math.min(100,total/maxHp*100):0;
+    let segments={hits:0,temp:0,persistent:0};
+    if(total>0)for(let type of Object.keys(segments))segments[type]=visiblePercent*amounts[type]/total;
+    return {amounts,total,visiblePercent,segments};
+}
+function shieldMeterMarkup(extraClass=""){
+    return `<div class="shield-wrap ${extraClass}"><div class="shield-number"><span class="shield-label-hits" data-shield-label="hits">次数0</span> · <span class="shield-label-temp" data-shield-label="temp">临时0</span> · <span class="shield-label-persistent" data-shield-label="persistent">持续0</span></div><div class="battle-meter shield-meter" aria-hidden="true"><div class="shield-segment shield-hits" data-shield-type="hits"></div><div class="shield-segment shield-temp" data-shield-type="temp"></div><div class="shield-segment shield-persistent" data-shield-type="persistent"></div></div></div>`;
+}
+function renderShieldMeter(wrap,unit,maxHp){
+    if(!wrap)return;
+    let state=shieldMeterState(unit,maxHp),labels={hits:`次数${unit.shields.hits.charges}`,temp:`临时${unit.shields.temp}`,persistent:`持续${unit.shields.persistent}`};
+    wrap.style.display=state.total>0?"block":"none";
+    wrap.setAttribute("aria-label",`护盾 ${shieldSummary(unit)}`);
+    for(let type of Object.keys(state.segments)){
+        let label=wrap.querySelector(`[data-shield-label="${type}"]`),segment=wrap.querySelector(`[data-shield-type="${type}"]`);
+        if(label)label.textContent=labels[type];
+        if(segment){segment.style.width=`${state.segments[type]}%`;segment.hidden=state.amounts[type]<=0;}
+    }
+}
 function grantShield(unit,type,value,charges=1){normalizeCombatant(unit);value=Math.max(0,Math.floor(value)||0);if(type==="hits"){unit.shields.hits.value=Math.max(unit.shields.hits.value,value);unit.shields.hits.charges+=Math.max(1,charges|0);}else unit.shields[type]=Math.max(0,unit.shields[type]+value);unit.ZDYHP=unit.shields.temp+unit.shields.persistent;unit.shield=unit.ZDYHP;}
 function setTemporaryShield(unit,value){normalizeCombatant(unit);unit.shields.temp=Math.max(0,Math.floor(value)||0);unit.ZDYHP=unit.shields.temp+unit.shields.persistent;unit.shield=unit.ZDYHP;}
 function restoreTemporaryShield(unit,value,cap){normalizeCombatant(unit);let before=unit.shields.temp,limit=Math.max(0,Math.floor(cap)||0);unit.shields.temp=Math.min(limit,before+Math.max(0,Math.floor(value)||0));unit.ZDYHP=unit.shields.temp+unit.shields.persistent;unit.shield=unit.ZDYHP;return unit.shields.temp-before;}
@@ -893,17 +915,14 @@ function createRosterCard(unit,side,index){
     let card=document.createElement("article");
     card.className=`combatant ${side==="ally"?"player":"enemy"}`;
     card.dataset.rosterUnit=String(index);card.dataset.unitSide=side;
-    card.innerHTML=`<div class="pixel-avatar"></div><div class="combatant-name"></div><div class="combatant-atk"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-fill"}"></div></div><div class="battle-number"></div><div class="shield-wrap ${side==="ally"?"":"enemy-shield-wrap"}"><div class="shield-number"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-shield-fill"}"></div></div></div><div class="trait-note"></div>`;
+    card.innerHTML=`<div class="pixel-avatar"></div><div class="combatant-name"></div><div class="combatant-atk"></div><div class="battle-meter"><div class="fill ${side==="ally"?"":"enemy-fill"}"></div></div><div class="battle-number"></div>${shieldMeterMarkup(side==="ally"?"":"enemy-shield-wrap")}<div class="trait-note"></div>`;
     setCombatantSprite(card,unit,side);
     card.querySelector(".combatant-name").textContent=unit.name||unit.job|| (side==="ally"?"友军":"敌人");
     card.querySelector(".combatant-atk").textContent=`ATK ${unit.atk??"—"}`;
     let hp=Number(unit.hp)||0,max=Number(unit.maxHp)||hp||1,pct=Math.max(0,Math.min(100,hp/max*100));
     card.querySelector(".fill").style.width=`${pct}%`;
     card.querySelector(".battle-number").textContent=`${hp} / ${max}`;
-    let shield=shieldTotal(unit),shieldWrap=card.querySelector(".shield-wrap"),shieldFill=shieldWrap.querySelector(".fill"),shieldNums=shieldWrap.querySelector(".shield-number");
-    shieldWrap.style.display=shield>0?"block":"none";
-    shieldFill.style.width=`${Math.min(100,shield/max*100)}%`;
-    shieldNums.textContent=shieldSummary(unit);
+    renderShieldMeter(card.querySelector(".shield-wrap"),unit,max);
     let trait=card.querySelector(".trait-note");
     trait.textContent=(unit.traits||[]).map(t=>`【${t.name||t.id||"特性"}】${t.desc||""}`).join(" ");
     return card;
@@ -949,28 +968,12 @@ function refreshHpBar(){
         hpFill.style.width=pct+"%";
         hpFill.className=`fill${pct<30?" low":""}`;
     }
-    let shieldWrap=document.getElementById("shieldBarWrap");
-    let shieldFill=document.getElementById("shieldBarFill");
-    if(shieldWrap&&shieldFill){
-        let totalShield=shieldTotal(player);
-        if(totalShield>0){
-            shieldWrap.style.display="block";
-            let spct=player.maxHp>0?Math.min(100,totalShield/player.maxHp*100):0;
-            shieldFill.style.width=spct+"%";
-            shieldFill.className="fill";
-            let shieldNums=document.getElementById("shieldNums");
-            if(shieldNums)shieldNums.textContent=shieldSummary(player);
-        }else{
-            shieldWrap.style.display="none";
-        }
-    }
+    renderShieldMeter(document.getElementById("shieldBarWrap"),player,player.maxHp);
     let enemyArea=document.getElementById("enemyBarArea");
     let enemyLabel=document.getElementById("enemyBarLabel");
     let enemyNums=document.getElementById("enemyHpNums");
     let enemyFill=document.getElementById("enemyBarFill");
     let enemyShieldWrap=document.getElementById("enemyShieldBarWrap");
-    let enemyShieldFill=document.getElementById("enemyShieldBarFill");
-    let enemyShieldNums=document.getElementById("enemyShieldNums");
     let enemyTraitDesc=document.getElementById("enemyTraitDesc");
     if(enemyArea&&active){
         enemyArea.style.display="grid";
@@ -979,13 +982,7 @@ function refreshHpBar(){
         let epct=enemy.maxHp>0?Math.max(0,Math.min(100,enemy.hp/enemy.maxHp*100)):0;
         enemyFill.style.width=epct+"%";
         enemyFill.className="fill enemy-fill";
-        let enemyShield=shieldTotal(enemy);
-        if(enemyShieldWrap&&enemyShieldFill){
-            enemyShieldWrap.style.display=enemyShield>0?"block":"none";
-            enemyShieldFill.style.width=`${enemy.maxHp>0?Math.min(100,enemyShield/enemy.maxHp*100):0}%`;
-            enemyShieldFill.className="fill enemy-shield-fill";
-            if(enemyShieldNums)enemyShieldNums.textContent=shieldSummary(enemy);
-        }
+        renderShieldMeter(enemyShieldWrap,enemy,enemy.maxHp);
         let playerName=document.getElementById("battlePlayerName");
         let playerAtk=document.getElementById("battlePlayerAtk");
         let enemyAtk=document.getElementById("battleEnemyAtk");
