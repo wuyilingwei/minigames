@@ -16,6 +16,9 @@ if (!runtime.includes('document.getElementById("welcomeOverlay").hidden=true;\n 
 if (!runtime.includes('if(!isNewGame&&!player.canAdjustPoint)return;')) {
   throw new Error('New-game confirmation must work even when the selected difficulty is unchanged.');
 }
+if (!runtime.includes('if(difficultySelectionMode!=="new"&&!player.canAdjustPoint)return;')) {
+  throw new Error('New-game difficulty adjustment must not depend on stale in-run point-lock state.');
+}
 const newGameEntry = runtime.indexOf('function openNewGameDifficulty(){');
 const newGameEntryEnd = runtime.indexOf('\nfunction shiftDifficulty(', newGameEntry);
 if (newGameEntry < 0 || newGameEntryEnd < 0 || runtime.slice(newGameEntry, newGameEntryEnd).includes('startGame();')) {

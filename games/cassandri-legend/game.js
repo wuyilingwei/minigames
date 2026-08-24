@@ -64,21 +64,21 @@ const equipmentSlots=[
 ];
 const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品",outerwear:"附加",purchase:"购买"};
 const equipmentTierData=[
-    {id:0,name:"制式",description:"基础装备"},
-    {id:1,name:"精工",description:"解锁第一档词条"},
-    {id:2,name:"秘藏",description:"解锁第二档词条"},
-    {id:3,name:"神铸",description:"解锁第三档词条"}
+    {id:0,name:"制式",description:"基础装备等级"},
+    {id:1,name:"精工",description:"难度 3 装备等级"},
+    {id:2,name:"秘藏",description:"难度 6 装备等级"},
+    {id:3,name:"神铸",description:"难度 9 装备等级"}
 ];
 function normalizeAffixTier(value){
     let tier=Number(value);
     return Number.isFinite(tier)?Math.max(0,Math.min(3,Math.floor(tier))):0;
 }
 function getEquipmentTier(tier){return equipmentTierData[normalizeAffixTier(tier)];}
-const equipmentEnhancementMarkers=["无标识","+","++","+++"];
+const equipmentEnhancementMarkers=["","+","++","+++"];
 function getEquipmentEnhancementMarker(tier){return equipmentEnhancementMarkers[normalizeAffixTier(tier)];}
 function getEquipmentLevelLabel(tier){
-    let normalized=normalizeAffixTier(tier),data=getEquipmentTier(normalized);
-    return `${data.name} · 强化${getEquipmentEnhancementMarker(normalized)}`;
+    let normalized=normalizeAffixTier(tier),data=getEquipmentTier(normalized),marker=getEquipmentEnhancementMarker(normalized);
+    return marker?`${data.name} ${marker}`:data.name;
 }
 const starterEquipmentData={
     "朴素头巾":{hp:25,crt:0.02},
@@ -1011,13 +1011,13 @@ function getDifficultyRules(level){
     if(current>=1)rules.push({level:1,tag:`金币 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`,detail:`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`});
     if(current>=3)rules.push({level:3,tag:"禁用职业/祝福",detail:"开局随机禁用一个职业和一项祝福"});
     if(current>=3)rules.push({level:3,tag:`回血 ${Math.floor(getHealingRecoveryRate(current)*100)}%`,detail:`单次治疗至多恢复当前损失生命的 ${Math.floor(getHealingRecoveryRate(current)*100)}%`});
-    if(current>=3)rules.push({level:3,tag:"装备强化 +",detail:"装备掉落开放额外效果与 1 条词条，强化等级提升为精工 · +"});
+    if(current>=3)rules.push({level:3,tag:"装备等级 +",detail:"装备掉落开放额外效果与 1 条词条，装备等级提升为精工 +"});
     if(current>=5)rules.push({level:5,tag:"追踪成长",detail:"敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%"});
-    if(current>=6)rules.push({level:6,tag:"装备强化 ++",detail:"装备掉落至多 2 条词条，强化等级提升为秘藏 · ++"});
+    if(current>=6)rules.push({level:6,tag:"装备等级 ++",detail:"装备掉落至多 2 条词条，装备等级提升为秘藏 ++"});
     if(current>=6)rules.push({level:6,tag:`高难盾 ${getEmergencyShieldValues(current)[0]}`,detail:`开放高难槽；新征途在该槽获得应急盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏；购买槽需商城单独解锁）`});
     if(current>=7)rules.push({level:7,tag:"伤害压制",detail:"玩家造成的伤害 -20%"});
     if(current>=9)rules.push({level:9,tag:"装备损失",detail:"遭遇普通敌人时有 30% 概率随机失去一件装备"});
-    if(current>=9)rules.push({level:9,tag:"装备强化 +++",detail:"装备掉落至多 3 条强化词条，强化等级提升为神铸 · +++"});
+    if(current>=9)rules.push({level:9,tag:"装备等级 +++",detail:"装备掉落至多 3 条强化词条，装备等级提升为神铸 +++"});
     return rules;
 }
 function getDifficultyRuleTags(level){
@@ -1051,7 +1051,7 @@ function renderDifficultyPanel(){
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
     document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
     document.getElementById("btnDifficultyApply").disabled=!adjustable||(!isNewGame&&level===save.useBlood);
-    document.getElementById("difficultyLockNote").textContent=isNewGame?`已解锁 ${unlocked}/10 级；确认后开始冒险，难度 3/6/9 将在职业与祝福选择前生效。`:adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备强化等级（+ / ++ / +++），6 级起开放高难槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
+    document.getElementById("difficultyLockNote").textContent=isNewGame?`已解锁 ${unlocked}/10 级；确认后开始冒险，难度 3/6/9 将在职业与祝福选择前生效。`:adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备等级（+ / ++ / +++），6 级起开放高难槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
     cancelLootAutoSelect();
@@ -1069,7 +1069,7 @@ function openNewGameDifficulty(){
     document.getElementById("difficultyOverlay").hidden=false;
 }
 function shiftDifficulty(delta){
-    if(!player.canAdjustPoint)return;
+    if(difficultySelectionMode!=="new"&&!player.canAdjustPoint)return;
     difficultyDraft=Math.max(0,Math.min(Math.min(10,Number(save.blood)||0),difficultyDraft+delta));
     renderDifficultyPanel();
 }

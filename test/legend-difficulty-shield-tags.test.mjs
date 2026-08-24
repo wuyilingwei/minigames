@@ -28,7 +28,7 @@ for(let level=0;level<=10;level++){
   if(level>=9&&!tags.some(tag=>tag.includes('难度9')))throw new Error(`Difficulty ${level} must retain prior and current level tags`);
 }
 const maxTags=model.getDifficultyRuleTags(10);
-for(const tag of ['难度3 · 回血 50%','难度3 · 精工装备','难度6 · 秘藏装备','难度9 · 神铸装备'])if(!maxTags.includes(tag))throw new Error(`Difficulty 10 collapsed summary must retain ${tag}`);
+for(const tag of ['难度3 · 回血 50%','难度3 · 装备等级 +','难度6 · 装备等级 ++','难度9 · 装备等级 +++'])if(!maxTags.includes(tag))throw new Error(`Difficulty 10 collapsed summary must retain ${tag}`);
 if(!/<details class="difficulty-rules">/.test(html)||/<details class="difficulty-rules" open/.test(html))throw new Error('Difficulty rule bar must be a closed details element by default');
 if(!runtime.includes('if(rules)rules.open=false'))throw new Error('Opening the difficulty overlay must reset the rule bar to collapsed');
 console.log('Verified difficulty-scaled emergency shield values and cumulative difficulty rule tags/details.');

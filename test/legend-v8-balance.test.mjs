@@ -11,8 +11,8 @@ const tierModel = runtime.slice(tierStart, tierEnd);
 const tiers = new Function(`${tierModel}\nreturn {equipmentTierData,normalizeAffixTier,getEquipmentTier,getEquipmentEnhancementMarker,getEquipmentLevelLabel};`)();
 if (tiers.equipmentTierData.map(item => item.name).join('/') !== '制式/精工/秘藏/神铸') throw new Error('Equipment tiers must use the four agreed names.');
 if (tiers.normalizeAffixTier(undefined) !== 0 || tiers.normalizeAffixTier(9) !== 3 || tiers.normalizeAffixTier(-1) !== 0) throw new Error('Equipment tier normalization must default and clamp safely.');
-if (['0', '1', '2', '3'].map(value => tiers.getEquipmentEnhancementMarker(value)).join('/') !== '无标识/+/++/+++') throw new Error('Equipment enhancement markers must map to no marker, +, ++, and +++.');
-if (tiers.getEquipmentLevelLabel(0) !== '制式 · 强化无标识' || tiers.getEquipmentLevelLabel(3) !== '神铸 · 强化+++') throw new Error('Equipment level labels must pair the named tier with its enhancement marker.');
+if (JSON.stringify(['0', '1', '2', '3'].map(value => tiers.getEquipmentEnhancementMarker(value))) !== JSON.stringify(['', '+', '++', '+++'])) throw new Error('Equipment level markers must map to no visible marker, +, ++, and +++.');
+if (tiers.getEquipmentLevelLabel(0) !== '制式' || tiers.getEquipmentLevelLabel(1) !== '精工 +' || tiers.getEquipmentLevelLabel(2) !== '秘藏 ++' || tiers.getEquipmentLevelLabel(3) !== '神铸 +++') throw new Error('Equipment level labels must pair each name with its difficulty level marker.');
 
 const jobs = runtime.match(/const jobData=\{[\s\S]*?\n\};/)?.[0] || '';
 const jobData = new Function(`${jobs}\nreturn jobData;`)();
@@ -21,8 +21,10 @@ if (!runtime.includes('let atk=Math.floor(rand(5,25)*scale),hp=Math.floor(rand(1
 if (!runtime.includes('crt=Math.floor(crt*scale*100)/100;')) throw new Error('Random equipment dodge must retain wave scaling.');
 if (runtime.includes('词条阶')) throw new Error('The old numeric equipment tier label must not remain in the runtime.');
 for (const name of ['制式', '精工', '秘藏', '神铸']) if (!runtime.includes(name)) throw new Error(`Missing equipment tier label: ${name}`);
-if (!runtime.includes('const equipmentEnhancementMarkers=["无标识","+","++","+++"]')) throw new Error('Enhancement marker mapping is not centralized.');
-for (const phrase of ['装备强化 +', '装备强化 ++', '装备强化 +++', '强化等级提升为精工', '强化等级提升为秘藏', '强化等级提升为神铸']) if (!runtime.includes(phrase)) throw new Error(`Difficulty rules must describe enhancement level: ${phrase}`);
+if (!runtime.includes('const equipmentEnhancementMarkers=["","+","++","+++"]')) throw new Error('Equipment level marker mapping is not centralized.');
+if (!runtime.includes('let tier=save.useBlood>=9?3:save.useBlood>=6?2:save.useBlood>=3?1:0;')) throw new Error('Equipment level must be derived from difficulty 3/6/9 rather than random quality.');
+for (const phrase of ['装备等级 +', '装备等级 ++', '装备等级 +++', '装备等级提升为精工 +', '装备等级提升为秘藏 ++', '装备等级提升为神铸 +++']) if (!runtime.includes(phrase)) throw new Error(`Difficulty rules must describe equipment level growth: ${phrase}`);
+for (const renderer of ['getEquipmentLevelLabel(s.affixTier)', 'getEquipmentLevelLabel(e.affixTier)']) if (!runtime.includes(renderer)) throw new Error(`Equipment level marker is missing from a renderer: ${renderer}`);
 
 const sample = (seed, wave) => {
   let state = seed;
@@ -43,5 +45,5 @@ const renderCard=new Function('getEquipmentTier','getEquipmentLevelLabel','elemC
 const standardCard=renderCard({name:'朴素布衣',element:'无',part:'body',atk:0,hp:80,bj:0,bs:0,crt:0,traits:[],affixTier:0});
 if(!standardCard.includes('身体 · 制式'))throw new Error('Standard equipment cards must show the named tier.');
 const emergencyCard=renderCard({id:'emergencyShield',name:'高难应急护盾',element:'无',part:'outerwear',atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],affixTier:0});
-if(emergencyCard.includes('附加')||!emergencyCard.includes('【制式 · 强化无标识】'))throw new Error('Emergency shield cards must omit the add-on label while retaining their enhancement level.');
+if(emergencyCard.includes('附加')||!emergencyCard.includes('【制式】'))throw new Error('Emergency shield cards must omit the add-on label while retaining their equipment level.');
 console.log('Verified four equipment tier names, legacy defaults, class dodge balance, starter stats, and random dodge bounds/growth.');
