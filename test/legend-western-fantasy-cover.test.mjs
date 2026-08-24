@@ -10,4 +10,4 @@ assert.equal(cover.readUInt32BE(16), cover.readUInt32BE(20), 'the game cover mus
 assert.ok(cover.readUInt32BE(16) >= 1024, 'the cover must remain readable at large displays');
 assert.ok(statSync(coverPath).size > 10_000, 'the cover must be a real raster asset');
 
-console.log('legend western fantasy cover: ok');
+console.log('legend mosaic cover: ok');
