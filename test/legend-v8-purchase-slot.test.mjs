@@ -15,7 +15,7 @@ if(!legacy.purchaseSlotUnlocked||!legacy.legacyAddonSlotUnlocked)throw new Error
 const difficulty=saveContext.normalizeSave({slot5Unlocked:true,useBlood:6});
 if(!difficulty.purchaseSlotUnlocked||!difficulty.legacyAddonSlotUnlocked)throw new Error('Every old slot5 save must migrate both purchase ownership and legacy add-on compatibility');
 
-const slotStart=runtime.indexOf('const equipmentSlots=');
+const slotStart=runtime.indexOf('const baseEquipmentParts=');
 const slotEnd=runtime.indexOf('\nfunction normalizeCombatant(',slotStart);
 const slots={isRecord:value=>Boolean(value)&&typeof value==='object'&&!Array.isArray(value),elements:['火','水','草','雷','无'],equipmentPartNames:{head:'头部',body:'身体',oneHand:'单手武器',twoHand:'双手武器',offHand:'副手',accessory:'配件',outerwear:'附加',purchase:'购买'},save:{slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:0,purchaseSlotUnlocked:true},player:{slots:[null,null,null,null,null,null]}};
 vm.createContext(slots);vm.runInContext(runtime.slice(slotStart,slotEnd),slots);

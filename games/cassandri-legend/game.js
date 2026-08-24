@@ -58,9 +58,10 @@ function applyPreferences(){
 loadPreferences();
 
 let player={name:"",job:"",atk:0,hp:0,maxHp:0,bj:0,bs:0,crt:0,ZDYHP:0,shields:null,slots:[null,null,null,null],Q3:0,Q4:0,ZBSPECIALUSED1:0,ZBSPECIALUSED2:false,ZBSPECIALUSED3:false,nextDodgeBoost:false,canAdjustPoint:true,wave:0,blessAtkAdd:0,blessHpAdd:0,blessBjAdd:0,blessBsAdd:0,blessCrtAdd:0,energy:0,defendStack:0,permAtkAdd:0,permHpAdd:0,revengeActive:false,energySurgeBoost:false};
+const baseEquipmentParts=["head","body","oneHand","twoHand","offHand"];
 const equipmentSlots=[
-    {id:"head",name:"头部",accepts:["head"]},{id:"body",name:"身体",accepts:["body"]},
-    {id:"mainHand",name:"主手",accepts:["oneHand","twoHand"]},{id:"offHand",name:"副手",accepts:["oneHand","offHand"]}
+    {id:"gear1",name:"装备 1",accepts:baseEquipmentParts},{id:"gear2",name:"装备 2",accepts:baseEquipmentParts},
+    {id:"gear3",name:"装备 3",accepts:baseEquipmentParts},{id:"gear4",name:"装备 4",accepts:baseEquipmentParts}
 ];
 const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"配件",outerwear:"附加",purchase:"购买"};
 const equipmentTierData=[
@@ -132,18 +133,29 @@ function normalizeEquipment(item,index=0){
     delete normalized.trait;
     return normalized;
 }
+const handEquipmentParts=["oneHand","twoHand","offHand"];
+function isHandEquipmentPart(part){return handEquipmentParts.includes(part);}
+function isEquipmentSetLegal(slots){
+    let parts=(Array.isArray(slots)?slots:[]).filter(Boolean).map(item=>item.part);
+    let count=part=>parts.filter(value=>value===part).length;
+    let handCount=parts.filter(isHandEquipmentPart).length,twoHandCount=count("twoHand");
+    if(count("head")>1||count("body")>1||count("offHand")>1||twoHandCount>1)return false;
+    if(twoHandCount>0&&handCount>1)return false;
+    return twoHandCount===0&&handCount>2?false:true;
+}
 function normalizeEquipmentSlots(slots,slotCount=getSlotCount(),slotDefinitions=getEquipmentSlots()){
     let next=Array.from({length:slotCount},()=>null);
     for(let sourceIndex=0;sourceIndex<(Array.isArray(slots)?slots.length:0);sourceIndex++){
         let item=normalizeEquipment(slots[sourceIndex],sourceIndex);
         if(!item)continue;
-        let targetIndex=sourceIndex<next.length&&slotDefinitions[sourceIndex]?.accepts.includes(item.part)&&!next[sourceIndex]
-            ?sourceIndex
-            :next.findIndex((slot,index)=>!slot&&slotDefinitions[index]?.accepts.includes(item.part));
-        if(targetIndex>=0)next[targetIndex]=item;
+        let targets=[];
+        if(sourceIndex<next.length&&slotDefinitions[sourceIndex]?.accepts.includes(item.part)&&!next[sourceIndex])targets.push(sourceIndex);
+        for(let index=0;index<next.length;index++)if(!targets.includes(index)&&!next[index]&&slotDefinitions[index]?.accepts.includes(item.part))targets.push(index);
+        for(let targetIndex of targets){
+            let candidate=next.slice();candidate[targetIndex]=item;
+            if(isEquipmentSetLegal(candidate)){next=candidate;break;}
+        }
     }
-    if(next[2]&&next[2].part==="twoHand")next[3]=null;
-    if(next[3]&&next[3].part==="twoHand"){next[2]=null;next[3]=null;}
     return next;
 }
 function syncSlotCapacity(){
@@ -700,10 +712,15 @@ function buildEquipAction(item,slotIndex,slots=player.slots){
     if(!item||!slotDefinitions[slotIndex]||!slotDefinitions[slotIndex].accepts.includes(item.part))return null;
     let next=slots.slice();
     let removed=[];
-    if(next[slotIndex])removed.push({slotIdx:slotIndex,equip:next[slotIndex]});
+    let removeAt=index=>{if(index>=0&&next[index]){removed.push({slotIdx:index,equip:next[index]});next[index]=null;}};
+    removeAt(slotIndex);
     next[slotIndex]=item;
-    if(slotIndex===2&&item.part==="twoHand"&&next[3]){removed.push({slotIdx:3,equip:next[3]});next[3]=null;}
-    if(slotIndex===3&&next[2]&&next[2].part==="twoHand"){removed.push({slotIdx:2,equip:next[2]});next[2]=null;}
+    if(item.part==="twoHand"){
+        for(let index=0;index<next.length;index++)if(index!==slotIndex&&isHandEquipmentPart(next[index]?.part))removeAt(index);
+    }else if(isHandEquipmentPart(item.part)){
+        for(let index=0;index<next.length;index++)if(index!==slotIndex&&next[index]?.part==="twoHand")removeAt(index);
+    }
+    if(!isEquipmentSetLegal(next))return null;
     return {slotIdx:slotIndex,newEquip:item,oldEquip:slots[slotIndex]||null,removed,slots:next};
 }
 function compareCandidate(item,slotIndex){
@@ -1336,7 +1353,7 @@ function renderReplacementChoices(e,chosenIdx){
         let index=comparison.slotIndex,recommended=index===best.slotIndex,removed=comparison.action.removed.map(entry=>`【${entry.equip.name}】`).join("、")||"无";
         return `<article class="modal-card ${recommended?"is-recommended":""}"><h3>${getSlotLabel(index)}</h3>${player.slots[index]?equipmentCardHtml(player.slots[index]):"<p>空位</p>"}<div class="replace-delta">更换后：${comparisonSummaryHtml(comparison)}<br>将卸下：${removed}</div><button class="choice-btn" onclick="replaceEquip(${index},${chosenIdx})">装备到${getSlotLabel(index)}</button></article>`;
     }).join("");
-    document.getElementById("lootContent").innerHTML=`<p class="modal-note">请选择合法装备位置；双手武器会卸下副手，副手或双持会卸下双手武器。</p><div class="modal-grid">${choices}</div><div class="modal-actions"><button class="choice-btn" onclick="renderLootChoice()">返回掉落选择</button><button class="choice-btn danger" onclick="declineLoot()">放弃这件装备</button></div>`;
+    document.getElementById("lootContent").innerHTML=`<p class="modal-note">前四个装备位不要求固定部位；请选择替换或空位。双手武器会卸下其他手持装备，单手武器或盾牌会卸下冲突的双手武器。</p><div class="modal-grid">${choices}</div><div class="modal-actions"><button class="choice-btn" onclick="renderLootChoice()">返回掉落选择</button><button class="choice-btn danger" onclick="declineLoot()">放弃这件装备</button></div>`;
 }
 function replaceEquip(slotIndex,chosenIdx){
     if(!pendingLoot)return;
