@@ -55,5 +55,7 @@ attackContext.resolveEnemyAttackSegment(1,2);attackContext.resolveEnemyAttackSeg
 if(attackContext.player.hp!==852||attackContext.player.energy!==20||attackContext.player.atk!==95||Math.abs(attackContext.player.bj-.48)>1e-9)throw new Error('Each enemy segment must independently apply damage, energy, weaken, curse, and unavoidable poison');
 if(attackContext.enemy.hp!==426)throw new Error('Enemy lifesteal must resolve independently for each landed segment');
 if(runtime.includes('enemyAttackLegacy'))throw new Error('The old single-hit attack implementation must not remain as dead compatibility code');
+if(!runtime.includes('healing=Math.min(healing,getHealingCapForMissing(player.maxHp-player.hp,save.useBlood))'))throw new Error('Auto-battle decisions must apply the current missing-HP healing cap');
+if(!runtime.includes('healPerTurn=Math.min(healPerTurn,getHealingCapForMissing(bossDmg,save.useBlood))'))throw new Error('Boss simulation must apply the difficulty healing cap');
 for(const marker of ['tracking:','dodge:','armor:','hits:','function enemyAttack(){','hasPrismaticResonance()','armorBreak','type==="temp"','persistent','【次数盾】'])if(!runtime.includes(marker))throw new Error(`Missing 8.0 combat marker: ${marker}`);
 console.log('Verified Legend 8.0 shields, healing caps, tracking, split attacks, and per-segment effects.');

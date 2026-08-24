@@ -188,9 +188,9 @@ function healPlayer(amount,source="恢复"){
     let requested=Math.max(0,Math.floor(amount)||0), bonus=hasPrismaticResonance()?1.20:1;
     let missingHp=Math.max(0,Math.floor(player.maxHp-player.hp));
     let recoveryRate=getHealingRecoveryRate(save.useBlood);
-    let perHealCap=Math.floor(missingHp*recoveryRate);
+    let perHealCap=getHealingCapForMissing(missingHp,save.useBlood);
     let healed=Math.max(0,Math.min(Math.floor(requested*bonus),perHealCap,missingHp));player.hp+=healed;
-    print(`【${source}】回复${healed}/${requested}点生命（当前损失生命可恢复${Math.floor(recoveryRate*100)}%，本次上限${perHealCap}）。`);return healed;
+    print(`【${source}】回复${healed}/${requested}点生命${recoveryRate<1?`（当前损失生命可恢复${Math.floor(recoveryRate*100)}%，本次上限${perHealCap}）`:""}。`);return healed;
 }
 function getEmergencyShield(){
     return player.slots.find(item=>item&&item.id==="emergencyShield")||null;
@@ -225,6 +225,9 @@ function getEmergencyShieldValues(level=save.useBlood){
 function getHealingRecoveryRate(level=save.useBlood){
     let rates=[1,1,1,.95,.90,.85,.75,.70,.65,.55,.50];
     return rates[Math.max(0,Math.min(10,Math.floor(Number(level)||0)))];
+}
+function getHealingCapForMissing(missingHp,level=save.useBlood){
+    return Math.floor(Math.max(0,Number(missingHp)||0)*getHealingRecoveryRate(level));
 }
 function hasPrismaticResonance(){let c=getElemCount();return ["火","水","草","雷"].every(element=>c[element]>=1);}
 function prepareBattleShields(){
@@ -787,8 +790,9 @@ function oneSlotHtml(idx){
     let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
     let isEmergencyShield=s.id==="emergencyShield";
     let specialNote=isEmergencyShield?` · 剩余${s.emergencyCharges}次${s.emergencyCharges>0?` · 下次${getEmergencyShieldValueForCharges(s.emergencyCharges,save.useBlood)}临时盾`:" · 已损坏"}`:"";
-    let partNote=isEmergencyShield?"":`【${equipmentPartNames[s.part]}】`;
-    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note">${partNote}${specialNote}</span>
+    let tier=getEquipmentTier(s.affixTier);
+    let partNote=isEmergencyShield?"":`【${equipmentPartNames[s.part]} · ${tier.name}】`;
+    return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note ${isEmergencyShield?"":`tier-${tier.id}`}">${partNote}${specialNote}</span>
     <div class="estats">
     <span class="estat-item stat-atk">ATK+${s.atk}</span>
     <span class="estat-item stat-hp">HP+${s.hp}</span>
@@ -997,14 +1001,16 @@ function getDifficultyEffects(level){
 }
 function getDifficultyRules(level){
     let current=Math.max(0,Math.min(10,Math.floor(Number(level)||0))),rules=[];
-    if(current>=1)rules.push({level:1,tag:"金币效率",detail:`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`});
-    if(current>=3)rules.push({level:3,tag:"禁用与回血",detail:`开局随机禁用一个职业和一项祝福；当前损失生命可恢复${Math.floor(getHealingRecoveryRate(current)*100)}%`});
-    if(current>=3)rules.push({level:3,tag:"额外词条",detail:"装备掉落开放额外效果与 1 条词条"});
+    if(current>=1)rules.push({level:1,tag:`金币 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`,detail:`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`});
+    if(current>=3)rules.push({level:3,tag:"禁用职业/祝福",detail:"开局随机禁用一个职业和一项祝福"});
+    if(current>=3)rules.push({level:3,tag:`回血 ${Math.floor(getHealingRecoveryRate(current)*100)}%`,detail:`单次治疗至多恢复当前损失生命的 ${Math.floor(getHealingRecoveryRate(current)*100)}%`});
+    if(current>=3)rules.push({level:3,tag:"精工装备",detail:"装备掉落开放额外效果与 1 条词条，等阶提升至精工"});
     if(current>=5)rules.push({level:5,tag:"追踪成长",detail:"敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%"});
-    if(current>=6)rules.push({level:6,tag:"高难应急盾",detail:`装备掉落至多 2 条词条，并开放高难槽；新征途在该槽获得应急盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏；购买槽需商城单独解锁）`});
+    if(current>=6)rules.push({level:6,tag:"秘藏装备",detail:"装备掉落至多 2 条词条，等阶提升至秘藏"});
+    if(current>=6)rules.push({level:6,tag:`高难盾 ${getEmergencyShieldValues(current)[0]}`,detail:`开放高难槽；新征途在该槽获得应急盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏；购买槽需商城单独解锁）`});
     if(current>=7)rules.push({level:7,tag:"伤害压制",detail:"玩家造成的伤害 -20%"});
     if(current>=9)rules.push({level:9,tag:"装备损失",detail:"遭遇普通敌人时有 30% 概率随机失去一件装备"});
-    if(current>=9)rules.push({level:9,tag:"强化词条",detail:"装备掉落至多 3 条强化词条"});
+    if(current>=9)rules.push({level:9,tag:"神铸装备",detail:"装备掉落至多 3 条强化词条，等阶提升至神铸"});
     return rules;
 }
 function getDifficultyRuleTags(level){
@@ -1042,6 +1048,7 @@ function renderDifficultyPanel(){
 function showDifficultyInfo(){
     cancelLootAutoSelect();
     difficultyDraft=Math.max(0,Math.min(10,Number(save.useBlood)||0));
+    let rules=document.querySelector(".difficulty-rules");if(rules)rules.open=false;
     renderDifficultyPanel();
     document.getElementById("difficultyOverlay").hidden=false;
 }
@@ -1281,7 +1288,8 @@ function equipmentCardHtml(e,includeRecommendation=false){
     }
     let recommendation=includeRecommendation?equipmentRecommendationHtml(e):"";
     let tier=getEquipmentTier(e.affixTier);
-    return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note">【${equipmentPartNames[e.part]||"未知部位"} · ${tier.name}】</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
+    let equipmentMeta=e.id==="emergencyShield"?`【${tier.name}】`:`【${equipmentPartNames[e.part]||"未知部位"} · ${tier.name}】`;
+    return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note tier-${tier.id}">${equipmentMeta}</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
 }
 function showEquip(e,includeRecommendation=false){
     print(equipmentCardHtml(e,includeRecommendation),"",true);
@@ -1931,6 +1939,7 @@ function autoBattleDecide(){
     if(player.blessing==="战士的祝福")healing+=player.maxHp*0.03;
     healing+=countTrait("attackHeal")*player.maxHp*0.03;
     healing+=countTrait("lifesteal")*chargedAttack*0.10;
+    healing=Math.min(healing,getHealingCapForMissing(player.maxHp-player.hp,save.useBlood));
     let effectiveHp=player.hp+shieldTotal(player);
     let turnsToDie=Math.ceil(effectiveHp/Math.max(1,incoming-healing));
     let turnsToKill=Math.ceil(enemy.hp/Math.max(1,chargedAttack));
@@ -1990,6 +1999,7 @@ function simulateBossSkip(){
     if(ls>0)healPerTurn+=avgDmg*0.10*ls;
     let ch=countTrait("critHeal");
     if(ch>0)healPerTurn+=player.maxHp*0.10*ch*Math.min(1,player.bj);
+    healPerTurn=Math.min(healPerTurn,getHealingCapForMissing(bossDmg,save.useBlood));
     let totalHp=player.maxHp+shieldTotal(player);
     let turnsToKill=enemy.maxHp/avgDmg;
     let netLoss=Math.max(0,bossDmg-healPerTurn);
