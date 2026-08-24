@@ -26,3 +26,9 @@
 
 - 远端为 `https://github.com/wuyilingwei/minigames.git`。
 - GitHub protection API 对 `main` 明确返回 `Branch not protected (HTTP 404)`，按全局交付规则将任务分支本地合入 `main` 并推送。
+
+## Git 交付
+
+- 任务提交为 `0d59221 feat: replace legend cover with mosaic artwork`。
+- 通过合并提交 `8e46565 merge: deliver mosaic legend cover` 合入本地 `main`，并成功推送到 `origin/main`。
+- 子 agent 已完成只读定位，15 分钟进度监控 heartbeat 已停用。
