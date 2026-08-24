@@ -17,7 +17,7 @@ if(!difficulty.purchaseSlotUnlocked||!difficulty.legacyAddonSlotUnlocked)throw n
 
 const slotStart=runtime.indexOf('const equipmentSlots=');
 const slotEnd=runtime.indexOf('\nfunction normalizeCombatant(',slotStart);
-const slots={isRecord:value=>Boolean(value)&&typeof value==='object'&&!Array.isArray(value),elements:['火','水','草','雷','无'],equipmentPartNames:{head:'头部',body:'身体',oneHand:'单手武器',twoHand:'双手武器',offHand:'副手',accessory:'饰品',outerwear:'附加',purchase:'购买'},save:{slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:0,purchaseSlotUnlocked:true},player:{slots:[null,null,null,null,null,null]}};
+const slots={isRecord:value=>Boolean(value)&&typeof value==='object'&&!Array.isArray(value),elements:['火','水','草','雷','无'],equipmentPartNames:{head:'头部',body:'身体',oneHand:'单手武器',twoHand:'双手武器',offHand:'副手',accessory:'配件',outerwear:'附加',purchase:'购买'},save:{slot5Unlocked:false,legacyAddonSlotUnlocked:false,useBlood:0,purchaseSlotUnlocked:true},player:{slots:[null,null,null,null,null,null]}};
 vm.createContext(slots);vm.runInContext(runtime.slice(slotStart,slotEnd),slots);
 if(slots.inferEquipmentPart({name:'职业护符',part:'accessory'},5)!=='purchase')throw new Error('Career amulet must normalize to purchase part');
 if(slots.getSlotCount()!==5||slots.getEquipmentSlots()[4].id!=='purchase')throw new Error('Low difficulty purchase-only mode must expose purchase as visible slot 5');
@@ -32,6 +32,8 @@ if(slots.player.slots.length!==6||slots.player.slots[4]?.id!=='emergencyShield'|
 slots.save=legacy;
 const migratedSlots=slots.normalizeEquipmentSlots([{name:'头盔',part:'head',element:'无'},{name:'铠甲',part:'body',element:'无'},{name:'长剑',part:'oneHand',element:'无'},{name:'盾牌',part:'offHand',element:'无'},{name:'披风',part:'outerwear',element:'无'}]);
 if(migratedSlots.length!==6||migratedSlots[4]?.part!=='outerwear'||migratedSlots[5]!==null)throw new Error('Legacy slot5 save must retain its old add-on and expose an empty purchase slot');
+const migratedShield=slots.normalizeEquipment({id:'emergencyShield',name:'高难应急护盾',part:'outerwear',element:'无'},4);
+if(migratedShield.name!=='应急护盾'||migratedShield.part!=='accessory')throw new Error('Legacy emergency shield must migrate to the ordinary accessory name and part.');
 
 const jobStart=runtime.indexOf('function calcBaseStats(');
 const jobEnd=runtime.indexOf('\nfunction applyEquipStats(',jobStart);

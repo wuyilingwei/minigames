@@ -29,7 +29,7 @@ if (player.slots.some(item => item?.id === 'emergencyShield')) throw new Error('
 if (!logs.some(line => line.includes('剩余3次') && line.includes(`下次${expectedValues[1]}`))) throw new Error('Remaining durability and scaled next shield amount must be logged.');
 if (!logs.some(line => line.includes('第4次触发') && line.includes('损坏'))) throw new Error('Fourth trigger must log equipment damage.');
 
-for (const text of ['makeEmergencyShield', 'emergencyCharges', '高难应急护盾', 'function triggerEmergencyShield', 'function emergencyShieldValue(item)']) {
+for (const text of ['makeEmergencyShield', 'name:"应急护盾"', 'part:"accessory"', 'emergencyCharges', 'function triggerEmergencyShield', 'function emergencyShieldValue(item)']) {
   if (!runtime.includes(text)) throw new Error(`Missing special equipment contract: ${text}`);
 }
 console.log('Verified emergency shield durability, ordered temporary shields, damage removal, and recommendation value contract.');

@@ -62,7 +62,7 @@ const equipmentSlots=[
     {id:"head",name:"头部",accepts:["head"]},{id:"body",name:"身体",accepts:["body"]},
     {id:"mainHand",name:"主手",accepts:["oneHand","twoHand"]},{id:"offHand",name:"副手",accepts:["oneHand","offHand"]}
 ];
-const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品",outerwear:"附加",purchase:"购买"};
+const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"配件",outerwear:"附加",purchase:"购买"};
 const equipmentTierData=[
     {id:0,name:"制式",description:"基础装备等级"},
     {id:1,name:"精工",description:"难度 3 装备等级"},
@@ -90,7 +90,7 @@ function hasAddonSlotFor(saveState=save){return saveState.useBlood>=6||saveState
 function hasPurchaseSlotFor(saveState=save){return Boolean(saveState.purchaseSlotUnlocked||saveState.slot5Unlocked);}
 function getEquipmentSlotsFor(saveState=save){
     let slots=equipmentSlots.slice();
-    if(hasAddonSlotFor(saveState))slots.push({id:"accessory",name:"高难",accepts:["accessory","outerwear"]});
+    if(hasAddonSlotFor(saveState))slots.push({id:"accessory",name:"配件",accepts:["accessory","outerwear"]});
     if(hasPurchaseSlotFor(saveState))slots.push({id:"purchase",name:"购买",accepts:["purchase"]});
     return slots;
 }
@@ -101,7 +101,7 @@ function getSlotCount(){return getEquipmentSlots().length;}
 function getSlotLabel(index){let slots=getEquipmentSlots();return slots[index]?slots[index].name:`槽位${index+1}`;}
 function inferEquipmentPart(item,index=0){
     let name=String(item&&item.name||"");
-    if(item&&item.id==="emergencyShield")return "outerwear";
+    if(item&&item.id==="emergencyShield")return "accessory";
     // Older versions classified wearable add-ons as body or oneHand. Name-based
     // migration must run before trusting the persisted part so they can reach slot 5.
     if(/斗篷|披风|靴子|鞋子|手套|翅膀|背包|臂甲|胫甲|护腿|护肩|披肩|围巾/.test(name))return "outerwear";
@@ -118,6 +118,7 @@ function normalizeEquipment(item,index=0){
     if(!isRecord(item))return null;
     let normalized={...item};
     normalized.part=inferEquipmentPart(normalized,index);
+    if(normalized.id==="emergencyShield")normalized.name="应急护盾";
     normalized.element=elements.includes(normalized.element)?normalized.element:"无";
     for(let key of ["atk","hp","bj","bs","crt"]){let value=Number(normalized[key]);normalized[key]=Number.isFinite(value)?value:0;}
     if(normalized.trait&&!normalized.traits)normalized.traits=[normalized.trait];
@@ -159,7 +160,7 @@ function makeStarterEquipment(){return [
     {name:"训练短剑",element:"无",part:"oneHand",atk:15,hp:0,bj:0.02,bs:0,crt:0,traits:[],affixTier:0},
     {name:"空白护臂",element:"无",part:"offHand",atk:0,hp:35,bj:0,bs:0,crt:0.02,traits:[],affixTier:0}
 ];}
-function makeEmergencyShield(){return {id:"emergencyShield",name:"高难应急护盾",element:"无",part:"outerwear",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],emergencyCharges:4};}
+function makeEmergencyShield(){return {id:"emergencyShield",name:"应急护盾",element:"无",part:"accessory",atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],emergencyCharges:4};}
 function initSlots(){
     player.slots=normalizeEquipmentSlots(makeStarterEquipment());
     if(save.useBlood>=6){
@@ -211,11 +212,11 @@ function triggerEmergencyShield(){
     item.emergencyCharges=charges-1;
     grantShield(player,"temp",value);
     if(item.emergencyCharges>0){
-        print(`【高难应急护盾】进战触发，获得${value}点临时盾；剩余${item.emergencyCharges}次，下次${getEmergencyShieldValueForCharges(item.emergencyCharges,save.useBlood)}点。`);
+        print(`【应急护盾】进战触发，获得${value}点临时盾；剩余${item.emergencyCharges}次，下次${getEmergencyShieldValueForCharges(item.emergencyCharges,save.useBlood)}点。`);
     }else{
         let index=player.slots.indexOf(item);
         if(index>=0)player.slots[index]=null;
-        print(`【高难应急护盾】进战触发，获得${value}点临时盾；第4次触发，装备已损坏并移除。`);
+        print(`【应急护盾】进战触发，获得${value}点临时盾；第4次触发，装备已损坏并移除。`);
         applyEquipStats();
     }
     refreshStatPanel();
@@ -744,7 +745,7 @@ function getDropAdvice(items){
 }
 function equipmentRecommendationHtml(item){
     let comparisons=getEquipmentComparisons(item),best=comparisons[0];
-    if(!best)return `<div class="recommendation avoid"><div class="recommend-title">当前没有可用部位</div><div>附加装备需要难度 6 的高难槽；商城专用装备需要单独解锁购买槽。</div></div>`;
+    if(!best)return `<div class="recommendation avoid"><div class="recommend-title">当前没有可用部位</div><div>配件或附加装备需要难度 6 的配件槽；商城专用装备需要单独解锁购买槽。</div></div>`;
     let decision=classifyRecommendation(best);
     let before=best.current,after=best.next;
     let beforeTrait=best.oldEquip&&best.oldEquip.traits&&best.oldEquip.traits.length?best.oldEquip.traits.map(trait=>trait.name).join("·"):"无";
@@ -1014,7 +1015,7 @@ function getDifficultyRules(level){
     if(current>=3)rules.push({level:3,tag:"装备等级 +",detail:"装备掉落开放额外效果与 1 条词条，装备等级提升为精工 +"});
     if(current>=5)rules.push({level:5,tag:"追踪成长",detail:"敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%"});
     if(current>=6)rules.push({level:6,tag:"装备等级 ++",detail:"装备掉落至多 2 条词条，装备等级提升为秘藏 ++"});
-    if(current>=6)rules.push({level:6,tag:`高难盾 ${getEmergencyShieldValues(current)[0]}`,detail:`开放高难槽；新征途在该槽获得应急盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏；购买槽需商城单独解锁）`});
+    if(current>=6)rules.push({level:6,tag:`应急护盾 ${getEmergencyShieldValues(current)[0]}`,detail:`开放配件槽；新征途在该槽获得应急护盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏；购买槽需商城单独解锁）`});
     if(current>=7)rules.push({level:7,tag:"伤害压制",detail:"玩家造成的伤害 -20%"});
     if(current>=9)rules.push({level:9,tag:"装备损失",detail:"遭遇普通敌人时有 30% 概率随机失去一件装备"});
     if(current>=9)rules.push({level:9,tag:"装备等级 +++",detail:"装备掉落至多 3 条强化词条，装备等级提升为神铸 +++"});
@@ -1051,7 +1052,7 @@ function renderDifficultyPanel(){
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
     document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
     document.getElementById("btnDifficultyApply").disabled=!adjustable||(!isNewGame&&level===save.useBlood);
-    document.getElementById("difficultyLockNote").textContent=isNewGame?`已解锁 ${unlocked}/10 级；确认后开始冒险，难度 3/6/9 将在职业与祝福选择前生效。`:adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备等级（+ / ++ / +++），6 级起开放高难槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
+    document.getElementById("difficultyLockNote").textContent=isNewGame?`已解锁 ${unlocked}/10 级；确认后开始冒险，难度 3/6/9 将在职业与祝福选择前生效。`:adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备等级（+ / ++ / +++），6 级起开放配件槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
     cancelLootAutoSelect();
@@ -1112,11 +1113,11 @@ function renderShop(notice=""){
     document.getElementById("shopNotice").textContent=notice||(cheatMode?"作弊模式：道具可免费增减。":`当前金币：${save.gold||0}`);
     let productHtml=products.map(([name,desc,key,price])=>`<article class="modal-card"><h3>${name}</h3><div>${desc}</div><div>${cheatMode?`已购 ${p[key]}/10（免费）`:`价格：${price} 金币 · 已购 ${p[key]}/10`}</div>${cheatMode?`<div class="cheat-shop-controls"><button class="choice-btn" onclick="adjustCheatItem('${key}',-1)" ${p[key]<=0?"disabled":""}>−</button><span class="cheat-count">${p[key]}</span><button class="choice-btn" onclick="adjustCheatItem('${key}',1)" ${p[key]>=10?"disabled":""}>+</button></div>`:`<button class="choice-btn" onclick="buyItem('${key}',${price},10)">${p[key]>=10?"已达限购":"购买"}</button>`}</article>`).join("");
     let purchaseEquipment=save.purchaseEquipment;
-    let purchaseHtml=`<article class="modal-card"><h3>购买槽</h3><div>独立于高难槽的专用装备槽，只接受商城装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
+    let purchaseHtml=`<article class="modal-card"><h3>购买槽</h3><div>独立于配件槽的专用装备槽，只接受商城装备。</div><div>${save.purchaseSlotUnlocked?"已解锁":"价格：5000 金币"}</div><button class="choice-btn" onclick="buyPurchaseSlot()" ${save.purchaseSlotUnlocked?"disabled":""}>${save.purchaseSlotUnlocked?"已解锁":"购买"}</button></article>`;
     if(save.purchaseSlotUnlocked){
         purchaseHtml+=`<article class="modal-card"><h3>职业护符</h3><div>无基础属性；当前职业所有数值效果 +25%，不放大祝福。切换职业后自动按当前职业生效。</div><div>${purchaseEquipment?.id==="jobAmulet"?"已装备":cheatMode?"作弊模式：免费":"价格：1200 金币"}</div><button class="choice-btn" onclick="buyPurchaseEquipment('jobAmulet',1200)" ${purchaseEquipment?.id==="jobAmulet"?"disabled":""}>${purchaseEquipment?.id==="jobAmulet"?"已装备":"购买并装备"}</button></article>`;
     }
-    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放高难槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
+    let extraHtml=cheatMode?`<div class="cheat-banner">作弊模式已激活 · 退出后全部回退</div><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放配件槽；作弊开关控制购买槽。</div><button class="choice-btn" onclick="toggleCheatPurchaseSlot()">${hasPurchaseSlot()?"关闭购买槽":"开启购买槽"}</button></article>${purchaseHtml}<article class="modal-card"><h3>退出作弊模式</h3><div>永久成长、商城道具和槽位会回退到进入前的状态。</div><button class="choice-btn danger" onclick="exitCheatMode()">退出并回退</button></article>`:`<article class="modal-card"><h3>潘多拉之盒</h3><div>随机奖励，也可能触发大记忆消失术。</div><div>价格：200 金币</div><button class="choice-btn" onclick="buyPandora()">开启</button></article><article class="modal-card"><h3>额外装备槽位</h3><div>难度 6 起自动开放配件槽，商城购买槽独立开放。</div><div>${hasAddonSlot()?"已解锁":"难度 6 开放"}</div></article>${purchaseHtml}<article class="modal-card"><h3>大记忆消失术</h3><div>清除所有商城购买效果，返还限购次数。</div><div>价格：10 金币</div>${resetConfirmationPending?`<div class="modal-notice">此操作会清除所有商城购买效果，无法撤销。</div><div class="modal-actions"><button class="choice-btn danger" onclick="confirmReset()">确认施放</button><button class="choice-btn" onclick="cancelReset()">取消</button></div>`:`<button class="choice-btn danger" onclick="requestReset()">施放</button>`}</article>`;
     document.getElementById("shopContent").innerHTML=productHtml+extraHtml;
 }
 function closeShop(){
