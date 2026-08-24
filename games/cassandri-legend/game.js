@@ -57,7 +57,7 @@ function applyPreferences(){
 }
 loadPreferences();
 
-let player={name:"",job:"",atk:0,hp:0,maxHp:0,bj:0,bs:0,crt:0,ZDYHP:0,shields:null,slots:[null,null,null,null],Q3:0,Q4:0,ZBSPECIALUSED1:0,ZBSPECIALUSED2:false,ZBSPECIALUSED3:false,nextDodgeBoost:false,canAdjustPoint:true,wave:0,blessAtkAdd:0,blessHpAdd:0,blessBjAdd:0,blessBsAdd:0,blessCrtAdd:0,energy:0,defendStack:0,permAtkAdd:0,permHpAdd:0,revengeActive:false,energySurgeBoost:false};
+let player={name:"",job:"",atk:0,hp:0,maxHp:0,bj:0,bs:0,crt:0,ZDYHP:0,shields:null,slots:[null,null,null,null],stolenEquipment:[],Q3:0,Q4:0,ZBSPECIALUSED1:0,ZBSPECIALUSED2:false,ZBSPECIALUSED3:false,nextDodgeBoost:false,canAdjustPoint:true,wave:0,blessAtkAdd:0,blessHpAdd:0,blessBjAdd:0,blessBsAdd:0,blessCrtAdd:0,energy:0,defendStack:0,permAtkAdd:0,permHpAdd:0,revengeActive:false,energySurgeBoost:false};
 const allEquipmentParts=["head","body","oneHand","twoHand","offHand","accessory","outerwear"];
 const equipmentSlots=[
     {id:"gear1",name:"装备 1",accepts:allEquipmentParts},{id:"gear2",name:"装备 2",accepts:allEquipmentParts},
@@ -323,6 +323,7 @@ function validateRunSnapshot(snapshot){
     let snapshotSave=normalizeSave(normalized.save);
     let snapshotSlotDefinitions=getEquipmentSlotsFor(snapshotSave);
     normalized.player.slots=normalizeEquipmentSlots(normalized.player.slots,snapshotSlotDefinitions.length,snapshotSlotDefinitions);
+    normalized.player.stolenEquipment=Array.isArray(normalized.player.stolenEquipment)?normalized.player.stolenEquipment.map(entry=>({slotIndex:Number(entry?.slotIndex),equipment:normalizeEquipment(entry?.equipment)})).filter(entry=>Number.isInteger(entry.slotIndex)&&entry.slotIndex>=0&&entry.slotIndex<snapshotSlotDefinitions.length&&entry.equipment):[];
     if(normalized.pendingLoot){for(let key of ["e1","e2","e3"])if(normalized.pendingLoot[key])normalized.pendingLoot[key]=normalizeEquipment(normalized.pendingLoot[key]);}
     return normalized;
 }
@@ -1855,6 +1856,17 @@ function tryPlayerRevive(){
     if(revive30>0&&Math.random()<.30*revive30*pmult){player.hp=1;print("【苟延残喘】你保留了1点生命！");return true;}
     return false;
 }
+function restoreStolenEquipment(){
+    let stolen=Array.isArray(player.stolenEquipment)?player.stolenEquipment:[];
+    if(!stolen.length)return 0;
+    let restored=0;
+    for(let entry of stolen){
+        if(entry?.equipment){player.slots[entry.slotIndex]=entry.equipment;restored++;}
+    }
+    player.stolenEquipment=[];
+    if(restored>0){applyEquipStats();refreshStatPanel();print(`【小偷】战斗结束，归还了 ${restored} 件装备。`);}
+    return restored;
+}
 function tryEnemyTheft(){
     if(!hasETrait("thief"))return true;
     if(hasTrait("stealGuard")){print("【防盗】你的装备受到保护，小偷未能得逞！");return true;}
@@ -1863,6 +1875,8 @@ function tryEnemyTheft(){
     for(let i=0;i<player.slots.length;i++)if(player.slots[i])filled.push(i);
     if(!filled.length)return true;
     let ridx=pick(filled),stolen=player.slots[ridx];player.slots[ridx]=null;
+    if(!Array.isArray(player.stolenEquipment))player.stolenEquipment=[];
+    player.stolenEquipment.push({slotIndex:ridx,equipment:stolen});
     applyEquipStats();refreshStatPanel();gameState="equipLostConfirm";
     print("【小偷】敌人偷走了你的装备：");showEquip(stolen);clearChoices();
     addChoice("确认",()=>{gameState="battle";battleLoop();});autoSaveRun();return false;
@@ -2076,7 +2090,7 @@ function battleLoop(){
     if(gameState==="bossBattle"){
         addChoice("一键跳过最终决战",()=>{simulateBossSkip();},"btn-danger");
     }
-    addChoice("逃跑",()=>{if(Math.random()<0.3){print("你成功逃跑了！");gameState="badEnd";badEnd(1);}else{print("逃跑失败！");if(!enemyAttack())return;if(player.hp<=0){onPlayerDefeat();return;}battleLoop();}});
+    addChoice("逃跑",()=>{if(Math.random()<0.3){print("你成功逃跑了！");restoreStolenEquipment();gameState="badEnd";badEnd(1);}else{print("逃跑失败！");if(!enemyAttack())return;if(player.hp<=0){onPlayerDefeat();return;}battleLoop();}});
 }
 
 function playEnemyDefeatAnimation(onComplete){
@@ -2103,6 +2117,7 @@ function finishEnemyDefeat(){
         if(explodeDmg>0){player.hp-=explodeDmg;print(`【爆裂】敌人死亡时爆炸，你受到${explodeDmg}点伤害！`);}
     }
     print(`你击败了 【${enemy.name}】！`);
+    restoreStolenEquipment();
     let kh=countTrait("killHeal");
     if(kh>0){
         let heal=Math.floor(player.maxHp*0.30*kh);
@@ -2194,6 +2209,7 @@ function finishEnemyDefeat(){
 
 function onPlayerDefeat(){
     print("你被击败了...");
+    restoreStolenEquipment();
     gameState="badEnd";
     clearRunSave("auto");
     refreshStatPanel();
