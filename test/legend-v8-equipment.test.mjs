@@ -4,10 +4,17 @@ import { resolve } from 'node:path';
 const root = resolve(new URL('..', import.meta.url).pathname);
 const html = await readFile(resolve(root, 'games/cassandri-legend/index.html'), 'utf8');
 const runtime = await readFile(resolve(root, 'games/cassandri-legend/game.js'), 'utf8');
-const model = runtime.match(/const equipmentSlots=\[[\s\S]*?function initSlots\(\)\{[\s\S]*?\n\}/)?.[0];
+const model = runtime.match(/const baseEquipmentParts=\[[\s\S]*?function initSlots\(\)\{[\s\S]*?\n\}/)?.[0];
 const actionModel = runtime.match(/function buildEquipAction\(item,slotIndex,slots=player\.slots\)\{[\s\S]*?\n\}/)?.[0];
-if (!model || !actionModel) throw new Error('Could not extract the equipment model.');
-const createModel = new Function('save', 'elements', `function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}\n${model}\n${actionModel.replace('slots=player.slots', 'slots=[]')}\nreturn {equipmentSlots,getEquipmentSlots,normalizeEquipment,normalizeEquipmentSlots,buildEquipAction,getSlotCount,makeStarterEquipment};`);
+const manualLootModel = runtime.match(/function equipToSlot\(e,chosenIdx\)\{[\s\S]*?\n\}/)?.[0];
+const replacementModel = runtime.match(/function renderReplacementChoices\(e,chosenIdx\)\{[\s\S]*?\n\}/)?.[0];
+if (!model || !actionModel || !manualLootModel || !replacementModel) throw new Error('Could not extract the equipment model.');
+if (!/renderReplacementChoices\(e,chosenIdx\);/.test(manualLootModel) || /confirmEquip\(\)/.test(manualLootModel)) throw new Error('Manual loot selection must always defer to explicit legal-slot choice, including when an empty slot exists.');
+if (!replacementModel.includes('<p>空位</p>') || !replacementModel.includes('replaceEquip(${index},${chosenIdx})')) throw new Error('Replacement flow must present empty and occupied legal slots for an explicit player decision.');
+for (const text of ['previousSlots:player.slots.slice()', 'player.slots=act.previousSlots', 'if(pendingLoot){', 'normalizeEquipmentSlots(normalized.player.slots']) {
+  if (!runtime.includes(text)) throw new Error(`Equipment replacement persistence contract is missing: ${text}`);
+}
+const createModel = new Function('save', 'elements', `function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}\n${model}\n${actionModel.replace('slots=player.slots', 'slots=[]')}\nreturn {equipmentSlots,getEquipmentSlots,normalizeEquipment,normalizeEquipmentSlots,buildEquipAction,getSlotCount,makeStarterEquipment,isEquipmentSetLegal};`);
 
 const low = createModel({ slot5Unlocked: false, useBlood: 0 }, ['火', '水', '草', '雷']);
 const starters = low.makeStarterEquipment();
@@ -17,6 +24,7 @@ const hard = createModel({ slot5Unlocked: false, useBlood: 6 }, ['火', '水', '
 const shop = createModel({ slot5Unlocked: false, useBlood: 6, purchaseSlotUnlocked: true }, ['火', '水', '草', '雷']);
 const shopLow = createModel({ slot5Unlocked: false, useBlood: 5, purchaseSlotUnlocked: true }, ['火', '水', '草', '雷']);
 if (hard.getSlotCount() !== 5 || shop.getSlotCount() !== 6 || shopLow.getSlotCount() !== 5) throw new Error('Difficulty and purchase slots must be independent and continuous.');
+if (low.getEquipmentSlots().slice(0, 4).map(slot => slot.name).join('/') !== '装备 1/装备 2/装备 3/装备 4') throw new Error('The four base positions must be generic equipment slots rather than mandatory armor or weapon slots.');
 const difficultyApply = runtime.match(/function applyDifficultySelection\(\)\{[\s\S]*?\n\}/)?.[0] || '';
 if (!/save\.useBlood=difficultyDraft;[\s\S]*syncSlotCapacity\(\);/.test(difficultyApply)) throw new Error('Raising difficulty to 6 must immediately synchronize the fifth accessory slot.');
 
@@ -28,7 +36,15 @@ const twoHandAction = hard.buildEquipAction(bow, 2, slots);
 if (!twoHandAction || twoHandAction.slots[2]?.part !== 'twoHand' || twoHandAction.slots[3] !== null || twoHandAction.removed.some(entry => entry.equip?.name === shield.name) === false) throw new Error('A two-handed weapon must occupy the main hand and unequip the off hand.');
 const dualAction = hard.buildEquipAction(sword, 3, [null, null, bow, null, null]);
 if (!dualAction || dualAction.slots[2] !== null || dualAction.slots[3]?.part !== 'oneHand') throw new Error('An off-hand one-handed weapon must unequip a conflicting two-handed weapon.');
-if (hard.buildEquipAction({ ...shield, part: 'body' }, 2, slots) !== null) throw new Error('Armor must never be placeable in a weapon slot.');
+const armorInGenericSlot = hard.buildEquipAction({ ...shield, name: '轻甲', part: 'body' }, 2, slots);
+if (!armorInGenericSlot || armorInGenericSlot.slots[2]?.part !== 'body') throw new Error('Body armor must be replaceable in any generic base slot without being mandatory.');
+const fullStarter = [{ name: '头巾', part: 'head' }, { name: '布衣', part: 'body' }, sword, shield, null];
+const armorReplacedByBow = hard.buildEquipAction(bow, 1, fullStarter);
+if (!armorReplacedByBow || armorReplacedByBow.slots.some(item => item?.part === 'body') || armorReplacedByBow.slots.filter(item => item?.part === 'twoHand').length !== 1 || armorReplacedByBow.slots.some(item => ['oneHand', 'offHand'].includes(item?.part))) throw new Error('A player must be allowed to replace armor with a two-handed weapon while conflicting hand gear is removed.');
+const twoSwords = hard.buildEquipAction({ ...sword, name: '第二把短剑' }, 3, [{ name: '头巾', part: 'head' }, { name: '布衣', part: 'body' }, sword, null, null]);
+if (!twoSwords || twoSwords.slots.filter(item => item?.part === 'oneHand').length !== 2) throw new Error('Two one-handed weapons must remain a legal build.');
+if (!hard.isEquipmentSetLegal([bow, null, null, null, null]) || hard.isEquipmentSetLegal([bow, { ...bow, name: '第二把长弓' }, null, null, null])) throw new Error('Exactly one two-handed weapon may be equipped.');
+if (!hard.isEquipmentSetLegal([sword, shield, null, null, null]) || hard.isEquipmentSetLegal([sword, { ...sword, name: '第二把短剑' }, shield, null, null])) throw new Error('Hand combinations must allow sword plus shield or two swords, but never three hand items.');
 
 const legacy = hard.normalizeEquipment({ name: '古老的大剑', atk: 4, hp: 5, trait: { id: 'armorBreak' } }, 2);
 if (legacy.part !== 'twoHand' || !Array.isArray(legacy.traits) || legacy.traits.length !== 1) throw new Error('Legacy equipment must infer a part and migrate a single trait.');
@@ -44,7 +60,7 @@ const migratedHard = hard.normalizeEquipmentSlots([null, armor, null, null, { ..
 if (migratedHard[1]?.part !== 'body' || migratedHard[4]?.part !== 'outerwear') throw new Error('Armor and a legacy body cloak must coexist in body and fifth slots.');
 const migratedLow = low.normalizeEquipmentSlots([null, armor, null, null, cloak]);
 if (migratedLow.some(item => item?.part === 'outerwear')) throw new Error('Low difficulty must not retain an add-on without the fifth slot.');
-if (hard.buildEquipAction(cloak, 1, [null, armor, null, null, null]) !== null) throw new Error('Outerwear must never be placeable in the body slot.');
+if (hard.buildEquipAction(cloak, 1, [null, armor, null, null, null]) !== null) throw new Error('Outerwear must remain exclusive to the accessory slot rather than a generic base slot.');
 if (!hard.buildEquipAction(cloak, 4, [null, armor, null, null, null])) throw new Error('Outerwear must be equipable in the unlocked fifth slot alongside armor.');
 const tierStart = runtime.indexOf('const equipmentTraitIdsByTier=');
 const tierEnd = runtime.indexOf('\n\nconst elements=', tierStart);

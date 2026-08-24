@@ -41,9 +41,9 @@ if (highWave.reduce((sum, value) => sum + value, 0) <= lowWave.reduce((sum, valu
 
 const cardSource=runtime.match(/function equipmentCardHtml\(e,includeRecommendation=false\)\{[\s\S]*?\n\}/)?.[0];
 if(!cardSource)throw new Error('Equipment card renderer is not extractable.');
-const renderCard=new Function('getEquipmentTier','getEquipmentLevelLabel','elemClass','equipmentPartNames','equipmentRecommendationHtml',`${cardSource}\nreturn equipmentCardHtml;`)(tiers.getEquipmentTier,tiers.getEquipmentLevelLabel,()=>'',{body:'身体',outerwear:'附加'},()=> '');
+const renderCard=new Function('getEquipmentTier','getEquipmentLevelLabel','elemClass','equipmentPartNames','equipmentRecommendationHtml',`${cardSource}\nreturn equipmentCardHtml;`)(tiers.getEquipmentTier,tiers.getEquipmentLevelLabel,()=>'',{body:'身体',accessory:'配件',outerwear:'附加'},()=> '');
 const standardCard=renderCard({name:'朴素布衣',element:'无',part:'body',atk:0,hp:80,bj:0,bs:0,crt:0,traits:[],affixTier:0});
 if(!standardCard.includes('身体 · 制式'))throw new Error('Standard equipment cards must show the named tier.');
-const emergencyCard=renderCard({id:'emergencyShield',name:'高难应急护盾',element:'无',part:'outerwear',atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],affixTier:0});
+const emergencyCard=renderCard({id:'emergencyShield',name:'应急护盾',element:'无',part:'accessory',atk:0,hp:0,bj:0,bs:0,crt:0,traits:[],affixTier:0});
 if(emergencyCard.includes('附加')||!emergencyCard.includes('【制式】'))throw new Error('Emergency shield cards must omit the add-on label while retaining their equipment level.');
 console.log('Verified four equipment tier names, legacy defaults, class dodge balance, starter stats, and random dodge bounds/growth.');
