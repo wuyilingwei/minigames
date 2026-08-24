@@ -11,8 +11,10 @@ const model=new Function('save',`${runtime.slice(start,end)}\nreturn {getEmergen
 
 for(const level of [6,7,8,9,10]){
   const values=model.getEmergencyShieldValues(level);
-  const expected=[100,75,50,25].map(base=>Math.floor(base*Math.pow(1.18,level)));
-  if(JSON.stringify(values)!==JSON.stringify(expected))throw new Error(`Difficulty ${level} emergency shield sequence must scale each of 100/75/50/25`);
+  const expected=[100,75,50,25].map(base=>Math.floor(base*Math.pow(1.18,level)*1.25));
+  if(JSON.stringify(values)!==JSON.stringify(expected))throw new Error(`Difficulty ${level} emergency shield sequence must preserve 100/75/50/25 decay with a 25% final-value increase`);
+  const shieldRule=model.getDifficultyRules(level).find(rule=>rule.tag.includes('战术护盾'));
+  if(!shieldRule?.detail.includes(`（${values.join('/')}临时盾，4次后损坏）`))throw new Error(`Difficulty ${level} tactical shield description must use the strengthened helper values`);
 }
 if(model.getEmergencyShieldValues(5).some(Boolean))throw new Error('Emergency shield must be unavailable below difficulty 6');
 const healingRates=[1,1,1,.95,.90,.85,.75,.70,.65,.55,.50];

@@ -237,7 +237,7 @@ function getEmergencyShieldValueForCharges(charges,level=save.useBlood){
     let remaining=Math.max(0,Math.min(4,Math.floor(Number(charges)||0)));
     if(remaining<=0||Number(level)<6)return 0;
     let base=[0,25,50,75,100][remaining];
-    return Math.floor(base*Math.pow(1.18,Math.max(0,Math.floor(Number(level)||0))));
+    return Math.floor(base*Math.pow(1.18,Math.max(0,Math.floor(Number(level)||0)))*1.25);
 }
 function getEmergencyShieldValues(level=save.useBlood){
     return [4,3,2,1].map(charges=>getEmergencyShieldValueForCharges(charges,level));
