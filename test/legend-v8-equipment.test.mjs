@@ -6,7 +6,14 @@ const html = await readFile(resolve(root, 'games/cassandri-legend/index.html'), 
 const runtime = await readFile(resolve(root, 'games/cassandri-legend/game.js'), 'utf8');
 const model = runtime.match(/const equipmentSlots=\[[\s\S]*?function initSlots\(\)\{[\s\S]*?\n\}/)?.[0];
 const actionModel = runtime.match(/function buildEquipAction\(item,slotIndex,slots=player\.slots\)\{[\s\S]*?\n\}/)?.[0];
-if (!model || !actionModel) throw new Error('Could not extract the equipment model.');
+const manualLootModel = runtime.match(/function equipToSlot\(e,chosenIdx\)\{[\s\S]*?\n\}/)?.[0];
+const replacementModel = runtime.match(/function renderReplacementChoices\(e,chosenIdx\)\{[\s\S]*?\n\}/)?.[0];
+if (!model || !actionModel || !manualLootModel || !replacementModel) throw new Error('Could not extract the equipment model.');
+if (!/renderReplacementChoices\(e,chosenIdx\);/.test(manualLootModel) || /confirmEquip\(\)/.test(manualLootModel)) throw new Error('Manual loot selection must always defer to explicit legal-slot choice, including when an empty slot exists.');
+if (!replacementModel.includes('<p>空位</p>') || !replacementModel.includes('replaceEquip(${index},${chosenIdx})')) throw new Error('Replacement flow must present empty and occupied legal slots for an explicit player decision.');
+for (const text of ['previousSlots:player.slots.slice()', 'player.slots=act.previousSlots', 'if(pendingLoot){', 'normalizeEquipmentSlots(normalized.player.slots']) {
+  if (!runtime.includes(text)) throw new Error(`Equipment replacement persistence contract is missing: ${text}`);
+}
 const createModel = new Function('save', 'elements', `function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}\n${model}\n${actionModel.replace('slots=player.slots', 'slots=[]')}\nreturn {equipmentSlots,getEquipmentSlots,normalizeEquipment,normalizeEquipmentSlots,buildEquipAction,getSlotCount,makeStarterEquipment};`);
 
 const low = createModel({ slot5Unlocked: false, useBlood: 0 }, ['火', '水', '草', '雷']);

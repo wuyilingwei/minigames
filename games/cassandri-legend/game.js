@@ -1323,14 +1323,11 @@ function showEquip(e,includeRecommendation=false){
 function equipToSlot(e,chosenIdx){
     let comparisons=getEquipmentComparisons(e);
     if(!comparisons.length){print("该装备没有可用部位，已放弃。");return false;}
-    let empty=comparisons.find(result=>!result.oldEquip&&result.action.removed.length===0);
-    if(!empty){renderReplacementChoices(e,chosenIdx);return true;}
-    let action=empty.action;
-    lastEquipAction={...action,chosenIdx:chosenIdx,previousSlots:player.slots.slice()};
-    player.slots=action.slots;
-    applyEquipStats();
-    refreshStatPanel();
-    confirmEquip();
+    // Manual loot selection must always expose every legal destination,
+    // including empty slots, so the player decides whether to leave a slot
+    // empty or replace an existing item of the same part.
+    renderReplacementChoices(e,chosenIdx);
+    return true;
 }
 function renderReplacementChoices(e,chosenIdx){
     cancelLootAutoSelect();
