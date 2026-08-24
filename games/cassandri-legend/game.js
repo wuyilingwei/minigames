@@ -10,6 +10,7 @@ let resetConfirmationPending=false;
 let cheatMode=false,cheatBackup=null;
 const CHEAT_SECRET="pqp是我们的皇";
 let difficultyDraft=0;
+let difficultySelectionMode="info";
 function isRecord(value){return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}
 function normalizeSave(stored){
     if(!isRecord(stored))return {...defaultSave,purchased:{...defaultPurchased}};
@@ -63,16 +64,22 @@ const equipmentSlots=[
 ];
 const equipmentPartNames={head:"头部",body:"身体",oneHand:"单手武器",twoHand:"双手武器",offHand:"副手",accessory:"饰品",outerwear:"附加",purchase:"购买"};
 const equipmentTierData=[
-    {id:0,name:"制式",description:"基础装备"},
-    {id:1,name:"精工",description:"解锁第一档词条"},
-    {id:2,name:"秘藏",description:"解锁第二档词条"},
-    {id:3,name:"神铸",description:"解锁第三档词条"}
+    {id:0,name:"制式",description:"基础装备等级"},
+    {id:1,name:"精工",description:"难度 3 装备等级"},
+    {id:2,name:"秘藏",description:"难度 6 装备等级"},
+    {id:3,name:"神铸",description:"难度 9 装备等级"}
 ];
 function normalizeAffixTier(value){
     let tier=Number(value);
     return Number.isFinite(tier)?Math.max(0,Math.min(3,Math.floor(tier))):0;
 }
 function getEquipmentTier(tier){return equipmentTierData[normalizeAffixTier(tier)];}
+const equipmentEnhancementMarkers=["","+","++","+++"];
+function getEquipmentEnhancementMarker(tier){return equipmentEnhancementMarkers[normalizeAffixTier(tier)];}
+function getEquipmentLevelLabel(tier){
+    let normalized=normalizeAffixTier(tier),data=getEquipmentTier(normalized),marker=getEquipmentEnhancementMarker(normalized);
+    return marker?`${data.name} ${marker}`:data.name;
+}
 const starterEquipmentData={
     "朴素头巾":{hp:25,crt:0.02},
     "朴素布衣":{hp:80},
@@ -790,8 +797,8 @@ function oneSlotHtml(idx){
     let traitHtml=(s.traits||[]).map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
     let isEmergencyShield=s.id==="emergencyShield";
     let specialNote=isEmergencyShield?` · 剩余${s.emergencyCharges}次${s.emergencyCharges>0?` · 下次${getEmergencyShieldValueForCharges(s.emergencyCharges,save.useBlood)}临时盾`:" · 已损坏"}`:"";
-    let tier=getEquipmentTier(s.affixTier);
-    let partNote=isEmergencyShield?"":`【${equipmentPartNames[s.part]} · ${tier.name}】`;
+    let tier=getEquipmentTier(s.affixTier),levelLabel=getEquipmentLevelLabel(s.affixTier);
+    let partNote=isEmergencyShield?`【${levelLabel}】`:`【${equipmentPartNames[s.part]} · ${levelLabel}】`;
     return `<div class="slot filled"><span class="ename">${getSlotLabel(idx)} · ${s.name}</span> <span class="${elemClass(s.element)}">【${s.element}】</span><span class="trait-note ${isEmergencyShield?"":`tier-${tier.id}`}">${partNote}${specialNote}</span>
     <div class="estats">
     <span class="estat-item stat-atk">ATK+${s.atk}</span>
@@ -1004,13 +1011,13 @@ function getDifficultyRules(level){
     if(current>=1)rules.push({level:1,tag:`金币 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`,detail:`胜利金币获取效率 +${Math.floor((getDifficultyGoldMultiplier(current)-1)*100)}%`});
     if(current>=3)rules.push({level:3,tag:"禁用职业/祝福",detail:"开局随机禁用一个职业和一项祝福"});
     if(current>=3)rules.push({level:3,tag:`回血 ${Math.floor(getHealingRecoveryRate(current)*100)}%`,detail:`单次治疗至多恢复当前损失生命的 ${Math.floor(getHealingRecoveryRate(current)*100)}%`});
-    if(current>=3)rules.push({level:3,tag:"精工装备",detail:"装备掉落开放额外效果与 1 条词条，等阶提升至精工"});
+    if(current>=3)rules.push({level:3,tag:"装备等级 +",detail:"装备掉落开放额外效果与 1 条词条，装备等级提升为精工 +"});
     if(current>=5)rules.push({level:5,tag:"追踪成长",detail:"敌人追踪随波次与难度成长，并与玩家闪避相减；敌人单段攻击伤害 -10%"});
-    if(current>=6)rules.push({level:6,tag:"秘藏装备",detail:"装备掉落至多 2 条词条，等阶提升至秘藏"});
+    if(current>=6)rules.push({level:6,tag:"装备等级 ++",detail:"装备掉落至多 2 条词条，装备等级提升为秘藏 ++"});
     if(current>=6)rules.push({level:6,tag:`高难盾 ${getEmergencyShieldValues(current)[0]}`,detail:`开放高难槽；新征途在该槽获得应急盾（${getEmergencyShieldValues(current).join("/")}临时盾，4次后损坏；购买槽需商城单独解锁）`});
     if(current>=7)rules.push({level:7,tag:"伤害压制",detail:"玩家造成的伤害 -20%"});
     if(current>=9)rules.push({level:9,tag:"装备损失",detail:"遭遇普通敌人时有 30% 概率随机失去一件装备"});
-    if(current>=9)rules.push({level:9,tag:"神铸装备",detail:"装备掉落至多 3 条强化词条，等阶提升至神铸"});
+    if(current>=9)rules.push({level:9,tag:"装备等级 +++",detail:"装备掉落至多 3 条强化词条，装备等级提升为神铸 +++"});
     return rules;
 }
 function getDifficultyRuleTags(level){
@@ -1033,7 +1040,8 @@ function renderDifficultyPanel(){
     let unlocked=Math.min(10,Math.max(0,Number(save.blood)||0));
     let level=Math.min(unlocked,Math.max(0,Math.floor(difficultyDraft)));
     difficultyDraft=level;
-    let adjustable=Boolean(player.canAdjustPoint);
+    let isNewGame=difficultySelectionMode==="new";
+    let adjustable=isNewGame||Boolean(player.canAdjustPoint);
     document.getElementById("difficultySelected").textContent=level;
     document.getElementById("difficultyFocusCaption").textContent=`难度 ${level}`;
     document.getElementById("difficultyMultiplier").textContent=`敌人攻击力与生命值 ×${Math.pow(1.4,level).toFixed(2)}；胜利金币 ×${getDifficultyGoldMultiplier(level).toFixed(2)}（每级金币 +10%）。`;
@@ -1042,32 +1050,48 @@ function renderDifficultyPanel(){
     document.getElementById("difficultyRuleDetails").innerHTML=getDifficultyRuleDetails(level);
     document.getElementById("btnDifficultyPrev").disabled=!adjustable||level<=0;
     document.getElementById("btnDifficultyNext").disabled=!adjustable||level>=unlocked;
-    document.getElementById("btnDifficultyApply").disabled=!adjustable||level===save.useBlood;
-    document.getElementById("difficultyLockNote").textContent=adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备词条，6 级起开放高难槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
+    document.getElementById("btnDifficultyApply").disabled=!adjustable||(!isNewGame&&level===save.useBlood);
+    document.getElementById("difficultyLockNote").textContent=isNewGame?`已解锁 ${unlocked}/10 级；确认后开始冒险，难度 3/6/9 将在职业与祝福选择前生效。`:adjustable?`已解锁 ${unlocked}/10 级；难度 3/6/9 分别提升装备等级（+ / ++ / +++），6 级起开放高难槽；商城购买槽独立解锁。`:"本局已经开始，难度已锁定。";
 }
 function showDifficultyInfo(){
     cancelLootAutoSelect();
+    difficultySelectionMode="info";
+    difficultyDraft=Math.max(0,Math.min(10,Number(save.useBlood)||0));
+    let rules=document.querySelector(".difficulty-rules");if(rules)rules.open=false;
+    renderDifficultyPanel();
+    document.getElementById("difficultyOverlay").hidden=false;
+}
+function openNewGameDifficulty(){
+    difficultySelectionMode="new";
     difficultyDraft=Math.max(0,Math.min(10,Number(save.useBlood)||0));
     let rules=document.querySelector(".difficulty-rules");if(rules)rules.open=false;
     renderDifficultyPanel();
     document.getElementById("difficultyOverlay").hidden=false;
 }
 function shiftDifficulty(delta){
-    if(!player.canAdjustPoint)return;
+    if(difficultySelectionMode!=="new"&&!player.canAdjustPoint)return;
     difficultyDraft=Math.max(0,Math.min(Math.min(10,Number(save.blood)||0),difficultyDraft+delta));
     renderDifficultyPanel();
 }
 function applyDifficultySelection(){
-    if(!player.canAdjustPoint)return;
+    let isNewGame=difficultySelectionMode==="new";
+    if(!isNewGame&&!player.canAdjustPoint)return;
     save.useBlood=difficultyDraft;
     writeSave();
+    document.getElementById("difficultyOverlay").hidden=true;
+    difficultySelectionMode="info";
+    if(isNewGame){
+        document.getElementById("welcomeOverlay").hidden=true;
+        startGame();
+        return;
+    }
     if(player.job){syncSlotCapacity();applyEquipStats();}
     refreshStatPanel();
-    document.getElementById("difficultyOverlay").hidden=true;
 }
 function closeDifficultyPanel(){
     difficultyDraft=save.useBlood;
     document.getElementById("difficultyOverlay").hidden=true;
+    difficultySelectionMode="info";
     resumeLootAutoSelectIfReady();
 }
 function openShop(){
@@ -1287,8 +1311,8 @@ function equipmentCardHtml(e,includeRecommendation=false){
         traitHtml=e.traits.map(trait=>`<div class="trait">【${trait.name}】${describeEquipmentTrait(trait)}</div>`).join("");
     }
     let recommendation=includeRecommendation?equipmentRecommendationHtml(e):"";
-    let tier=getEquipmentTier(e.affixTier);
-    let equipmentMeta=e.id==="emergencyShield"?`【${tier.name}】`:`【${equipmentPartNames[e.part]||"未知部位"} · ${tier.name}】`;
+    let tier=getEquipmentTier(e.affixTier),levelLabel=getEquipmentLevelLabel(e.affixTier);
+    let equipmentMeta=e.id==="emergencyShield"?`【${levelLabel}】`:`【${equipmentPartNames[e.part]||"未知部位"} · ${levelLabel}】`;
     return `<div class="equipment-card"><div class="equip-title">${e.name} <span class="${elemClass(e.element)}">【${e.element}】</span> <span class="trait-note tier-${tier.id}">${equipmentMeta}</span></div><div class="equip-stats"><span class="stat-atk">ATK +${e.atk}</span> · <span class="stat-hp">HP +${e.hp}</span> · <span class="stat-bj">BJ +${Math.floor(e.bj*100)}%</span> · <span class="stat-bs">BS +${Math.floor(e.bs*100)}%</span> · <span class="stat-crt">CRT +${Math.floor(e.crt*100)}%</span></div>${traitHtml}${recommendation}</div>`;
 }
 function showEquip(e,includeRecommendation=false){
@@ -2462,7 +2486,7 @@ function initApp(){
     const settingsLootAutoSelect=document.getElementById("settingsLootAutoSelect");
     const continueButton=document.getElementById("btnContinue");
     const saveImportInput=document.getElementById("saveImportInput");
-    document.getElementById("btnNewGame").onclick=()=>{welcome.hidden=true;startGame();};
+    document.getElementById("btnNewGame").onclick=()=>openNewGameDifficulty();
     continueButton.onclick=()=>{let snapshot=readRunSave("auto");if(snapshot)restoreRunSnapshot(snapshot);};
     document.getElementById("btnHomeSave").onclick=()=>openHomeSaveManager();
     document.getElementById("btnHomeShop").onclick=()=>openHomeShop();
