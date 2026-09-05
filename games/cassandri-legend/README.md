@@ -2,7 +2,7 @@
 
 浏览器文字冒险 RPG。当前发布版为《卡桑德里传说》8.0，采用无需打包器的纯静态资源结构。
 
-在线游玩：<https://minigames.wuyilingwei.workers.dev/games/cassandri-legend/>
+在线游玩：<https://minigames.voidcarve.com/games/cassandri-legend/>
 
 入口由 [`index.html`](index.html)、[`styles.css`](styles.css) 和 [`game.js`](game.js) 组成。三者使用相对路径加载，直接用浏览器打开 `index.html` 即可运行；经典脚本会保留现有内联 `onclick` 与全局函数兼容性。
 
